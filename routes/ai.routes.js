@@ -77,29 +77,39 @@ THÔNG TIN BẢO TÀNG THỰC TẾ:
  * Admin Natural Language NLP Query qua Google Gemini API
  */
 router.post('/query', async (req, res) => {
-  const { prompt } = req.body;
+  const { prompt, contextStats } = req.body;
 
   if (!prompt) {
     return res.status(400).json({ success: false, message: 'Vui lòng nhập câu hỏi tự nhiên cho AI Administrator!' });
   }
 
   try {
+    const stats = contextStats || {};
+    const totalVisitors = stats.totalVisitors || 0;
+    const totalRevenue = stats.totalRevenue || 0;
+    const totalArtifacts = stats.totalArtifacts || 0;
+
     const systemInstruction = `Bạn là AI Trợ lý Quản trị & Trí tuệ Dữ liệu (Admin Data Intelligence AI) của Bảo tàng Văn hóa các Dân tộc Việt Nam (Thái Nguyên). Khi Cán bộ hoặc Lãnh đạo đặt câu hỏi truy vấn tự nhiên về kho hiện vật, báo cáo doanh thu, lượt khách hay công tác bảo quản:
 - Hãy phân tích và trả lời súc tích, cấu trúc rõ ràng với các mục tóm tắt số liệu, thông kê chi tiết và khuyến nghị quản lý.
 - KHÔNG sử dụng ký tự Markdown dạng dấu sao (*) hay (**). Dùng dấu gạch ngang "-" khi liệt kê.
-- Dữ liệu thực tế hệ thống bảo tàng:
-  + Tổng hiện vật di sản: 10.250 hiện vật (trong đó 142 hiện vật Dân tộc Tày, 85 lưu kho bảo quản, 57 trưng bày tại Phòng 2).
-  + Cơ cấu 5 Phòng trong nhà: Phòng 1 (Việt-Mường), Phòng 2 (Tày-Thái), Phòng 3 (H'mông-Dao, Ka Đai, Tạng Miến), Phòng 4 (Môn-Khơ mer), Phòng 5 (Nam Đảo & Hán).
-  + Cơ cấu 6 Vùng ngoài trời: Vùng núi cao phía Bắc, Thung lũng, Trung du-Bắc Bộ, Miền Trung-Ven biển, Trường Sơn-Tây Nguyên, Đồng Bằng Nam Bộ.
-  + Doanh thu bán vé Tháng 8/2026: 160.450.000 VNĐ (4.210 lượt vé: Vé Người lớn 40k, Vé HSSV 20k, Vé Khách Quốc tế 40k).
-  + Tình trạng hiện vật: 92% Nguyên vẹn, 8% Đang bảo quản định kỳ.`;
+- DỮ LIỆU THỰC TẾ ĐANG VẬN HÀNH TRÊN HỆ THỐNG QUẢN TRỊ BẢO TÀNG:
+  + Bảng giá vé hiện hành thực tế: Vé Tham Quan Bảo Tàng (Phổ thông/Người lớn): 30.000 VNĐ/lượt; Vé Trẻ Em dưới 5 tuổi: Miễn phí (0 VNĐ).
+  + Báo cáo số liệu thực tế hệ thống đã ghi nhận:
+    * Tổng số vé/lượt khách đã bán và lưu vết: ${totalVisitors} lượt vé.
+    * Tổng doanh thu thực tế ghi nhận: ${totalRevenue.toLocaleString('vi-VN')} VNĐ.
+    * Tổng số hồ sơ hiện vật di sản trong cơ sở dữ liệu: ${totalArtifacts} hiện vật.
+  + Hệ thống cơ sở vật chất bảo tàng:
+    * 5 Phòng trưng bày trong nhà (Phòng 1, Phòng 2, Phòng 3, Phòng 4, Phòng 5) theo các nhóm ngôn ngữ.
+    * 6 Vùng không gian văn hóa sinh thái ngoài trời (Vùng núi cao phía Bắc, Thung lũng, Trung du-Bắc Bộ, Miền Trung-Ven biển, Trường Sơn-Tây Nguyên, Đồng Bằng Nam Bộ).
+    * Hệ thống Kho bảo quản 1.
+  + Tình trạng vật lý hiện vật: Hầu hết nguyên vẹn và được theo dõi lịch bảo quản định kỳ.`;
 
     const detailsText = await generateGeminiWithFallback(prompt, systemInstruction);
 
     return res.json({
       success: true,
       data: {
-        summary: `Kết quả phân tích dữ liệu quản trị qua Gemini AI`,
+        summary: `Kết quả phân tích dữ liệu quản trị thực tế qua Gemini AI`,
         details: detailsText
       }
     });

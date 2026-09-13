@@ -1671,11 +1671,25 @@ async function handleExecuteAdminNlQuery(event) {
     </div>
   `;
 
+  let totalVisitors = 0;
+  let totalRevenue = 0;
+  (TICKETS_PURCHASED_DATA || []).forEach(t => {
+    totalVisitors += (t.totalQty || t.adultQty + t.childQty || 1);
+    totalRevenue += (t.amount || 0);
+  });
+
   try {
     const res = await fetch('/api/ai/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: query })
+      body: JSON.stringify({
+        prompt: query,
+        contextStats: {
+          totalVisitors: totalVisitors,
+          totalRevenue: totalRevenue,
+          totalArtifacts: (ARTIFACTS_DATA || []).length
+        }
+      })
     });
     const data = await res.json();
 
