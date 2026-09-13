@@ -118,6 +118,10 @@ INSERT INTO DanToc (ten_dantoc, nhom_ngon_ngu, vung_id) VALUES
 
 INSERT INTO KhuTrungBay (ten_khu, loai_khu, vi_tri) VALUES 
 ('Phòng Trưng Bày 1', 'TRUNG_BAY_INDOOR', 'Tầng 1 - Khu A'),
+('Phòng Trưng Bày 2', 'TRUNG_BAY_INDOOR', 'Tầng 1 - Khu B'),
+('Phòng Trưng Bày 3', 'TRUNG_BAY_INDOOR', 'Tầng 2 - Khu A'),
+('Phòng Trưng Bày 4', 'TRUNG_BAY_INDOOR', 'Tầng 2 - Khu B'),
+('Phòng Trưng Bày 5', 'TRUNG_BAY_INDOOR', 'Tầng 2 - Khu C'),
 ('Kho Bảo Quản 1', 'KHO_BAO_QUAN', 'Tầng Hầm - Khu B');
 
 INSERT INTO LoaiVe (ten_loaive, gia_ve, ghi_chu) VALUES 
