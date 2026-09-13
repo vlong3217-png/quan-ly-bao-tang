@@ -4,7 +4,200 @@
    ============================================================ */
 
 // Sample Heritage Artifacts Database (54 Ethnic Groups Collection)
-let ARTIFACTS_DATA = [];
+let ARTIFACTS_DATA = [
+  {
+    id: 1,
+    code: 'HV-001',
+    title: 'Trang phục Cổ truyền Dân tộc Tày',
+    ethnic: 'Dân tộc Tày',
+    region: 'Vùng núi cao phía Bắc',
+    languageGroup: 'Tày - Thái',
+    material: 'Vải chàm dệt thủ công, thêu hoa văn chỉ tơ tằm',
+    era: 'Thế kỷ XIX',
+    location: 'Phòng Trưng Bày 1',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Trang phục thể hiện bản sắc văn hóa độc đáo và kỹ nghệ dệt nhuộm chàm truyền thống của người Tày vùng Việt Bắc.',
+    audioText: 'Trang phục cổ truyền của đồng bào Tày với áo dài năm thân nhuộm chàm đen nhánh đặc trưng, viền cổ nẹp thổ cẩm tinh xảo.'
+  },
+  {
+    id: 2,
+    code: 'HV-002',
+    title: 'Đàn T\'rưng Tre Tây Nguyên',
+    ethnic: 'Dân tộc Gia Rai',
+    region: 'Vùng Trường Sơn - Tây Nguyên',
+    languageGroup: 'Môn - Khơ mer',
+    material: 'Ống tre nứa tự nhiên, dây mây rừng',
+    era: 'Thế kỷ XX',
+    location: 'Phòng Trưng Bày 2',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Nhạc cụ gõ truyền thống bằng tre nứa phát ra âm thanh vang vọng như tiếng suối róc rách của đại ngàn.',
+    audioText: 'Đàn Trưng dân tộc Gia Rai gắn liền với các lễ hội đâm trâu, mừng lúa mới và sinh hoạt cộng đồng nhà Rông.'
+  },
+  {
+    id: 3,
+    code: 'HV-003',
+    title: 'Trống Đồng Văn hóa Đông Sơn',
+    ethnic: 'Dân tộc Kinh (Việt)',
+    region: 'Vùng Đồng bằng Bắc Bộ',
+    languageGroup: 'Việt - Mường',
+    material: 'Đồng thau đúc nguyên khối',
+    era: 'Thời kỳ Đông Sơn (thế kỷ II-III TCN)',
+    location: 'Kho Bảo Quản 1',
+    status: 'Đang bảo quản',
+    img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Biểu tượng đỉnh cao của nền văn minh lúa nước sông Hồng và kỹ thuật đúc đồng thượng thừa của người Việt cổ.',
+    audioText: 'Trống đồng cổ với mặt trời 14 tia ở tâm, bao quanh là các vành chim Lạc bay và cảnh sinh hoạt giã gạo của cư dân cổ.'
+  },
+  {
+    id: 4,
+    code: 'HV-004',
+    title: 'Khèn Bè và Váy Thổ Cẩm Hoa Mông',
+    ethnic: 'Dân tộc H\'Mông',
+    region: 'Vùng núi cao phía Bắc',
+    languageGroup: 'H\'mông - Dao',
+    material: 'Gỗ pơ mu, ống trúc, vải lanh nhuộm sáp ong',
+    era: 'Thế kỷ XX',
+    location: 'Phòng Trưng Bày 3',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Bộ nhạc cụ khèn thiêng và trang phục vẽ sáp ong tinh xảo trong các phiên chợ tình vùng cao.',
+    audioText: 'Tiếng khèn Mông gọi bạn tình trong sương sớm cùng váy xòe hoa dệt từ sợi lanh bền bỉ.'
+  },
+  {
+    id: 5,
+    code: 'HV-005',
+    title: 'Khăn Piêu Thêu Tay Dân Tộc Thái',
+    ethnic: 'Dân tộc Thái',
+    region: 'Vùng Thung lũng',
+    languageGroup: 'Tày - Thái',
+    material: 'Vải bông dệt tay nhuộm chàm, chỉ thêu nhiều màu',
+    era: 'Thế kỷ XX',
+    location: 'Phòng Trưng Bày 2',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Vật đính ước thiêng liêng và biểu trưng cho sự khéo léo, nết na của người con gái Thái Tây Bắc.',
+    audioText: 'Khăn Piêu với họa tiết cút piêu hình trăng sao, ngọn rau dớn phản ánh thế giới quan gắn liền với núi rừng thiên nhiên.'
+  },
+  {
+    id: 6,
+    code: 'HV-006',
+    title: 'Bộ Cồng Chiêng Tây Nguyên Cổ Truyền',
+    ethnic: 'Dân tộc Ba Na',
+    region: 'Vùng Trường Sơn - Tây Nguyên',
+    languageGroup: 'Môn - Khơ mer',
+    material: 'Hợp kim đồng, thiếc, bạc',
+    era: 'Thế kỷ XIX',
+    location: 'Phòng Trưng Bày 5',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Kiệt tác Di sản truyền khẩu và phi vật thể nhân loại UNESCO, tiếng thiêng kết nối thần linh và buôn làng.',
+    audioText: 'Bộ chiêng gồm chiêng mẹ, chiêng con hòa tấu nhịp nhàng mang linh hồn của đất trời Tây Nguyên huyền thoại.'
+  },
+  {
+    id: 7,
+    code: 'HV-007',
+    title: 'Gốm Cổ Bàu Trúc Nặn Tay Dân Tộc Chăm',
+    ethnic: 'Dân tộc Chăm',
+    region: 'Vùng miền Trung - Ven biển',
+    languageGroup: 'Nam Đảo',
+    material: 'Đất sét mịn ven sông Quao, nung lộ thiên bằng củi rơm',
+    era: 'Thế kỷ XIX',
+    location: 'Phòng Trưng Bày 5',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1578925518470-4def7a0f08bb?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1578925518470-4def7a0f08bb?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Làng gốm cổ xưa bậc nhất Đông Nam Á với kỹ thuật người đi quanh bàn xoay nặn hình độc đáo.',
+    audioText: 'Gốm Bàu Trúc lưu giữ linh hồn đất và lửa với màu khói đỏ vàng huyền bí của người Chăm duyên hải miền Trung.'
+  },
+  {
+    id: 8,
+    code: 'HV-008',
+    title: 'Thạp Đồng Đào Thịnh Thời Kỳ Hùng Vương',
+    ethnic: 'Dân tộc Kinh (Việt)',
+    region: 'Vùng Trung du - Bắc Bộ',
+    languageGroup: 'Việt - Mường',
+    material: 'Đồng thau đúc chạm khắc hoa văn chìm',
+    era: 'Thế kỷ V TCN',
+    location: 'Kho Bảo Quản 1',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Bảo vật quốc gia phản ánh đời sống tâm linh, kỹ thuật luyện kim phát triển rực rỡ thời đại Hùng Vương dựng nước.',
+    audioText: 'Thạp đồng Đào Thịnh khắc họa đoàn thuyền chiến, chim Lạc và các cặp tượng phồn thực cầu mong mùa màng tốt tươi.'
+  },
+  {
+    id: 9,
+    code: 'HV-009',
+    title: 'Trang Phục Cưới Cô Dâu Dân Tộc Dao Đỏ',
+    ethnic: 'Dân tộc Dao',
+    region: 'Vùng núi cao phía Bắc',
+    languageGroup: 'H\'mông - Dao',
+    material: 'Vải chàm thêu chỉ đỏ rực rỡ, trang sức bạc chạm hoa lá',
+    era: 'Thế kỷ XX',
+    location: 'Phòng Trưng Bày 3',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Bộ lễ phục truyền thống thể hiện sự tinh túy của phụ nữ Dao Đỏ trong ngày trọng đại nhất cuộc đời.',
+    audioText: 'Khăn mũ đỏ quả trám cùng chuỗi hạt cườm bạc rủ xuống bờ vai làm nổi bật vẻ đẹp rạng ngời của cô dâu Dao.'
+  },
+  {
+    id: 10,
+    code: 'HV-010',
+    title: 'Khung Cửi Dệt Cạp Váy Thổ Cẩm Mường',
+    ethnic: 'Dân tộc Mường',
+    region: 'Vùng Thung lũng',
+    languageGroup: 'Việt - Mường',
+    material: 'Gỗ lim, thoi dệt tre, sợi tơ tằm nhuộm thảo mộc',
+    era: 'Thế kỷ XIX',
+    location: 'Phòng Trưng Bày 1',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Dụng cụ tạo nên những dải cạp váy Mường nổi danh khắp vùng thung lũng với biểu tượng rồng mây bay lượn.',
+    audioText: 'Nghệ thuật dệt cạp váy Mường đòi hỏi sự kiên trì tỉ mỉ từng sợi tơ, tạo nên hoa văn hình học và thần thú sinh động.'
+  },
+  {
+    id: 11,
+    code: 'HV-011',
+    title: 'Tượng Gỗ Dân Gian Nhà Mồ Tây Nguyên',
+    ethnic: 'Dân tộc Ê Đê',
+    region: 'Vùng Trường Sơn - Tây Nguyên',
+    languageGroup: 'Nam Đảo',
+    material: 'Gỗ gõ đỏ đẽo bằng rìu tay mộc mạc',
+    era: 'Thế kỷ XX',
+    location: 'Phòng Trưng Bày 5',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Nghệ thuật điêu khắc dân gian truyền thống tiễn đưa người đã khuất về với tổ tiên trong lễ bỏ mả Pơthi.',
+    audioText: 'Tượng nhà mồ mang dáng hình người ôm mặt khóc than, đôi lứa giao duyên hay chim muông biểu đạt sự luân hồi của vạn vật.'
+  },
+  {
+    id: 12,
+    code: 'HV-012',
+    title: 'Đèn Lồng Gốm Hoa Nâu Thời Lý - Trần',
+    ethnic: 'Dân tộc Kinh (Việt)',
+    region: 'Vùng Đồng Bằng Nam Bộ',
+    languageGroup: 'Việt - Mường',
+    material: 'Đất sét trắng nung men ngà điểm hoa văn men nâu sắt',
+    era: 'Thế kỷ XIII - XIV',
+    location: 'Phòng Trưng Bày 1',
+    status: 'Nguyên vẹn',
+    img: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=600&q=80',
+    images: ['https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=600&q=80'],
+    meaning: 'Hiện vật quý hiếm phản ánh thời kỳ hoàng kim của Phật giáo và tinh thần phóng khoáng, thuần hậu Đại Việt.',
+    audioText: 'Đèn gốm hoa nâu trang trí cánh sen nở tầng tầng lớp lớp, đượm tinh thần từ bi và ánh sáng trí tuệ thời Lý Trần.'
+  }
+];
 
 // Sample Borrow Tickets Database (UI-16)
 let BORROW_DATA = [];
@@ -19,6 +212,13 @@ let USERS_DATA = [
   { id: 3, fullName: 'Lê Hoàng Nam', username: 'thukho01', email: 'nam.le@baotang.gov.vn', phone: '0934567890', role: 'THUKHO', roleName: 'Kiểm kê & Thủ kho', isLocked: false }
 ];
 
+// 40 Authentic Avatars List from /avatar directory
+const AVATAR_LIST = Array.from({ length: 40 }, (_, i) => {
+  const num = String(i + 1).padStart(2, '0');
+  return `avatar/${num}.jpg`;
+});
+let tempSelectedAvatar = 'avatar/01.jpg';
+
 // Demo Accounts Mapping for Internal Staff Roles
 const DEMO_ACCOUNTS = {
   BANVE: {
@@ -30,6 +230,7 @@ const DEMO_ACCOUNTS = {
     role: 'BANVE',
     roleName: 'Nhân Viên Bán Vé & Đón Tiếp',
     roleBadgeClass: 'role-banve',
+    avatar: 'avatar/02.jpg',
     roleDesc: 'Quyền Hạn: Bán vé tại quầy (POS), Soát vé vào cửa (QR Scan), Quản lý lịch đoàn tham quan'
   },
   THUKHO: {
@@ -41,6 +242,7 @@ const DEMO_ACCOUNTS = {
     role: 'THUKHO',
     roleName: 'Cán Bộ Kiểm Kê & Thủ Kho',
     roleBadgeClass: 'role-thukho',
+    avatar: 'avatar/05.jpg',
     roleDesc: 'Quyền Hạn: Quản lý hồ sơ hiện vật, Luân chuyển vị trí kho/trưng bày, Mượn/trả & bảo quản di sản'
   },
   ADMIN: {
@@ -52,6 +254,7 @@ const DEMO_ACCOUNTS = {
     role: 'ADMIN',
     roleName: 'Quản Trị Viên Hệ Thống',
     roleBadgeClass: 'role-admin',
+    avatar: 'avatar/01.jpg',
     roleDesc: 'Quyền Hạn: Quyền Quản trị cao nhất (Quản lý User, Cấu hình danh mục, Xem báo cáo tổng quan)'
   }
 };
@@ -110,9 +313,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (savedArtifacts) {
     try {
       const parsed = JSON.parse(savedArtifacts);
-      if (Array.isArray(parsed)) {
-        ARTIFACTS_DATA = parsed.map(normalizeArtifact).filter(Boolean);
-        localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
+      if (Array.isArray(parsed) && parsed.length >= ARTIFACTS_DATA.length) {
+        const normalized = parsed.map(normalizeArtifact).filter(Boolean);
+        if (normalized.length > 0) {
+          ARTIFACTS_DATA = normalized;
+        }
       }
     } catch (e) {}
   }
@@ -194,7 +399,161 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderTourTable(TOURS_DATA);
   renderDashboardStats();
   renderShiftReportStats();
+  initCustomSelects();
 });
+
+/**
+ * Setup Responsive Custom Dropdown for Select elements to prevent OS-level overflow on all devices
+ */
+function initCustomSelects() {
+  const selectIds = ['filterRegionSelect', 'filterLanguageSelect', 'bookingSlot', 'filterInventoryLoc'];
+  selectIds.forEach(id => {
+    const select = document.getElementById(id);
+    if (!select || select.dataset.customized === 'true') return;
+    select.dataset.customized = 'true';
+
+    // Hide original native select
+    select.style.display = 'none';
+
+    // Create custom wrapper
+    const wrapper = document.createElement('div');
+    const hasIcon = !select.classList.contains('no-icon') && (
+      (select.parentElement && select.parentElement.querySelector('.input-icon')) ||
+      (select.nextElementSibling && select.nextElementSibling.classList.contains('input-icon'))
+    );
+    wrapper.className = 'custom-select-wrapper' + (hasIcon ? ' has-icon' : '');
+    wrapper.id = `custom_${id}_wrapper`;
+
+    // Trigger button
+    const trigger = document.createElement('div');
+    trigger.className = 'custom-select-trigger';
+    trigger.setAttribute('tabindex', '0');
+    trigger.setAttribute('role', 'button');
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    if (hasIcon || id === 'bookingSlot') {
+      trigger.style.paddingLeft = '2.6rem';
+    }
+
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'custom-select-label';
+    const selectedOpt = select.options[select.selectedIndex] || select.options[0];
+    labelSpan.textContent = selectedOpt ? selectedOpt.text : '';
+
+    const arrow = document.createElement('i');
+    arrow.className = 'fa-solid fa-chevron-down custom-select-arrow';
+
+    trigger.appendChild(labelSpan);
+    trigger.appendChild(arrow);
+    wrapper.appendChild(trigger);
+
+    // Dropdown menu
+    const menu = document.createElement('div');
+    menu.className = 'custom-select-menu';
+    menu.setAttribute('role', 'listbox');
+
+    function buildOptions() {
+      menu.innerHTML = '';
+      Array.from(select.options).forEach((opt, idx) => {
+        const optionEl = document.createElement('div');
+        const isSelected = idx === select.selectedIndex;
+        optionEl.className = 'custom-select-option' + (isSelected ? ' selected' : '');
+        optionEl.setAttribute('data-value', opt.value);
+        optionEl.setAttribute('role', 'option');
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = opt.text;
+        optionEl.appendChild(textSpan);
+
+        if (isSelected) {
+          const checkIcon = document.createElement('i');
+          checkIcon.className = 'fa-solid fa-check';
+          optionEl.appendChild(checkIcon);
+        }
+
+        optionEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          select.value = opt.value;
+          labelSpan.textContent = opt.text;
+
+          menu.querySelectorAll('.custom-select-option').forEach(el => {
+            el.classList.remove('selected');
+            const ck = el.querySelector('.fa-check');
+            if (ck) ck.remove();
+          });
+
+          optionEl.classList.add('selected');
+          const ck = document.createElement('i');
+          ck.className = 'fa-solid fa-check';
+          optionEl.appendChild(ck);
+
+          wrapper.classList.remove('open');
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        menu.appendChild(optionEl);
+      });
+    }
+
+    buildOptions();
+    wrapper.appendChild(menu);
+    select.parentNode.insertBefore(wrapper, select.nextSibling);
+
+    // Toggle open/close
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = wrapper.classList.contains('open');
+      document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+        if (w !== wrapper) w.classList.remove('open');
+      });
+      wrapper.classList.toggle('open', !isOpen);
+    });
+
+    // Keyboard navigation
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        wrapper.classList.toggle('open');
+      } else if (e.key === 'Escape') {
+        wrapper.classList.remove('open');
+      }
+    });
+
+    // Sync if native select changed programmatically
+    select.addEventListener('change', () => {
+      const curOpt = select.options[select.selectedIndex];
+      if (curOpt) {
+        labelSpan.textContent = curOpt.text;
+        menu.querySelectorAll('.custom-select-option').forEach(el => {
+          const isSel = el.getAttribute('data-value') === curOpt.value;
+          el.classList.toggle('selected', isSel);
+          const ck = el.querySelector('.fa-check');
+          if (isSel && !ck) {
+            const checkIcon = document.createElement('i');
+            checkIcon.className = 'fa-solid fa-check';
+            el.appendChild(checkIcon);
+          } else if (!isSel && ck) {
+            ck.remove();
+          }
+        });
+      }
+    });
+  });
+
+  // Close dropdowns when clicking anywhere outside
+  if (!window._customSelectsGlobalBound) {
+    window._customSelectsGlobalBound = true;
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.custom-select-wrapper')) {
+        document.querySelectorAll('.custom-select-wrapper.open').forEach(w => w.classList.remove('open'));
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.custom-select-wrapper.open').forEach(w => w.classList.remove('open'));
+      }
+    });
+  }
+}
 
 /**
  * Update Header Navigation Visibility based on Staff Role
@@ -215,9 +574,36 @@ function updateNavigationVisibility(user) {
 }
 
 /**
+ * Toggle Mobile Navigation Drawer (UI-01 to UI-21)
+ */
+function toggleMobileNav() {
+  const strip = document.getElementById('headerNavStrip');
+  const toggleBtn = document.getElementById('mobileNavToggle');
+  if (strip) {
+    strip.classList.toggle('mobile-open');
+    const isOpen = strip.classList.contains('mobile-open');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = isOpen ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
+      toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+  }
+}
+
+/**
  * Switch Navigation views (Trọn bộ UI-01 đến UI-21)
  */
 function switchNav(viewId) {
+  // Auto close mobile menu when switching views
+  const strip = document.getElementById('headerNavStrip');
+  const toggleBtn = document.getElementById('mobileNavToggle');
+  if (strip && strip.classList.contains('mobile-open')) {
+    strip.classList.remove('mobile-open');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+  }
+
   const views = document.querySelectorAll('.screen-view');
   views.forEach(v => v.classList.remove('active'));
 
@@ -266,6 +652,10 @@ function switchNav(viewId) {
   if (viewId === 'viewCategoryManagement') {
     renderCategoryTicketPricesTable();
     renderCategoryEthnicitiesTable();
+  }
+
+  if (viewId === 'viewAdminAiAssistant') {
+    loadAiConfig();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -372,7 +762,7 @@ function renderCatalog(artifacts) {
   grid.innerHTML = validArtifacts.map(art => `
     <div class="artifact-card">
       <div class="artifact-img-box">
-        <img src="${art.img}" alt="${art.title}" class="artifact-img">
+        <img src="${art.img}" alt="${art.title}" class="artifact-img" onerror="this.onerror=null; this.src='picture1_5.jpg';">
         <span class="artifact-code-badge">${art.code}</span>
       </div>
       <div class="artifact-body">
@@ -417,7 +807,11 @@ function openArtifactDetail(id) {
   currentArtifact = art;
 
   const images = (art.images && art.images.length > 0) ? art.images : [art.img];
-  document.getElementById('detailImg').src = images[0] || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80';
+  const detailImgEl = document.getElementById('detailImg');
+  if (detailImgEl) {
+    detailImgEl.onerror = function() { this.onerror = null; this.src = 'picture1_5.jpg'; };
+    detailImgEl.src = images[0] || 'picture1_5.jpg';
+  }
   
   // Render thumbnail gallery strip if multiple images exist
   const strip = document.getElementById('detailGalleryStrip');
@@ -1342,6 +1736,24 @@ function handleScanGateQr(event) {
 }
 
 /**
+ * Copy Ticket Code Helper
+ */
+function copyTicketCode() {
+  const codeEl = document.getElementById('ticketCodeText');
+  if (!codeEl) return;
+  const text = codeEl.textContent.trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(`Đã sao chép mã vé: ${text}`, 'success');
+    }).catch(() => {
+      showToast(`Mã vé: ${text}`, 'info');
+    });
+  } else {
+    showToast(`Mã vé: ${text}`, 'info');
+  }
+}
+
+/**
  * Booking Logics
  */
 function changeTicketQty(qtyId, delta) {
@@ -1412,6 +1824,182 @@ function handleProcessBooking(event) {
 
   switchNav('viewMyTickets');
   showToast('Đặt vé thành công! Mã QR vé điện tử đã được khởi tạo.', 'success');
+}
+
+/* ============================================================
+   UI-07: QUẦY BÁN VÉ & IN VÉ ĐIỆN TỬ POS (POS CONTROLLER)
+   ============================================================ */
+let posCart = [];
+
+/**
+ * Thêm loại vé vào giỏ hàng POS hoặc tăng số lượng
+ */
+function addPosItem(ticketName, price, cardId) {
+  const existingItem = posCart.find(item => item.name === ticketName);
+  if (existingItem) {
+    existingItem.qty += 1;
+  } else {
+    posCart.push({
+      id: cardId || (ticketName.includes('30') || ticketName.includes('Tham') ? 'posCardTour' : 'posCardChild'),
+      name: ticketName,
+      price: price,
+      qty: 1
+    });
+  }
+
+  renderPosCart();
+  showToast(`Đã thêm 1 ${ticketName} vào hóa đơn POS`, 'success');
+}
+
+/**
+ * Điều chỉnh số lượng vé trong giỏ hàng POS
+ */
+function changePosItemQty(index, delta) {
+  if (!posCart[index]) return;
+  posCart[index].qty += delta;
+  if (posCart[index].qty <= 0) {
+    posCart.splice(index, 1);
+  }
+  renderPosCart();
+}
+
+/**
+ * Xóa một dòng vé khỏi giỏ hàng POS
+ */
+function removePosItem(index) {
+  if (!posCart[index]) return;
+  posCart.splice(index, 1);
+  renderPosCart();
+}
+
+/**
+ * Kết xuất giao diện hóa đơn giỏ hàng POS & cập nhật trạng thái các thẻ vé
+ */
+function renderPosCart() {
+  const cartContainer = document.getElementById('posCartItems');
+  const totalText = document.getElementById('posTotalText');
+  const tourCard = document.getElementById('posCardTour');
+  const childCard = document.getElementById('posCardChild');
+
+  // Cập nhật trạng thái sáng (active) của các thẻ chọn vé theo dữ liệu trong giỏ
+  const hasTour = posCart.some(item => item.id === 'posCardTour' || item.name.includes('Tham Quan'));
+  const hasChild = posCart.some(item => item.id === 'posCardChild' || item.name.includes('Trẻ Em'));
+
+  if (tourCard) {
+    if (hasTour) {
+      tourCard.classList.add('active');
+    } else {
+      tourCard.classList.remove('active');
+    }
+  }
+
+  if (childCard) {
+    if (hasChild) {
+      childCard.classList.add('active');
+    } else {
+      childCard.classList.remove('active');
+    }
+  }
+
+  if (!cartContainer) return;
+
+  if (posCart.length === 0) {
+    cartContainer.innerHTML = `
+      <div style="color: var(--text-muted); text-align: center; padding: 2rem 0; font-style: italic;">
+        <i class="fa-solid fa-basket-shopping" style="font-size: 1.8rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
+        Chưa có vé nào được chọn.<br>Vui lòng bấm vào loại vé bên trái để thêm vào hóa đơn.
+      </div>
+    `;
+    if (totalText) totalText.textContent = '0 VNĐ';
+    return;
+  }
+
+  let totalAmount = 0;
+  cartContainer.innerHTML = posCart.map((item, index) => {
+    const itemTotal = item.price * item.qty;
+    totalAmount += itemTotal;
+    const priceDisplay = item.price > 0 ? (item.price.toLocaleString('vi-VN') + ' VNĐ') : 'MIỄN PHÍ';
+    const totalDisplay = itemTotal > 0 ? (itemTotal.toLocaleString('vi-VN') + ' VNĐ') : 'MIỄN PHÍ';
+
+    return `
+      <div class="pos-cart-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0; border-bottom: 1px dashed #e2e8f0;">
+        <div style="flex: 1;">
+          <strong style="font-size: 0.95rem; color: var(--text-primary); display: block;">${item.name}</strong>
+          <small style="color: var(--text-muted);">${priceDisplay} / vé</small>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="button" class="pos-qty-btn" onclick="changePosItemQty(${index}, -1)" title="Giảm số lượng">-</button>
+          <span style="font-weight: 700; font-size: 0.95rem; min-width: 20px; text-align: center;">${item.qty}</span>
+          <button type="button" class="pos-qty-btn" onclick="changePosItemQty(${index}, 1)" title="Tăng số lượng">+</button>
+        </div>
+
+        <div style="text-align: right; min-width: 90px; margin-left: 0.75rem;">
+          <strong style="color: var(--primary-gold); font-size: 0.95rem;">${totalDisplay}</strong>
+          <button type="button" class="pos-delete-btn" onclick="removePosItem(${index})" title="Xóa loại vé này" style="display: block; margin-left: auto; margin-top: 0.2rem;">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (totalText) {
+    totalText.textContent = totalAmount.toLocaleString('vi-VN') + ' VNĐ';
+  }
+}
+
+/**
+ * Xử lý thanh toán quầy POS & in vé
+ */
+function handlePosCheckout() {
+  if (posCart.length === 0) {
+    showToast('Hóa đơn đang trống! Vui lòng chọn loại vé cần bán tại quầy.', 'warning');
+    return;
+  }
+
+  let totalQty = 0;
+  let totalAmount = 0;
+  let adultQty = 0;
+  let childQty = 0;
+
+  posCart.forEach(item => {
+    totalQty += item.qty;
+    totalAmount += (item.price * item.qty);
+    if (item.price > 0) adultQty += item.qty;
+    else childQty += item.qty;
+  });
+
+  const randomNum = Math.floor(1000 + Math.random() * 9000);
+  const posCode = `#POS-2026-${randomNum}`;
+
+  const posRecord = {
+    id: Date.now(),
+    code: posCode,
+    name: 'Khách mua tại quầy POS',
+    phone: 'Quầy bán vé số 1',
+    adultQty: adultQty,
+    childQty: childQty,
+    totalQty: totalQty,
+    amount: totalAmount,
+    type: 'POS',
+    paymentMethod: 'Tiền mặt tại quầy',
+    createdAt: new Date().toISOString()
+  };
+
+  TICKETS_PURCHASED_DATA.unshift(posRecord);
+  try {
+    localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+  } catch (e) {}
+
+  renderDashboardStats();
+  renderShiftReportStats();
+
+  showToast(`Đã thanh toán thành công ${totalAmount.toLocaleString('vi-VN')} VNĐ! Đang in ${totalQty} vé (${posCode}).`, 'success');
+
+  // Đặt lại giỏ hàng POS
+  posCart = [];
+  renderPosCart();
 }
 
 /**
@@ -1667,7 +2255,7 @@ async function handleExecuteAdminNlQuery(event) {
   const resultBox = document.getElementById('adminNlQueryResult');
   resultBox.innerHTML = `
     <div style="background: #fdfaef; border: 1.5px solid var(--primary-gold); padding: 1.25rem; border-radius: var(--radius-md);">
-      <h4 style="color: #78350f; font-size: 1rem;"><i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích dữ liệu kho & doanh thu qua Google Gemini AI...</h4>
+      <h4 style="color: #78350f; font-size: 1rem;"><i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích dữ liệu kho & doanh thu qua Trợ lý AI Bảo tàng...</h4>
     </div>
   `;
 
@@ -1700,13 +2288,202 @@ async function handleExecuteAdminNlQuery(event) {
           <div style="font-size: 0.9rem; color: #451a03; line-height: 1.6;">${formatAiText(data.data.details)}</div>
         </div>
       `;
-      showToast('Đã phân tích dữ liệu quản trị bằng Gemini AI thành công!', 'success');
+      showToast('Đã phân tích dữ liệu quản trị bằng Trợ lý AI Bảo tàng thành công!', 'success');
     } else {
       resultBox.innerHTML = `<div style="color: red; padding: 1rem;">${data.message || 'Lỗi xử lý AI Admin'}</div>`;
     }
   } catch (err) {
     console.error('Lỗi Admin AI Query:', err);
     resultBox.innerHTML = `<div style="color: red; padding: 1rem;">Không thể kết nối đến server AI Admin.</div>`;
+  }
+}
+
+/**
+ * Tải thông tin cấu hình API Key Trợ lý AI từ server
+ */
+async function loadAiConfig() {
+  const keyInput = document.getElementById('aiApiKeyInput');
+
+  try {
+    const res = await fetch('/api/ai/config');
+    const data = await res.json();
+
+    if (data.success) {
+      if (keyInput) {
+        keyInput.value = data.rawKey || '';
+      }
+    }
+  } catch (err) {
+    console.error('Lỗi tải cấu hình AI API:', err);
+  }
+}
+
+/**
+ * Lưu API Key mới vào server (cập nhật runtime và file .env)
+ */
+async function handleSaveAiKey(event) {
+  if (event) event.preventDefault();
+  const keyInput = document.getElementById('aiApiKeyInput');
+  const saveBtn = document.getElementById('btnSaveAiKey');
+  if (!keyInput) return;
+
+  const newKey = keyInput.value.trim();
+  if (!newKey) {
+    showToast('Vui lòng nhập API Key hợp lệ!', 'warning');
+    return;
+  }
+
+  const originalBtnHtml = saveBtn ? saveBtn.innerHTML : '';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+  }
+
+  try {
+    const res = await fetch('/api/ai/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: newKey })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showToast(data.message || 'Đã lưu cấu hình API Key thành công!', 'success');
+      loadAiConfig();
+    } else {
+      showToast(data.message || 'Không thể lưu API Key.', 'error');
+    }
+  } catch (err) {
+    console.error('Lỗi lưu API Key:', err);
+    showToast('Lỗi kết nối máy chủ khi lưu API Key.', 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalBtnHtml;
+    }
+  }
+}
+
+/**
+ * Kiểm tra kết nối trực tiếp đến Gemini API và đo độ trễ
+ */
+async function handleTestAiKey() {
+  const testBtn = document.getElementById('btnTestAiConnection');
+  const testResultBox = document.getElementById('aiApiTestStatus');
+  const keyInput = document.getElementById('aiApiKeyInput');
+  const enteredKey = keyInput ? keyInput.value.trim() : '';
+
+  if (testResultBox) {
+    testResultBox.style.display = 'block';
+    testResultBox.className = 'api-test-result testing';
+    testResultBox.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.75rem; color: #92400e;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.2rem;"></i>
+        <div>
+          <strong>Đang gửi yêu cầu kiểm tra đến máy chủ Google Gemini API...</strong>
+          <div style="font-size: 0.8rem; color: #b45309;">Đang đo lường độ trễ mạng và xác thực token...</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const originalBtnHtml = testBtn ? testBtn.innerHTML : '';
+  if (testBtn) {
+    testBtn.disabled = true;
+    testBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra...';
+  }
+
+  try {
+    const res = await fetch('/api/ai/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: enteredKey })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      if (testResultBox) {
+        testResultBox.className = 'api-test-result success';
+        testResultBox.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+            <div>
+              <div style="font-weight: 700; color: #166534; font-size: 0.95rem; margin-bottom: 0.25rem;">
+                <i class="fa-solid fa-circle-check"></i> ${data.message}
+              </div>
+              <div style="font-size: 0.85rem; color: #15803d;">
+                <strong>Phản hồi mẫu:</strong> <em>"${data.sampleResponse}"</em>
+              </div>
+            </div>
+            <span class="api-latency-pill">
+              <i class="fa-solid fa-gauge-high"></i> ${data.latency}ms
+            </span>
+          </div>
+        `;
+      }
+      showToast(`Kết nối API thành công (${data.latency}ms)!`, 'success');
+      loadAiConfig();
+    } else {
+      if (testResultBox) {
+        testResultBox.className = 'api-test-result error';
+        testResultBox.innerHTML = `
+          <div style="font-weight: 700; color: #991b1b; font-size: 0.95rem; margin-bottom: 0.25rem;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Kiểm tra kết nối thất bại
+          </div>
+          <div style="font-size: 0.85rem; color: #b91c1c;">
+            ${data.message || 'Lỗi không xác định.'}
+          </div>
+        `;
+      }
+      showToast('Kiểm tra kết nối thất bại: ' + (data.message || ''), 'error');
+    }
+  } catch (err) {
+    console.error('Lỗi kiểm tra kết nối API:', err);
+    if (testResultBox) {
+      testResultBox.className = 'api-test-result error';
+      testResultBox.innerHTML = `
+        <div style="font-weight: 700; color: #991b1b; font-size: 0.95rem;">
+          <i class="fa-solid fa-triangle-exclamation"></i> Lỗi kết nối đến server backend: ${err.message}
+        </div>
+      `;
+    }
+    showToast('Lỗi kết nối đến server backend', 'error');
+  } finally {
+    if (testBtn) {
+      testBtn.disabled = false;
+      testBtn.innerHTML = originalBtnHtml;
+    }
+  }
+}
+
+/**
+ * Sao chép API Key vào Clipboard
+ */
+function copyAiApiKey() {
+  const keyInput = document.getElementById('aiApiKeyInput');
+  if (!keyInput || !keyInput.value) {
+    showToast('Chưa có API Key để sao chép!', 'warning');
+    return;
+  }
+  navigator.clipboard.writeText(keyInput.value).then(() => {
+    showToast('Đã sao chép API Key vào bộ nhớ tạm!', 'info');
+  }).catch(() => {
+    keyInput.select();
+    document.execCommand('copy');
+    showToast('Đã sao chép API Key!', 'info');
+  });
+}
+
+/**
+ * Toggle Password Visibility Function
+ */
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  if (btn) {
+    btn.innerHTML = isPassword ? '<i class="fa-regular fa-eye-slash"></i>' : '<i class="fa-regular fa-eye"></i>';
+    btn.setAttribute('aria-label', isPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
   }
 }
 
@@ -1724,16 +2501,149 @@ function setRoleDemo(roleKey) {
   }
 }
 
+/**
+ * Switch between Login and Register tabs
+ */
+function switchAuthTab(tab) {
+  const tabLogin = document.getElementById('authTabLogin');
+  const tabRegister = document.getElementById('authTabRegister');
+  const panelLogin = document.getElementById('panelLogin');
+  const panelRegister = document.getElementById('panelRegister');
+
+  if (tab === 'login') {
+    if (tabLogin) tabLogin.classList.add('active');
+    if (tabRegister) tabRegister.classList.remove('active');
+    if (panelLogin) {
+      panelLogin.style.display = 'block';
+      panelLogin.classList.add('active');
+    }
+    if (panelRegister) {
+      panelRegister.style.display = 'none';
+      panelRegister.classList.remove('active');
+    }
+  } else if (tab === 'register') {
+    if (tabRegister) tabRegister.classList.add('active');
+    if (tabLogin) tabLogin.classList.remove('active');
+    if (panelRegister) {
+      panelRegister.style.display = 'block';
+      panelRegister.classList.add('active');
+    }
+    if (panelLogin) {
+      panelLogin.style.display = 'none';
+      panelLogin.classList.remove('active');
+    }
+  }
+}
+
+/**
+ * Handle new Visitor/Customer Registration
+ */
+function handleRegister(event) {
+  event.preventDefault();
+  const fullName = document.getElementById('regFullName').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+
+  if (password.length < 6) {
+    showToast('Mật khẩu phải có ít nhất 6 ký tự!', 'warning');
+    return;
+  }
+
+  if (password !== passwordConfirm) {
+    showToast('Mật khẩu và xác nhận mật khẩu không trùng khớp!', 'error');
+    return;
+  }
+
+  // Load existing registered users
+  let registeredUsers = [];
+  try {
+    const saved = localStorage.getItem('baotang_registered_users');
+    if (saved) registeredUsers = JSON.parse(saved);
+  } catch (e) {}
+
+  // Check username or email uniqueness
+  const exists = registeredUsers.some(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()) ||
+                 Object.values(DEMO_ACCOUNTS).some(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()) ||
+                 USERS_DATA.some(u => u.username.toLowerCase() === username.toLowerCase());
+
+  if (exists) {
+    showToast('Tên đăng nhập hoặc Email này đã tồn tại trên hệ thống!', 'error');
+    return;
+  }
+
+  const newUser = {
+    id: Date.now(),
+    fullName: fullName,
+    username: username,
+    email: email,
+    phone: phone,
+    password: password,
+    role: 'KHACH',
+    roleName: 'Hội Viên Khách Tham Quan',
+    roleBadgeClass: 'role-banve',
+    roleDesc: 'Quyền Hạn: Đặt vé tham quan trực tuyến, Lưu trữ vé điện tử, Trợ lý AI đồng hành'
+  };
+
+  registeredUsers.push(newUser);
+  try {
+    localStorage.setItem('baotang_registered_users', JSON.stringify(registeredUsers));
+  } catch (e) {}
+
+  // Also add to active USERS_DATA for admin view
+  USERS_DATA.push(newUser);
+  renderUserTable(USERS_DATA);
+  renderDashboardStats();
+
+  document.getElementById('registerForm').reset();
+  showToast('Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ.', 'success');
+
+  // Switch to Login tab and prefill
+  switchAuthTab('login');
+  const loginUserEl = document.getElementById('loginUsername');
+  if (loginUserEl) {
+    loginUserEl.value = username;
+    const loginPwdEl = document.getElementById('loginPassword');
+    if (loginPwdEl) loginPwdEl.focus();
+  }
+}
+
 function handleLogin(event) {
   event.preventDefault();
   const usernameInput = document.getElementById('loginUsername').value.trim();
   const passwordInput = document.getElementById('loginPassword').value;
 
+  // 1. Check Demo Staff Accounts
   let foundAcc = Object.values(DEMO_ACCOUNTS).find(
     acc => (acc.username.toLowerCase() === usernameInput.toLowerCase() || acc.email.toLowerCase() === usernameInput.toLowerCase())
   );
 
-  if (foundAcc && foundAcc.password === passwordInput) {
+  // 2. Check Registered Users from LocalStorage
+  if (!foundAcc) {
+    try {
+      const saved = localStorage.getItem('baotang_registered_users');
+      if (saved) {
+        const list = JSON.parse(saved);
+        foundAcc = list.find(u => (u.username.toLowerCase() === usernameInput.toLowerCase() || u.email.toLowerCase() === usernameInput.toLowerCase()));
+      }
+    } catch (e) {}
+  }
+
+  // 3. Check USERS_DATA
+  if (!foundAcc) {
+    const fromUsers = USERS_DATA.find(u => (u.username.toLowerCase() === usernameInput.toLowerCase() || u.email.toLowerCase() === usernameInput.toLowerCase()));
+    if (fromUsers) {
+      foundAcc = {
+        ...fromUsers,
+        password: fromUsers.password || 'password123',
+        roleDesc: fromUsers.roleDesc || `Vai trò: ${fromUsers.roleName}`
+      };
+    }
+  }
+
+  if (foundAcc && (foundAcc.password === passwordInput || !foundAcc.password)) {
     currentUser = { ...foundAcc };
     localStorage.setItem('baotang_staff_user', JSON.stringify(currentUser));
 
@@ -1742,10 +2652,15 @@ function handleLogin(event) {
     document.getElementById('headerProfileBtn').style.display = 'inline-flex';
     document.getElementById('navLoginBtn').style.display = 'none';
 
-    switchNav('viewProfile');
-    showToast(`Đăng nhập thành công! Vai trò: ${currentUser.roleName}`, 'success');
+    if (currentUser.role === 'KHACH') {
+      switchNav('viewCatalog');
+      showToast(`Đăng nhập thành công! Chào mừng ${currentUser.fullName} đến với Bảo tàng!`, 'success');
+    } else {
+      switchNav('viewProfile');
+      showToast(`Đăng nhập thành công! Vai trò: ${currentUser.roleName}`, 'success');
+    }
   } else {
-    showToast('Tên đăng nhập hoặc mật khẩu cán bộ không chính xác!', 'error');
+    showToast('Tên đăng nhập hoặc mật khẩu không chính xác!', 'error');
   }
 }
 
@@ -1757,14 +2672,140 @@ function renderProfileView(user) {
   roleTag.textContent = user.roleName || 'Cán bộ';
   roleTag.className = `profile-role-tag ${user.roleBadgeClass || 'role-banve'}`;
 
-  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName)}&background=f59e0b&color=0f172a&bold=true&size=128`;
-  document.getElementById('userAvatarImg').src = avatarUrl;
+  const avatarUrl = user.avatar || (user.role === 'THUKHO' ? 'avatar/05.jpg' : (user.role === 'BANVE' ? 'avatar/02.jpg' : 'avatar/01.jpg'));
+  const avatarImg = document.getElementById('userAvatarImg');
+  if (avatarImg) {
+    avatarImg.onerror = function() { this.onerror = null; this.src = 'avatar/01.jpg'; };
+    avatarImg.src = avatarUrl;
+  }
 
   document.getElementById('profileInputFullName').value = user.fullName;
   document.getElementById('profileInputUsername').value = user.username;
   document.getElementById('profileInputEmail').value = user.email;
   document.getElementById('profileInputPhone').value = user.phone;
   document.getElementById('profileInputRoleDesc').value = user.roleDesc || user.roleName;
+}
+
+/**
+ * Avatar Change Modal Handlers (UI-03 Feature from /avatar directory)
+ */
+function openAvatarModal() {
+  const currentSrc = (currentUser && currentUser.avatar) 
+    ? currentUser.avatar 
+    : (document.getElementById('userAvatarImg')?.getAttribute('src') || 'avatar/01.jpg');
+  tempSelectedAvatar = currentSrc;
+
+  const previewEl = document.getElementById('avatarModalPreviewImg');
+  if (previewEl) previewEl.src = tempSelectedAvatar;
+
+  const nameEl = document.getElementById('avatarModalSelectedName');
+  if (nameEl) {
+    const filename = tempSelectedAvatar.startsWith('data:') ? 'Ảnh tùy chỉnh đã tải lên' : tempSelectedAvatar.split('/').pop();
+    nameEl.textContent = filename || 'Ảnh đại diện';
+  }
+
+  renderAvatarSelectionGrid();
+  document.getElementById('avatarModal').classList.add('active');
+}
+
+function closeAvatarModal() {
+  document.getElementById('avatarModal').classList.remove('active');
+}
+
+function renderAvatarSelectionGrid() {
+  const grid = document.getElementById('avatarSelectionGrid');
+  if (!grid) return;
+
+  grid.innerHTML = AVATAR_LIST.map(src => {
+    const isSel = src === tempSelectedAvatar || tempSelectedAvatar.endsWith(src);
+    return `
+      <div class="avatar-option-item ${isSel ? 'selected' : ''}" onclick="selectAvatarOption('${src}')" title="${src}">
+        <img src="${src}" alt="${src}" loading="lazy" onerror="this.onerror=null; this.src='picture1_5.jpg';">
+      </div>
+    `;
+  }).join('');
+}
+
+function selectAvatarOption(src) {
+  tempSelectedAvatar = src;
+  const previewEl = document.getElementById('avatarModalPreviewImg');
+  if (previewEl) previewEl.src = src;
+
+  const nameEl = document.getElementById('avatarModalSelectedName');
+  if (nameEl) nameEl.textContent = src;
+
+  document.querySelectorAll('.avatar-option-item').forEach(item => {
+    const img = item.querySelector('img');
+    if (img && (img.getAttribute('src') === src || item.getAttribute('title') === src)) {
+      item.classList.add('selected');
+    } else {
+      item.classList.remove('selected');
+    }
+  });
+}
+
+function handleCustomAvatarUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showToast('Vui lòng chọn file hình ảnh hợp lệ (JPG, PNG, WebP)!', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    tempSelectedAvatar = e.target.result;
+    const previewEl = document.getElementById('avatarModalPreviewImg');
+    if (previewEl) previewEl.src = tempSelectedAvatar;
+
+    const nameEl = document.getElementById('avatarModalSelectedName');
+    if (nameEl) nameEl.textContent = file.name;
+
+    // Deselect preset items
+    document.querySelectorAll('.avatar-option-item').forEach(item => item.classList.remove('selected'));
+    showToast('Đã tải ảnh lên thành công. Nhấn "Lưu Ảnh Đại Diện" để áp dụng.', 'info');
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveSelectedAvatar() {
+  if (!tempSelectedAvatar) {
+    showToast('Vui lòng chọn một ảnh đại diện!', 'warning');
+    return;
+  }
+
+  const avatarImg = document.getElementById('userAvatarImg');
+  if (avatarImg) {
+    avatarImg.src = tempSelectedAvatar;
+  }
+
+  if (currentUser) {
+    currentUser.avatar = tempSelectedAvatar;
+    localStorage.setItem('baotang_staff_user', JSON.stringify(currentUser));
+
+    // Update in active USERS_DATA
+    const u = USERS_DATA.find(user => user.username === currentUser.username);
+    if (u) {
+      u.avatar = tempSelectedAvatar;
+    }
+
+    // Update in registered users list
+    try {
+      const saved = localStorage.getItem('baotang_registered_users');
+      if (saved) {
+        const list = JSON.parse(saved);
+        const regU = list.find(user => user.username === currentUser.username);
+        if (regU) {
+          regU.avatar = tempSelectedAvatar;
+          localStorage.setItem('baotang_registered_users', JSON.stringify(list));
+        }
+      }
+    } catch (e) {}
+  }
+
+  closeAvatarModal();
+  showToast('Đã thay đổi ảnh đại diện thành công!', 'success');
 }
 
 function switchProfileTab(tabId, btnElement) {
@@ -1854,3 +2895,10 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 400);
   }, 3500);
 }
+
+// Khởi tạo trạng thái cấu hình AI API khi tải trang
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof loadAiConfig === 'function') {
+    loadAiConfig();
+  }
+});

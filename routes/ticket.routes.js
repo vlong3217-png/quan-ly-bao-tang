@@ -12,9 +12,11 @@ router.post('/book', (req, res) => {
   const { name, phone, date, slot, adultQty, studentQty, foreignerQty, paymentMethod } = req.body;
 
   const adult = parseInt(adultQty) || 0;
+  const student = parseInt(studentQty) || 0;
   const child = parseInt(req.body.childQty) || 0;
+  const foreigner = parseInt(foreignerQty) || 0;
 
-  const totalAmount = adult * 30000;
+  const totalAmount = adult * 30000 + student * 15000 + foreigner * 50000;
   const randomNum = Math.floor(10000 + Math.random() * 90000);
   const ticketCode = `VE-2026-${randomNum}`;
   const qrCodeData = `BAOTANG-#${ticketCode}-${phone}`;
