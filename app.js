@@ -10,6 +10,7 @@ let ARTIFACTS_DATA = [];
 let BORROW_DATA = [];
 let TOURS_DATA = [];
 let RESTORATION_DATA = [];
+let TICKETS_PURCHASED_DATA = [];
 
 // Sample Staff User Accounts Table Database
 let USERS_DATA = [
@@ -123,6 +124,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (savedBorrows) {
     try { BORROW_DATA = JSON.parse(savedBorrows); } catch (e) {}
   }
+  const savedTickets = localStorage.getItem('baotang_purchased_tickets_data');
+  if (savedTickets) {
+    try { TICKETS_PURCHASED_DATA = JSON.parse(savedTickets); } catch (e) {}
+  }
 
   renderCatalog(ARTIFACTS_DATA);
   renderInventoryTable(ARTIFACTS_DATA);
@@ -188,6 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderBorrowTable(BORROW_DATA);
   renderTourTable(TOURS_DATA);
   renderDashboardStats();
+  renderShiftReportStats();
 });
 
 /**
@@ -254,6 +260,7 @@ function switchNav(viewId) {
     if (elStaffName && typeof currentUser !== 'undefined' && currentUser && currentUser.full_name) {
       elStaffName.textContent = currentUser.full_name;
     }
+    renderShiftReportStats();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -265,10 +272,76 @@ function renderDashboardStats() {
   const elArtifacts = document.getElementById('kpiTotalArtifacts');
   const elUsers = document.getElementById('kpiTotalUsers');
 
-  if (elVisitors) elVisitors.textContent = '0';
-  if (elRevenue) elRevenue.textContent = '0 VNĐ';
+  let totalVisitors = 0;
+  let totalRevenue = 0;
+  let adultRevenue = 0;
+  let childCount = 0;
+
+  (TICKETS_PURCHASED_DATA || []).forEach(t => {
+    totalVisitors += (t.totalQty || t.adultQty + t.childQty || 1);
+    totalRevenue += (t.amount || 0);
+    adultRevenue += (t.adultQty || 0) * 30000;
+    childCount += (t.childQty || 0);
+  });
+
+  if (elVisitors) elVisitors.textContent = totalVisitors;
+  if (elRevenue) elRevenue.textContent = totalRevenue.toLocaleString('vi-VN') + ' VNĐ';
   if (elArtifacts) elArtifacts.textContent = (ARTIFACTS_DATA || []).length;
   if (elUsers) elUsers.textContent = (USERS_DATA || []).length;
+
+  // Render Tỷ Lệ Loại Vé
+  const elAdultDisplay = document.getElementById('kpiAdultRevenueDisplay');
+  const elAdultBar = document.getElementById('kpiAdultBar');
+  const elChildDisplay = document.getElementById('kpiChildRevenueDisplay');
+  const elChildBar = document.getElementById('kpiChildBar');
+
+  const totalTickets = (TICKETS_PURCHASED_DATA || []).reduce((acc, t) => acc + (t.totalQty || 1), 0);
+  if (totalTickets > 0) {
+    const adultQtyTotal = (TICKETS_PURCHASED_DATA || []).reduce((acc, t) => acc + (t.adultQty || 0), 0);
+    const adultPercent = Math.round((adultQtyTotal / totalTickets) * 100);
+    const childPercent = Math.round((childCount / totalTickets) * 100);
+
+    if (elAdultDisplay) elAdultDisplay.textContent = `${adultRevenue.toLocaleString('vi-VN')} VNĐ (${adultPercent}%)`;
+    if (elAdultBar) elAdultBar.style.width = `${adultPercent}%`;
+
+    if (elChildDisplay) elChildDisplay.textContent = `${childCount} Vé (${childPercent}%)`;
+    if (elChildBar) elChildBar.style.width = `${childPercent}%`;
+  } else {
+    if (elAdultDisplay) elAdultDisplay.textContent = '0 VNĐ (0%)';
+    if (elAdultBar) elAdultBar.style.width = '0%';
+    if (elChildDisplay) elChildDisplay.textContent = '0 VNĐ (0%)';
+    if (elChildBar) elChildBar.style.width = '0%';
+  }
+}
+
+/**
+ * Render real-time Shift Report stats (UI-21)
+ */
+function renderShiftReportStats() {
+  const elTicketCount = document.getElementById('shiftTicketCount');
+  const elCashRev = document.getElementById('shiftCashRevenue');
+  const elQrRev = document.getElementById('shiftQrRevenue');
+  const elTotalRev = document.getElementById('shiftTotalRevenue');
+
+  let totalTickets = 0;
+  let cashRevenue = 0;
+  let qrRevenue = 0;
+
+  (TICKETS_PURCHASED_DATA || []).forEach(t => {
+    totalTickets += (t.totalQty || 1);
+    if (t.type === 'POS' || t.paymentMethod === 'Tiền mặt thu tại quầy') {
+      cashRevenue += (t.amount || 0);
+    } else {
+      qrRevenue += (t.amount || 0);
+    }
+  });
+
+  const totalRevenue = cashRevenue + qrRevenue;
+
+  if (elTicketCount) elTicketCount.textContent = `${totalTickets} Vé`;
+  if (elCashRev) elCashRev.textContent = `${cashRevenue.toLocaleString('vi-VN')} VNĐ`;
+  if (elQrRev) elQrRev.textContent = `${qrRevenue.toLocaleString('vi-VN')} VNĐ`;
+  if (elTotalRev) elTotalRev.textContent = `${totalRevenue.toLocaleString('vi-VN')} VNĐ`;
 }
 
 /**
@@ -1220,6 +1293,28 @@ function handlePosCheckout() {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=POS-${ticketCode}`;
   document.getElementById('ticketQrImage').src = qrUrl;
 
+  const isFree = posCartTotal === 0;
+  const ticketRecord = {
+    id: Date.now(),
+    code: ticketCode,
+    name: 'Khách Quầy POS',
+    phone: '',
+    adultQty: isFree ? 0 : 1,
+    childQty: isFree ? 1 : 0,
+    totalQty: 1,
+    amount: posCartTotal,
+    type: 'POS',
+    paymentMethod: 'Tiền mặt thu tại quầy',
+    createdAt: new Date().toISOString()
+  };
+  TICKETS_PURCHASED_DATA.unshift(ticketRecord);
+  try {
+    localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+  } catch (e) {}
+
+  renderDashboardStats();
+  renderShiftReportStats();
+
   switchNav('viewMyTickets');
   showToast(`Đã in vé tại quầy POS thành công! Mã QR: ${ticketCode}`, 'success');
 }
@@ -1287,6 +1382,28 @@ function handleProcessBooking(event) {
   
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BAOTANG-${ticketCode}-${phone}`;
   document.getElementById('ticketQrImage').src = qrUrl;
+
+  // Record purchased ticket data
+  const ticketRecord = {
+    id: Date.now(),
+    code: ticketCode,
+    name: name,
+    phone: phone,
+    adultQty: adult,
+    childQty: child,
+    totalQty: totalQty,
+    amount: adult * 30000,
+    type: 'ONLINE',
+    paymentMethod: 'Chuyển khoản QR code',
+    createdAt: new Date().toISOString()
+  };
+  TICKETS_PURCHASED_DATA.unshift(ticketRecord);
+  try {
+    localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+  } catch (e) {}
+
+  renderDashboardStats();
+  renderShiftReportStats();
 
   switchNav('viewMyTickets');
   showToast('Đặt vé thành công! Mã QR vé điện tử đã được khởi tạo.', 'success');
