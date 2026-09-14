@@ -5,39 +5,8 @@ from urllib.parse import parse_qs, urlparse
 
 PORT = 5000
 
-# Sample Demo Data
-ARTIFACTS_DATA = [
-    {
-        "id": 1,
-        "code": "HV-001",
-        "title": "Trang phục Cổ truyền Dân tộc Tày",
-        "ethnic": "Dân tộc Tày",
-        "region": "Vùng Việt Bắc",
-        "material": "Vải chàm, thổ cẩm thêu tay",
-        "location": "Phòng Trưng Bày 1",
-        "status": "Nguyên vẹn"
-    },
-    {
-        "id": 2,
-        "code": "HV-002",
-        "title": "Đàn T'rưng Tre Tây Nguyên",
-        "ethnic": "Dân tộc Gia Rai",
-        "region": "Vùng Tây Nguyên",
-        "material": "Ống tre nứa tự nhiên, dây mây",
-        "location": "Phòng Trưng Bày 2",
-        "status": "Nguyên vẹn"
-    },
-    {
-        "id": 3,
-        "code": "HV-003",
-        "title": "Trống Đồng Văn hóa Đông Sơn",
-        "ethnic": "Dân tộc Kinh (Việt)",
-        "region": "Vùng Đồng bằng Bắc Bộ",
-        "material": "Đồng thau đúc nguyên khối",
-        "location": "Kho Bảo Quản 1",
-        "status": "Đang bảo quản"
-    }
-]
+# Heritage Artifacts Data
+ARTIFACTS_DATA = []
 
 USERS_DATA = [
     {"id": 1, "fullName": "Phạm Đức Quang", "username": "admin", "role": "ADMIN", "roleName": "Quản trị viên"},
