@@ -172,24 +172,65 @@ document.addEventListener('DOMContentLoaded', async () => {
       const result = await resArt.json();
       if (result.success && Array.isArray(result.data)) {
         const backendArtifacts = result.data.map(normalizeArtifact).filter(Boolean);
-        ARTIFACTS_DATA = backendArtifacts;
-        localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
+        if (backendArtifacts.length > 0) {
+          // Merge backend artifacts with local ones to prevent data loss
+          const map = new Map();
+          ARTIFACTS_DATA.forEach(item => map.set(String(item.id), item));
+          backendArtifacts.forEach(item => map.set(String(item.id), item));
+          ARTIFACTS_DATA = Array.from(map.values());
+          localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
+        } else if (ARTIFACTS_DATA.length > 0) {
+          // Send local artifacts to backend if backend was restarted and lost memory
+          ARTIFACTS_DATA.forEach(item => {
+            fetch(`${API_BASE}/artifacts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item)
+            }).catch(() => {});
+          });
+        }
       }
     }
 
     if (resTour.ok) {
       const tourResult = await resTour.json();
-      if (tourResult.success && Array.isArray(tourResult.data) && tourResult.data.length > 0) {
-        TOURS_DATA = tourResult.data;
-        localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
+      if (tourResult.success && Array.isArray(tourResult.data)) {
+        if (tourResult.data.length > 0) {
+          const map = new Map();
+          TOURS_DATA.forEach(t => map.set(String(t.id), t));
+          tourResult.data.forEach(t => map.set(String(t.id), t));
+          TOURS_DATA = Array.from(map.values());
+          localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
+        } else if (TOURS_DATA.length > 0) {
+          TOURS_DATA.forEach(item => {
+            fetch(`${API_BASE}/tickets/tours`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item)
+            }).catch(() => {});
+          });
+        }
       }
     }
 
     if (resBorrow && resBorrow.ok) {
       const borrowResult = await resBorrow.json();
-      if (borrowResult.success && Array.isArray(borrowResult.data) && borrowResult.data.length > 0) {
-        BORROW_DATA = borrowResult.data;
-        localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
+      if (borrowResult.success && Array.isArray(borrowResult.data)) {
+        if (borrowResult.data.length > 0) {
+          const map = new Map();
+          BORROW_DATA.forEach(b => map.set(String(b.id), b));
+          borrowResult.data.forEach(b => map.set(String(b.id), b));
+          BORROW_DATA = Array.from(map.values());
+          localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
+        } else if (BORROW_DATA.length > 0) {
+          BORROW_DATA.forEach(item => {
+            fetch(`${API_BASE}/tickets/borrows`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item)
+            }).catch(() => {});
+          });
+        }
       }
     }
   } catch (apiErr) {
