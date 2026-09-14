@@ -9,8 +9,8 @@ let ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 async function generateGeminiWithFallback(contents, systemInstruction) {
   const models = [
     'gemini-3.6-flash',
-    'gemini-2.5-flash',
-    'gemini-flash-latest'
+    'gemini-1.5-flash',
+    'gemini-1.5-pro'
   ];
   let lastErr = null;
 
@@ -161,7 +161,7 @@ router.post('/query', async (req, res) => {
     const stats = req.body.contextStats || {};
     const totalVisitors = stats.totalVisitors || 0;
     const totalRevenue = stats.totalRevenue || 0;
-    const totalArtifacts = stats.totalArtifacts || 12;
+    const totalArtifacts = stats.totalArtifacts !== undefined ? stats.totalArtifacts : 0;
 
     return res.json({
       success: true,
