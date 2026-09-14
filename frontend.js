@@ -116,27 +116,18 @@ function normalizeArtifact(art) {
 // Initialize Page Logics & Fetch Backend API Data
 document.addEventListener('DOMContentLoaded', async () => {
   // Load persistent local storage data if user added items previously
-  const savedArtifacts = localStorage.getItem('baotang_artifacts_data');
-  if (savedArtifacts) {
-    try {
-      const parsed = JSON.parse(savedArtifacts);
-      if (Array.isArray(parsed)) {
-        const normalized = parsed.map(normalizeArtifact).filter(Boolean);
-        ARTIFACTS_DATA = normalized;
-      }
-    } catch (e) {}
-  }
+
   const savedTours = localStorage.getItem('baotang_tours_data');
   if (savedTours) {
-    try { TOURS_DATA = JSON.parse(savedTours); } catch (e) {}
+    try { TOURS_DATA = JSON.parse(savedTours); } catch (e) { }
   }
   const savedBorrows = localStorage.getItem('baotang_borrow_data');
   if (savedBorrows) {
-    try { BORROW_DATA = JSON.parse(savedBorrows); } catch (e) {}
+    try { BORROW_DATA = JSON.parse(savedBorrows); } catch (e) { }
   }
   const savedTickets = localStorage.getItem('baotang_purchased_tickets_data');
   if (savedTickets) {
-    try { TICKETS_PURCHASED_DATA = JSON.parse(savedTickets); } catch (e) {}
+    try { TICKETS_PURCHASED_DATA = JSON.parse(savedTickets); } catch (e) { }
   }
 
   renderCatalog(ARTIFACTS_DATA);
@@ -146,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderRestorationTable(RESTORATION_DATA);
   renderUserTable(USERS_DATA);
   renderDashboardStats();
-  
+
   const todayStr = new Date().toISOString().split('T')[0];
   const dateInput = document.getElementById('bookingDate');
   if (dateInput) dateInput.value = todayStr;
@@ -170,25 +161,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (resArt.ok) {
       const result = await resArt.json();
+
       if (result.success && Array.isArray(result.data)) {
-        const backendArtifacts = result.data.map(normalizeArtifact).filter(Boolean);
-        if (backendArtifacts.length > 0) {
-          // Merge backend artifacts with local ones to prevent data loss
-          const map = new Map();
-          ARTIFACTS_DATA.forEach(item => map.set(String(item.id), item));
-          backendArtifacts.forEach(item => map.set(String(item.id), item));
-          ARTIFACTS_DATA = Array.from(map.values());
-          localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
-        } else if (ARTIFACTS_DATA.length > 0) {
-          // Send local artifacts to backend if backend was restarted and lost memory
-          ARTIFACTS_DATA.forEach(item => {
-            fetch(`${API_BASE}/artifacts`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(item)
-            }).catch(() => {});
-          });
-        }
+        ARTIFACTS_DATA = result.data
+          .map(normalizeArtifact)
+          .filter(Boolean);
+
+        localStorage.setItem(
+          'baotang_artifacts_data',
+          JSON.stringify(ARTIFACTS_DATA)
+        );
       }
     }
 
@@ -207,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(item)
-            }).catch(() => {});
+            }).catch(() => { });
           });
         }
       }
@@ -228,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(item)
-            }).catch(() => {});
+            }).catch(() => { });
           });
         }
       }
@@ -653,10 +635,10 @@ function openArtifactDetail(id) {
   const images = (art.images && art.images.length > 0) ? art.images : [art.img];
   const detailImgEl = document.getElementById('detailImg');
   if (detailImgEl) {
-    detailImgEl.onerror = function() { this.onerror = null; this.src = 'picture1_5.jpg'; };
+    detailImgEl.onerror = function () { this.onerror = null; this.src = 'picture1_5.jpg'; };
     detailImgEl.src = images[0] || 'picture1_5.jpg';
   }
-  
+
   // Render thumbnail gallery strip if multiple images exist
   const strip = document.getElementById('detailGalleryStrip');
   if (strip) {
@@ -973,7 +955,7 @@ function handleImageFileSelect(event) {
   let loaded = 0;
   files.forEach(file => {
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
       await addArtifactImages(e.target.result);
       loaded++;
       if (loaded === files.length) {
@@ -1014,7 +996,7 @@ function openArtifactModal(id = null) {
       document.getElementById('modalArtMaterial').value = art.material || '';
       document.getElementById('modalArtLocation').value = art.location || 'Kho Bảo Quản 1';
       document.getElementById('modalArtImgUrl').value = '';
-      
+
       if (art.images && art.images.length > 0) {
         editingArtifactImages = [...art.images];
       } else if (art.img) {
@@ -1042,7 +1024,7 @@ function openArtifactModal(id = null) {
   }
 
   renderModalGallery();
-  
+
   const deleteBtn = document.getElementById('modalDeleteArtifactBtn');
   if (deleteBtn) {
     deleteBtn.style.display = editingArtifactId !== null ? 'inline-flex' : 'none';
@@ -1066,7 +1048,7 @@ async function handleSaveArtifact(event) {
   const regionInput = document.getElementById('modalArtRegion').value;
   const materialInput = document.getElementById('modalArtMaterial').value.trim();
   const locationInput = document.getElementById('modalArtLocation').value;
-  
+
   const code = codeInput || `HV-${String(ARTIFACTS_DATA.length + 1).padStart(3, '0')}`;
   const title = titleInput || 'Hiện vật mới';
   const ethnic = ethnicInput || 'Chưa xác định';
@@ -1092,8 +1074,8 @@ async function handleSaveArtifact(event) {
 
   let targetArt = null;
   if (editingArtifactId !== null && editingArtifactId !== undefined && editingArtifactId !== '' && editingArtifactId !== 'undefined') {
-    targetArt = ARTIFACTS_DATA.find(item => 
-      String(item.id) === String(editingArtifactId) || 
+    targetArt = ARTIFACTS_DATA.find(item =>
+      String(item.id) === String(editingArtifactId) ||
       item.code === String(editingArtifactId)
     );
   }
@@ -1142,12 +1124,43 @@ async function handleSaveArtifact(event) {
 
   // Sync to REST API backend if running
   try {
-    fetch('/api/artifacts', {
+    const response = await fetch('/api/artifacts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(targetArt)
-    }).catch(() => {});
-  } catch (err) {}
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Không thể lưu hiện vật vào cơ sở dữ liệu');
+    }
+
+    if (result.data) {
+      const savedArtifact = normalizeArtifact(result.data);
+
+      const index = ARTIFACTS_DATA.findIndex(item =>
+        String(item.id) === String(targetArt.id) ||
+        item.code === targetArt.code
+      );
+
+      if (index !== -1) {
+        ARTIFACTS_DATA[index] = savedArtifact;
+      }
+    }
+
+    localStorage.setItem(
+      'baotang_artifacts_data',
+      JSON.stringify(ARTIFACTS_DATA)
+    );
+
+  } catch (err) {
+    console.error('Lỗi lưu hiện vật:', err);
+    showToast('Lưu hiện vật thất bại: ' + err.message, 'error');
+    return;
+  }
 
   renderInventoryTable(ARTIFACTS_DATA);
   renderCatalog(ARTIFACTS_DATA);
@@ -1164,7 +1177,7 @@ async function handleSaveArtifact(event) {
 /**
  * Delete an artifact by ID or code
  */
-function deleteArtifact(id) {
+async function deleteArtifact(id) {
   const targetId = id !== undefined && id !== null ? id : editingArtifactId;
   if (!targetId) return;
 
@@ -1187,10 +1200,21 @@ function deleteArtifact(id) {
 
   // Sync DELETE to REST API backend
   try {
-    fetch(`/api/artifacts/${targetId}`, {
+    const response = await fetch(`/api/artifacts/${targetId}`, {
       method: 'DELETE'
-    }).catch(() => {});
-  } catch (err) {}
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Không thể xóa hiện vật');
+    }
+
+  } catch (err) {
+    console.error('Lỗi xóa hiện vật:', err);
+    showToast('Xóa hiện vật thất bại: ' + err.message, 'error');
+    return;
+  }
 
   showToast(`Đã xóa thành công ${artName}!`, 'info');
 
@@ -1204,7 +1228,7 @@ function deleteArtifact(id) {
 }
 
 /* Global Clipboard Paste Listener for Ctrl + V */
-window.addEventListener('paste', function(e) {
+window.addEventListener('paste', function (e) {
   const modal = document.getElementById('artifactModal');
   if (!modal || !modal.classList.contains('active')) return;
 
@@ -1222,7 +1246,7 @@ window.addEventListener('paste', function(e) {
         const file = item.getAsFile();
         if (file) {
           const reader = new FileReader();
-          reader.onload = function(evt) {
+          reader.onload = function (evt) {
             addArtifactImages(evt.target.result);
             const inputBox = document.getElementById('modalArtImgUrl');
             if (inputBox) inputBox.value = '';
@@ -1301,8 +1325,8 @@ function handleSaveBorrow(event) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newBorrow)
-    }).catch(() => {});
-  } catch (e) {}
+    }).catch(() => { });
+  } catch (e) { }
 
   renderBorrowTable(BORROW_DATA);
   closeBorrowModal();
@@ -1366,8 +1390,8 @@ function handleSaveTour(event) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newTour)
-    }).catch(() => {});
-  } catch (err) {}
+    }).catch(() => { });
+  } catch (err) { }
 
   renderTourTable(TOURS_DATA);
   closeTourModal();
@@ -1389,8 +1413,8 @@ function deleteTour(id) {
   try {
     fetch(`${API_BASE}/tickets/tours/${id}`, {
       method: 'DELETE'
-    }).catch(() => {});
-  } catch (err) {}
+    }).catch(() => { });
+  } catch (err) { }
 
   renderTourTable(TOURS_DATA);
   showToast(`Đã xóa thành công ${tourName}!`, 'info');
@@ -1492,9 +1516,9 @@ function renderBorrowTable(borrows) {
         </span>
       </td>
       <td>
-        ${b.status === 'DANG_MUON' 
-          ? `<button type="button" class="btn-secondary btn-sm" onclick="handleReturnArtifact(${b.id})"><i class="fa-solid fa-rotate-left"></i> Ghi Nhận Trả</button>` 
-          : '<span style="color: var(--text-dim); font-size:0.8rem;">Hoàn tất</span>'}
+        ${b.status === 'DANG_MUON'
+      ? `<button type="button" class="btn-secondary btn-sm" onclick="handleReturnArtifact(${b.id})"><i class="fa-solid fa-rotate-left"></i> Ghi Nhận Trả</button>`
+      : '<span style="color: var(--text-dim); font-size:0.8rem;">Hoàn tất</span>'}
       </td>
     </tr>
   `).join('');
@@ -1532,7 +1556,7 @@ function handlePosCheckout() {
   document.getElementById('ticketOwnerName').textContent = 'Khách Mua Tại Quầy POS';
   document.getElementById('ticketUseDate').textContent = 'Hôm Nay';
   document.getElementById('ticketDetailText').textContent = '01 Vé Tham quan tại quầy (30.000 VNĐ)';
-  
+
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=POS-${ticketCode}`;
   document.getElementById('ticketQrImage').src = qrUrl;
 
@@ -1553,7 +1577,7 @@ function handlePosCheckout() {
   TICKETS_PURCHASED_DATA.unshift(ticketRecord);
   try {
     localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
-  } catch (e) {}
+  } catch (e) { }
 
   renderDashboardStats();
   renderShiftReportStats();
@@ -1575,7 +1599,7 @@ function handleScanGateQr(event) {
   badge.style.display = 'block';
   badge.className = 'eticket-status-badge';
   badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ (${inputVal}) - MỜI VÀO CỬA`;
-  
+
   showToast('Xác thực mã QR thành công! Ghi nhận 01 lượt vào cửa.', 'success');
 }
 
@@ -1634,13 +1658,13 @@ function handleProcessBooking(event) {
   document.getElementById('ticketCodeText').textContent = `Mã Vé: ${ticketCode}`;
   document.getElementById('ticketOwnerName').textContent = name;
   document.getElementById('ticketUseDate').textContent = 'Hôm nay';
-  
+
   let detailDesc = `${totalQty} vé (${adult} Vé Tham quan - 30k`;
   if (child > 0) detailDesc += `, ${child} Trẻ dưới 5t - Miễn phí`;
   detailDesc += ')';
 
   document.getElementById('ticketDetailText').textContent = detailDesc;
-  
+
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BAOTANG-${ticketCode}-${phone}`;
   document.getElementById('ticketQrImage').src = qrUrl;
 
@@ -1661,7 +1685,7 @@ function handleProcessBooking(event) {
   TICKETS_PURCHASED_DATA.unshift(ticketRecord);
   try {
     localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
-  } catch (e) {}
+  } catch (e) { }
 
   renderDashboardStats();
   renderShiftReportStats();
@@ -1834,7 +1858,7 @@ function handlePosCheckout() {
   TICKETS_PURCHASED_DATA.unshift(posRecord);
   try {
     localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
-  } catch (e) {}
+  } catch (e) { }
 
   renderDashboardStats();
   renderShiftReportStats();
@@ -1861,9 +1885,9 @@ function renderUserTable(users) {
       <td>${u.email}<br><small style="color: var(--text-dim);">${u.phone}</small></td>
       <td><span class="profile-role-tag role-${u.role.toLowerCase()}">${u.roleName}</span></td>
       <td>
-        ${u.isLocked 
-          ? '<span style="color: #dc2626; font-weight:700;"><i class="fa-solid fa-lock"></i> Đã Khóa</span>' 
-          : '<span style="color: #059669; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Hoạt Động</span>'}
+        ${u.isLocked
+      ? '<span style="color: #dc2626; font-weight:700;"><i class="fa-solid fa-lock"></i> Đã Khóa</span>'
+      : '<span style="color: #059669; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Hoạt Động</span>'}
       </td>
       <td>
         <button type="button" class="btn-secondary btn-sm" onclick="toggleLockUser(${u.id})">
@@ -1876,7 +1900,7 @@ function renderUserTable(users) {
 
 function filterUserTable() {
   const query = document.getElementById('userSearchInput').value.toLowerCase().trim();
-  const filtered = USERS_DATA.filter(u => 
+  const filtered = USERS_DATA.filter(u =>
     u.fullName.toLowerCase().includes(query) || u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query)
   );
   renderUserTable(filtered);
@@ -2334,7 +2358,7 @@ function togglePasswordVisibility(inputId, btn) {
 function setRoleDemo(roleKey) {
   const buttons = document.querySelectorAll('.role-chips .role-btn');
   buttons.forEach(btn => btn.classList.remove('active'));
-  
+
   const selectedBtn = Array.from(buttons).find(b => b.getAttribute('onclick').includes(roleKey));
   if (selectedBtn) selectedBtn.classList.add('active');
 
@@ -2406,12 +2430,12 @@ function handleRegister(event) {
   try {
     const saved = localStorage.getItem('baotang_registered_users');
     if (saved) registeredUsers = JSON.parse(saved);
-  } catch (e) {}
+  } catch (e) { }
 
   // Check username or email uniqueness
   const exists = registeredUsers.some(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()) ||
-                 Object.values(DEMO_ACCOUNTS).some(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()) ||
-                 USERS_DATA.some(u => u.username.toLowerCase() === username.toLowerCase());
+    Object.values(DEMO_ACCOUNTS).some(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()) ||
+    USERS_DATA.some(u => u.username.toLowerCase() === username.toLowerCase());
 
   if (exists) {
     showToast('Tên đăng nhập hoặc Email này đã tồn tại trên hệ thống!', 'error');
@@ -2434,7 +2458,7 @@ function handleRegister(event) {
   registeredUsers.push(newUser);
   try {
     localStorage.setItem('baotang_registered_users', JSON.stringify(registeredUsers));
-  } catch (e) {}
+  } catch (e) { }
 
   // Also add to active USERS_DATA for admin view
   USERS_DATA.push(newUser);
@@ -2472,7 +2496,7 @@ function handleLogin(event) {
         const list = JSON.parse(saved);
         foundAcc = list.find(u => (u.username.toLowerCase() === usernameInput.toLowerCase() || u.email.toLowerCase() === usernameInput.toLowerCase()));
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // 3. Check USERS_DATA
@@ -2511,7 +2535,7 @@ function handleLogin(event) {
 function renderProfileView(user) {
   if (!user) return;
   document.getElementById('profileFullName').textContent = user.fullName;
-  
+
   const roleTag = document.getElementById('profileRoleTag');
   roleTag.textContent = user.roleName || 'Cán bộ';
   roleTag.className = `profile-role-tag ${user.roleBadgeClass || 'role-banve'}`;
@@ -2519,7 +2543,7 @@ function renderProfileView(user) {
   const avatarUrl = user.avatar || (user.role === 'THUKHO' ? 'avatar/05.jpg' : (user.role === 'BANVE' ? 'avatar/02.jpg' : 'avatar/01.jpg'));
   const avatarImg = document.getElementById('userAvatarImg');
   if (avatarImg) {
-    avatarImg.onerror = function() { this.onerror = null; this.src = 'avatar/01.jpg'; };
+    avatarImg.onerror = function () { this.onerror = null; this.src = 'avatar/01.jpg'; };
     avatarImg.src = avatarUrl;
   }
 
@@ -2534,8 +2558,8 @@ function renderProfileView(user) {
  * Avatar Change Modal Handlers (UI-03 Feature from /avatar directory)
  */
 function openAvatarModal() {
-  const currentSrc = (currentUser && currentUser.avatar) 
-    ? currentUser.avatar 
+  const currentSrc = (currentUser && currentUser.avatar)
+    ? currentUser.avatar
     : (document.getElementById('userAvatarImg')?.getAttribute('src') || 'avatar/01.jpg');
   tempSelectedAvatar = currentSrc;
 
@@ -2645,7 +2669,7 @@ function saveSelectedAvatar() {
           localStorage.setItem('baotang_registered_users', JSON.stringify(list));
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   closeAvatarModal();
@@ -2707,7 +2731,7 @@ function handleChangePassword(event) {
 function handleLogout() {
   currentUser = null;
   localStorage.removeItem('baotang_staff_user');
-  
+
   updateNavigationVisibility(null);
   document.getElementById('headerProfileBtn').style.display = 'none';
   document.getElementById('navLoginBtn').style.display = 'inline-flex';
@@ -2722,9 +2746,9 @@ function showToast(message, type = 'success') {
 
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  
+
   const iconClass = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info');
-  
+
   toast.innerHTML = `
     <i class="fa-solid ${iconClass}"></i>
     <span>${message}</span>
