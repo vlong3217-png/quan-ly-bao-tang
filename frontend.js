@@ -400,20 +400,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderDashboardStats();
   renderShiftReportStats();
   initCustomSelects();
-
-  // Tự động mở màn hình tương ứng dựa vào Hash URL (Ví dụ: #viewBorrowReturn)
-  const initialHash = window.location.hash.replace('#', '');
-  if (initialHash && document.getElementById(initialHash)) {
-    switchNav(initialHash);
-  }
-});
-
-// Lắng nghe khi người dùng bấm Back/Forward hoặc nhập Hash trên URL
-window.addEventListener('hashchange', () => {
-  const currentHash = window.location.hash.replace('#', '');
-  if (currentHash && document.getElementById(currentHash)) {
-    switchNav(currentHash);
-  }
 });
 
 /**
@@ -622,12 +608,7 @@ function switchNav(viewId) {
   views.forEach(v => v.classList.remove('active'));
 
   const targetView = document.getElementById(viewId);
-  if (targetView) {
-    targetView.classList.add('active');
-    if (window.location.hash !== `#${viewId}`) {
-      history.pushState(null, null, `#${viewId}`);
-    }
-  }
+  if (targetView) targetView.classList.add('active');
 
   const navLinks = document.querySelectorAll('.main-nav .nav-link');
   navLinks.forEach(link => link.classList.remove('active'));

@@ -8,8 +8,10 @@
 
   <!-- Primary Meta Tags -->
   <meta name="title" content="Bảo tàng Văn hóa các Dân tộc Việt Nam - Cổng Thông Tin Di Sản & Đặt Vé Tham Quan AI">
-  <meta name="description" content="Khám phá không gian di sản văn hóa 54 dân tộc anh em Việt Nam. Hệ thống thuyết minh AI thông minh qua mã QR, tra cứu hiện vật trực tuyến và đặt vé tham quan nhanh chóng.">
-  <meta name="keywords" content="bảo tàng văn hóa các dân tộc việt nam, 54 dân tộc, di sản văn hóa, bảo tàng thái nguyên, đặt vé bảo tàng, thuyết minh ai, hiện vật văn hóa, việt mường, tày thái, hmong dao, môn khơ me, nam đảo hán">
+  <meta name="description"
+    content="Khám phá không gian di sản văn hóa 54 dân tộc anh em Việt Nam. Hệ thống thuyết minh AI thông minh qua mã QR, tra cứu hiện vật trực tuyến và đặt vé tham quan nhanh chóng.">
+  <meta name="keywords"
+    content="bảo tàng văn hóa các dân tộc việt nam, 54 dân tộc, di sản văn hóa, bảo tàng thái nguyên, đặt vé bảo tàng, thuyết minh ai, hiện vật văn hóa, việt mường, tày thái, hmong dao, môn khơ me, nam đảo hán">
   <meta name="author" content="Bảo tàng Văn hóa các Dân tộc Việt Nam">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="theme-color" content="#b45309">
@@ -20,7 +22,8 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="http://localhost:5000/">
   <meta property="og:title" content="Bảo tàng Văn hóa các Dân tộc Việt Nam - Cổng Di Sản & Đặt Vé AI">
-  <meta property="og:description" content="Khám phá kho tàng di sản 54 dân tộc Việt Nam, thuyết minh AI tự động qua mã QR và đặt vé tham quan điện tử.">
+  <meta property="og:description"
+    content="Khám phá kho tàng di sản 54 dân tộc Việt Nam, thuyết minh AI tự động qua mã QR và đặt vé tham quan điện tử.">
   <meta property="og:image" content="http://localhost:5000/logo.png">
   <meta property="og:image:alt" content="Logo Bảo tàng Văn hóa các Dân tộc Việt Nam">
   <meta property="og:locale" content="vi_VN">
@@ -30,7 +33,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="http://localhost:5000/">
   <meta name="twitter:title" content="Bảo tàng Văn hóa các Dân tộc Việt Nam - Hệ Thống AI & Quản Lý Di Sản">
-  <meta name="twitter:description" content="Khám phá kho tàng di sản 54 dân tộc Việt Nam, thuyết minh AI tự động qua mã QR và đặt vé tham quan điện tử.">
+  <meta name="twitter:description"
+    content="Khám phá kho tàng di sản 54 dân tộc Việt Nam, thuyết minh AI tự động qua mã QR và đặt vé tham quan điện tử.">
   <meta name="twitter:image" content="http://localhost:5000/logo.png">
 
   <!-- Structured Data JSON-LD (Schema.org Museum & WebSite) -->
@@ -85,7 +89,9 @@
   <!-- Google Fonts: Be Vietnam Pro (Full Vietnamese Support) + Outfit + Cinzel -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Cinzel:wght@600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Cinzel:wght@600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
 
   <!-- FontAwesome Icons & Custom Stylesheet -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -119,7 +125,8 @@
         <button class="btn-secondary" id="headerProfileBtn" style="display: none;" onclick="switchNav('viewProfile')">
           <i class="fa-solid fa-user-gear"></i> <span class="nav-login-text">Hồ sơ Cán bộ</span>
         </button>
-        <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Menu điều hướng" onclick="toggleMobileNav()">
+        <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Menu điều hướng"
+          onclick="toggleMobileNav()">
           <i class="fa-solid fa-bars"></i>
         </button>
       </div>
@@ -143,39 +150,49 @@
 
         <span class="nav-divider nav-staff-thukho nav-staff-banve nav-staff-admin"></span>
 
-        <a href="#viewArtifactInventory" class="nav-link nav-staff-thukho" id="navInventory" onclick="switchNav('viewArtifactInventory')">
+        <a href="#viewArtifactInventory" class="nav-link nav-staff-thukho" id="navInventory"
+          onclick="switchNav('viewArtifactInventory')">
           <i class="fa-solid fa-boxes-stacked"></i> Kho Di Sản
         </a>
-        <a href="#viewBorrowReturn" class="nav-link nav-staff-thukho" id="navBorrow" onclick="switchNav('viewBorrowReturn')">
+        <a href="#viewBorrowReturn" class="nav-link nav-staff-thukho" id="navBorrow"
+          onclick="switchNav('viewBorrowReturn')">
           <i class="fa-solid fa-handshake"></i> Mượn/Trả
         </a>
-        <a href="#viewRestorationLogs" class="nav-link nav-staff-thukho" id="navRestoration" onclick="switchNav('viewRestorationLogs')">
+        <a href="#viewRestorationLogs" class="nav-link nav-staff-thukho" id="navRestoration"
+          onclick="switchNav('viewRestorationLogs')">
           <i class="fa-solid fa-screwdriver-wrench"></i> Bảo Quản
         </a>
 
         <a href="#viewPosTicket" class="nav-link nav-staff-banve" id="navPos" onclick="switchNav('viewPosTicket')">
           <i class="fa-solid fa-cash-register"></i> Quầy POS
         </a>
-        <a href="#viewGateScanner" class="nav-link nav-staff-banve" id="navScanner" onclick="switchNav('viewGateScanner')">
+        <a href="#viewGateScanner" class="nav-link nav-staff-banve" id="navScanner"
+          onclick="switchNav('viewGateScanner')">
           <i class="fa-solid fa-expand"></i> Soát Vé QR
         </a>
-        <a href="#viewTourSchedule" class="nav-link nav-staff-banve" id="navTour" onclick="switchNav('viewTourSchedule')">
+        <a href="#viewTourSchedule" class="nav-link nav-staff-banve" id="navTour"
+          onclick="switchNav('viewTourSchedule')">
           <i class="fa-solid fa-calendar-days"></i> Lịch Đoàn
         </a>
-        <a href="#viewShiftReport" class="nav-link nav-staff-banve" id="navShift" onclick="switchNav('viewShiftReport')">
+        <a href="#viewShiftReport" class="nav-link nav-staff-banve" id="navShift"
+          onclick="switchNav('viewShiftReport')">
           <i class="fa-solid fa-file-invoice-dollar"></i> Chốt Ca
         </a>
 
-        <a href="#viewAdminDashboard" class="nav-link nav-staff-admin" id="navAdminDashboard" onclick="switchNav('viewAdminDashboard')">
+        <a href="#viewAdminDashboard" class="nav-link nav-staff-admin" id="navAdminDashboard"
+          onclick="switchNav('viewAdminDashboard')">
           <i class="fa-solid fa-chart-pie"></i> Dashboard
         </a>
-        <a href="#viewUserManagement" class="nav-link nav-staff-admin" id="navUserManagement" onclick="switchNav('viewUserManagement')">
+        <a href="#viewUserManagement" class="nav-link nav-staff-admin" id="navUserManagement"
+          onclick="switchNav('viewUserManagement')">
           <i class="fa-solid fa-users-gear"></i> Cán bộ
         </a>
-        <a href="#viewCategoryManagement" class="nav-link nav-staff-admin" id="navCategoryManagement" onclick="switchNav('viewCategoryManagement')">
+        <a href="#viewCategoryManagement" class="nav-link nav-staff-admin" id="navCategoryManagement"
+          onclick="switchNav('viewCategoryManagement')">
           <i class="fa-solid fa-layer-group"></i> Danh mục
         </a>
-        <a href="#viewAdminAiAssistant" class="nav-link nav-staff-admin" id="navAdminAi" onclick="switchNav('viewAdminAiAssistant')">
+        <a href="#viewAdminAiAssistant" class="nav-link nav-staff-admin" id="navAdminAi"
+          onclick="switchNav('viewAdminAiAssistant')">
           <i class="fa-solid fa-wand-magic-sparkles"></i> AI Trợ lý
         </a>
       </nav>
@@ -259,17 +276,21 @@
 
             <div class="room-card">
               <h4><i class="fa-solid fa-bookmark"></i> Phòng 3: H'mông - Dao, Ka Đai & Tạng Miến</h4>
-              <p>Văn hóa 13 tộc người: <strong>H'mông, Dao, Pà Thẻn</strong> (H'mông-Dao); <strong>La Chí, La Ha, Cờ Lao, Pu Péo</strong> (Ka Đai); <strong>Lô Lô, Phù Lá, Hà Nhì, La Hủ, Cống, Si La</strong> (Tạng Miến).</p>
+              <p>Văn hóa 13 tộc người: <strong>H'mông, Dao, Pà Thẻn</strong> (H'mông-Dao); <strong>La Chí, La Ha, Cờ
+                  Lao, Pu Péo</strong> (Ka Đai); <strong>Lô Lô, Phù Lá, Hà Nhì, La Hủ, Cống, Si La</strong> (Tạng Miến).
+              </p>
             </div>
 
             <div class="room-card">
               <h4><i class="fa-solid fa-bookmark"></i> Phòng 4: Môn - Khơ mer</h4>
-              <p>Văn hóa 21 tộc người: <strong>Ba Na, Brâu, Bru-Vân Kiều, Chơ Ro, Co, Cơ Ho, Cơ Tu, Gié Triêng, H'rê, Kháng, Khơ mer, Khơ Mú, Mạ, Mảng, Mnông, Ơ Đu, Rơ Măm, Tà Ôi, Xơ Đăng, Xtiêng</strong>.</p>
+              <p>Văn hóa 21 tộc người: <strong>Ba Na, Brâu, Bru-Vân Kiều, Chơ Ro, Co, Cơ Ho, Cơ Tu, Gié Triêng, H'rê,
+                  Kháng, Khơ mer, Khơ Mú, Mạ, Mảng, Mnông, Ơ Đu, Rơ Măm, Tà Ôi, Xơ Đăng, Xtiêng</strong>.</p>
             </div>
 
             <div class="room-card">
               <h4><i class="fa-solid fa-bookmark"></i> Phòng 5: Nam Đảo & Hán</h4>
-              <p>Văn hóa 8 tộc người: <strong>Chăm, Gia Rai, Ê Đê, Raglai, Chu Ru</strong> (Nam Đảo) và <strong>Hoa, Ngái, Sán Dìu</strong> (Hán).</p>
+              <p>Văn hóa 8 tộc người: <strong>Chăm, Gia Rai, Ê Đê, Raglai, Chu Ru</strong> (Nam Đảo) và <strong>Hoa,
+                  Ngái, Sán Dìu</strong> (Hán).</p>
             </div>
 
           </div>
@@ -649,7 +670,8 @@
 
               <div class="eticket-notice">
                 <i class="fa-solid fa-shield-halved"></i>
-                <div>Vé điện tử có giá trị 01 lượt vào cửa trong ngày. Vui lòng bảo mật mã QR trước khi soát vé tại cổng.</div>
+                <div>Vé điện tử có giá trị 01 lượt vào cửa trong ngày. Vui lòng bảo mật mã QR trước khi soát vé tại
+                  cổng.</div>
               </div>
             </div>
 
@@ -843,7 +865,8 @@
                 <div style="color: var(--primary-gold); font-weight: 800; margin-top: 0.3rem;">30.000 VNĐ</div>
               </div>
 
-              <div class="pos-ticket-card" id="posCardChild" onclick="addPosItem('Trẻ Em Dưới 5 Tuổi', 0, 'posCardChild')">
+              <div class="pos-ticket-card" id="posCardChild"
+                onclick="addPosItem('Trẻ Em Dưới 5 Tuổi', 0, 'posCardChild')">
                 <div style="font-weight: 700; font-size: 1.05rem;">Trẻ Em Dưới 5 Tuổi</div>
                 <div style="color: #059669; font-weight: 800; margin-top: 0.3rem;">MIỄN PHÍ</div>
               </div>
@@ -858,7 +881,8 @@
             <div id="posCartItems"
               style="min-height: 120px; font-size: 0.9rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1rem;">
               <div style="color: var(--text-muted); text-align: center; padding: 2rem 0; font-style: italic;">
-                <i class="fa-solid fa-basket-shopping" style="font-size: 1.8rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
+                <i class="fa-solid fa-basket-shopping"
+                  style="font-size: 1.8rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
                 Chưa có vé nào được chọn.<br>Vui lòng bấm vào loại vé bên trái để thêm vào hóa đơn.
               </div>
             </div>
@@ -1126,7 +1150,8 @@
             <div>📌 <strong>Hệ thống sẵn sàng:</strong> Đang chờ dữ liệu lượt tham quan và bán vé thực tế phát sinh để
               mô hình AI tự động phân tích xu hướng.</div>
             <div>📌 <strong>Truy vấn AI trực tiếp:</strong> Bạn có thể sử dụng chức năng <strong>"AI Trợ Lý"</strong>
-              hoặc form truy vấn ngôn ngữ tự nhiên để yêu cầu Trợ lý AI Bảo tàng phân tích doanh thu & dữ liệu di sản bất
+              hoặc form truy vấn ngôn ngữ tự nhiên để yêu cầu Trợ lý AI Bảo tàng phân tích doanh thu & dữ liệu di sản
+              bất
               kỳ lúc nào.</div>
           </div>
         </div>
@@ -1205,7 +1230,8 @@
 
         <div id="tabCatTicketPrice" class="tab-pane active">
           <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-            <button type="button" class="btn-primary" style="width: auto; padding: 0.6rem 1.2rem; font-size: 0.9rem;" onclick="openAddTicketPriceModal()">
+            <button type="button" class="btn-primary" style="width: auto; padding: 0.6rem 1.2rem; font-size: 0.9rem;"
+              onclick="openAddTicketPriceModal()">
               <i class="fa-solid fa-plus"></i> Thêm Loại Vé Mới
             </button>
           </div>
@@ -1229,7 +1255,8 @@
 
         <div id="tabCatEthnicity" class="tab-pane">
           <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-            <button type="button" class="btn-primary" style="width: auto; padding: 0.6rem 1.2rem; font-size: 0.9rem;" onclick="openAddEthnicityModal()">
+            <button type="button" class="btn-primary" style="width: auto; padding: 0.6rem 1.2rem; font-size: 0.9rem;"
+              onclick="openAddEthnicityModal()">
               <i class="fa-solid fa-plus"></i> Thêm Dân Tộc Mới
             </button>
           </div>
@@ -1262,13 +1289,16 @@
       <div class="auth-card wide">
 
         <div class="card-header">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
             <div>
               <h2 class="card-title">
-                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary-gold);"></i> Trợ Lý AI Bảo Tàng & Cấu Hình API
+                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary-gold);"></i> Trợ Lý AI Bảo Tàng &
+                Cấu Hình API
               </h2>
               <p class="card-subtitle">
-                Quản lý thiết lập kết nối API trợ lý thông minh và truy vấn tổng hợp dữ liệu di sản bằng ngôn ngữ tự nhiên
+                Quản lý thiết lập kết nối API trợ lý thông minh và truy vấn tổng hợp dữ liệu di sản bằng ngôn ngữ tự
+                nhiên
               </p>
             </div>
           </div>
@@ -1292,10 +1322,14 @@
                   Khóa bí mật API Key (Google AI Studio Key) <span style="color: #ef4444;">*</span>
                 </label>
                 <div class="input-container" style="position: relative;">
-                  <input type="password" id="aiApiKeyInput" class="form-input" placeholder="Nhập API Key bắt đầu bằng AIzaSy... hoặc AQ..." required style="padding-right: 5.5rem; font-family: monospace; font-size: 0.95rem;">
+                  <input type="password" id="aiApiKeyInput" class="form-input"
+                    placeholder="Nhập API Key bắt đầu bằng AIzaSy... hoặc AQ..." required
+                    style="padding-right: 5.5rem; font-family: monospace; font-size: 0.95rem;">
                   <i class="fa-solid fa-key input-icon"></i>
-                  <div style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); display: flex; gap: 0.35rem;">
-                    <button type="button" class="btn-icon-subtle" title="Hiện/Ẩn Key" onclick="togglePasswordVisibility('aiApiKeyInput', this)">
+                  <div
+                    style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); display: flex; gap: 0.35rem;">
+                    <button type="button" class="btn-icon-subtle" title="Hiện/Ẩn Key"
+                      onclick="togglePasswordVisibility('aiApiKeyInput', this)">
                       <i class="fa-regular fa-eye"></i>
                     </button>
                     <button type="button" class="btn-icon-subtle" title="Sao chép Key" onclick="copyAiApiKey()">
@@ -1306,10 +1340,12 @@
               </div>
 
               <div class="api-config-actions">
-                <button type="button" id="btnTestAiConnection" class="btn-secondary" style="width: auto; padding: 0.75rem 1.4rem; font-weight: 600;" onclick="handleTestAiKey()">
+                <button type="button" id="btnTestAiConnection" class="btn-secondary"
+                  style="width: auto; padding: 0.75rem 1.4rem; font-weight: 600;" onclick="handleTestAiKey()">
                   <i class="fa-solid fa-bolt" style="color: #d97706;"></i> Kiểm Tra Kết Nối API
                 </button>
-                <button type="submit" id="btnSaveAiKey" class="btn-primary" style="width: auto; padding: 0.75rem 1.75rem;">
+                <button type="submit" id="btnSaveAiKey" class="btn-primary"
+                  style="width: auto; padding: 0.75rem 1.75rem;">
                   <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình Key
                 </button>
               </div>
@@ -1326,13 +1362,15 @@
             <div class="api-config-title">
               <i class="fa-solid fa-comments"></i> Truy Vấn Dữ Liệu Quản Trị Bằng Ngôn Ngữ Tự Nhiên
             </div>
-            <span class="api-model-tag" style="background: rgba(30, 58, 138, 0.08); color: #1e3a8a; border-color: rgba(30, 58, 138, 0.2);">
+            <span class="api-model-tag"
+              style="background: rgba(30, 58, 138, 0.08); color: #1e3a8a; border-color: rgba(30, 58, 138, 0.2);">
               <i class="fa-solid fa-database"></i> Dữ liệu thời gian thực
             </span>
           </div>
 
           <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-            Nhập câu hỏi bằng tiếng Việt để Trợ lý AI Bảo tàng tự động trích xuất số liệu doanh thu, lượt khách và thống kê kho di sản 54 dân tộc.
+            Nhập câu hỏi bằng tiếng Việt để Trợ lý AI Bảo tàng tự động trích xuất số liệu doanh thu, lượt khách và thống
+            kê kho di sản 54 dân tộc.
           </p>
 
           <!-- Prompt Suggestions -->
@@ -1341,13 +1379,16 @@
               <i class="fa-regular fa-lightbulb" style="color: #d97706;"></i> Gợi ý câu hỏi quản trị nhanh:
             </div>
             <div class="prompt-chips">
-              <button type="button" class="prompt-chip" onclick="setNlQueryPrompt('Báo cáo tổng hợp doanh thu bán vé, số lượt khách tham quan và lượng hiện vật hiện có.')">
+              <button type="button" class="prompt-chip"
+                onclick="setNlQueryPrompt('Báo cáo tổng hợp doanh thu bán vé, số lượt khách tham quan và lượng hiện vật hiện có.')">
                 📊 Tổng hợp bán vé & doanh thu
               </button>
-              <button type="button" class="prompt-chip" onclick="setNlQueryPrompt('Phân tích cơ cấu và hiện trạng các hiện vật thuộc nhóm ngôn ngữ Môn - Khơ mer và Tày - Thái.')">
+              <button type="button" class="prompt-chip"
+                onclick="setNlQueryPrompt('Phân tích cơ cấu và hiện trạng các hiện vật thuộc nhóm ngôn ngữ Môn - Khơ mer và Tày - Thái.')">
                 🏛️ Cơ cấu hiện vật 54 Dân tộc
               </button>
-              <button type="button" class="prompt-chip" onclick="setNlQueryPrompt('Đề xuất kế hoạch trưng bày và biện pháp bảo quản hiện vật quý hiếm trong tháng tới.')">
+              <button type="button" class="prompt-chip"
+                onclick="setNlQueryPrompt('Đề xuất kế hoạch trưng bày và biện pháp bảo quản hiện vật quý hiếm trong tháng tới.')">
                 💡 Đề xuất bảo tồn & trưng bày
               </button>
             </div>
@@ -1356,7 +1397,8 @@
           <form onsubmit="handleExecuteAdminNlQuery(event)">
             <div class="form-group">
               <div class="input-container">
-                <input type="text" id="adminNlQueryInput" class="form-input" placeholder="Ví dụ: Phân tích tình hình bán vé hôm nay và đề xuất trưng bày chuyên đề..." required>
+                <input type="text" id="adminNlQueryInput" class="form-input"
+                  placeholder="Ví dụ: Phân tích tình hình bán vé hôm nay và đề xuất trưng bày chuyên đề..." required>
                 <i class="fa-solid fa-terminal input-icon"></i>
               </div>
             </div>
@@ -1436,11 +1478,15 @@
               </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.85rem;">
-              <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-muted);">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.85rem;">
+              <label
+                style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-muted);">
                 <input type="checkbox" id="loginRemember" checked> Ghi nhớ đăng nhập
               </label>
-              <button type="button" class="btn-link-inline" onclick="showToast('Vui lòng liên hệ Quản trị viên (admin@baotang.gov.vn) để cấp lại mật khẩu.', 'info')">Quên mật khẩu?</button>
+              <button type="button" class="btn-link-inline"
+                onclick="showToast('Vui lòng liên hệ Quản trị viên (admin@baotang.gov.vn) để cấp lại mật khẩu.', 'info')">Quên
+                mật khẩu?</button>
             </div>
 
             <button type="submit" class="btn-primary">
@@ -1448,8 +1494,10 @@
             </button>
           </form>
 
-          <div style="text-align: center; margin-top: 1.25rem; font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 1rem;">
-            Chưa có tài khoản? <button type="button" class="btn-link-inline" style="font-weight: 700;" onclick="switchAuthTab('register')">Đăng ký tài khoản mới <i class="fa-solid fa-angle-right"></i></button>
+          <div
+            style="text-align: center; margin-top: 1.25rem; font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            Chưa có tài khoản? <button type="button" class="btn-link-inline" style="font-weight: 700;"
+              onclick="switchAuthTab('register')">Đăng ký tài khoản mới <i class="fa-solid fa-angle-right"></i></button>
           </div>
         </div>
 
@@ -1491,7 +1539,8 @@
               <div class="form-group">
                 <label class="form-label" for="regUsername">Tên đăng nhập <span style="color: #ef4444;">*</span></label>
                 <div class="input-container">
-                  <input type="text" id="regUsername" class="form-input" placeholder="username123" required minlength="3">
+                  <input type="text" id="regUsername" class="form-input" placeholder="username123" required
+                    minlength="3">
                   <i class="fa-solid fa-at input-icon"></i>
                 </div>
               </div>
@@ -1501,7 +1550,8 @@
               <div class="form-group">
                 <label class="form-label" for="regPassword">Mật khẩu <span style="color: #ef4444;">*</span></label>
                 <div class="input-container">
-                  <input type="password" id="regPassword" class="form-input" placeholder="Tối thiểu 6 ký tự" required minlength="6">
+                  <input type="password" id="regPassword" class="form-input" placeholder="Tối thiểu 6 ký tự" required
+                    minlength="6">
                   <i class="fa-solid fa-lock input-icon"></i>
                   <button type="button" class="toggle-password" onclick="togglePasswordVisibility('regPassword', this)">
                     <i class="fa-regular fa-eye"></i>
@@ -1510,11 +1560,14 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="regPasswordConfirm">Xác nhận mật khẩu <span style="color: #ef4444;">*</span></label>
+                <label class="form-label" for="regPasswordConfirm">Xác nhận mật khẩu <span
+                    style="color: #ef4444;">*</span></label>
                 <div class="input-container">
-                  <input type="password" id="regPasswordConfirm" class="form-input" placeholder="Nhập lại mật khẩu" required minlength="6">
+                  <input type="password" id="regPasswordConfirm" class="form-input" placeholder="Nhập lại mật khẩu"
+                    required minlength="6">
                   <i class="fa-solid fa-shield-halved input-icon"></i>
-                  <button type="button" class="toggle-password" onclick="togglePasswordVisibility('regPasswordConfirm', this)">
+                  <button type="button" class="toggle-password"
+                    onclick="togglePasswordVisibility('regPasswordConfirm', this)">
                     <i class="fa-regular fa-eye"></i>
                   </button>
                 </div>
@@ -1522,9 +1575,11 @@
             </div>
 
             <div class="form-group" style="margin-bottom: 1.25rem;">
-              <label style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">
+              <label
+                style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">
                 <input type="checkbox" id="regAgreeTerms" required style="margin-top: 0.2rem;">
-                <span>Tôi đồng ý với Quy chế hoạt động & Chính sách bảo mật của Bảo tàng Văn hóa các Dân tộc Việt Nam.</span>
+                <span>Tôi đồng ý với Quy chế hoạt động & Chính sách bảo mật của Bảo tàng Văn hóa các Dân tộc Việt
+                  Nam.</span>
               </label>
             </div>
 
@@ -1533,8 +1588,10 @@
             </button>
           </form>
 
-          <div style="text-align: center; margin-top: 1.25rem; font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 1rem;">
-            Đã có tài khoản? <button type="button" class="btn-link-inline" style="font-weight: 700;" onclick="switchAuthTab('login')"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập ngay</button>
+          <div
+            style="text-align: center; margin-top: 1.25rem; font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            Đã có tài khoản? <button type="button" class="btn-link-inline" style="font-weight: 700;"
+              onclick="switchAuthTab('login')"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập ngay</button>
           </div>
         </div>
 
@@ -1551,9 +1608,7 @@
 
           <div class="profile-sidebar">
             <div class="avatar-wrapper" onclick="openAvatarModal()" title="Nhấp để thay đổi ảnh đại diện (40 avatar)">
-              <img id="userAvatarImg"
-                src="avatar/01.jpg"
-                alt="Staff Avatar" class="avatar-img">
+              <img id="userAvatarImg" src="avatar/01.jpg" alt="Staff Avatar" class="avatar-img">
               <div class="avatar-badge"><i class="fa-solid fa-camera"></i></div>
             </div>
             <button type="button" class="btn-change-avatar" onclick="openAvatarModal()">
@@ -1807,13 +1862,15 @@
           <div class="form-group" style="margin-top: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
               <label class="form-label" style="margin-bottom: 0;">
-                <i class="fa-solid fa-images" style="color: var(--primary-gold);"></i> Hình ảnh di sản / hiện vật (Nhiều ảnh & Ctrl+V)
+                <i class="fa-solid fa-images" style="color: var(--primary-gold);"></i> Hình ảnh di sản / hiện vật (Nhiều
+                ảnh & Ctrl+V)
               </label>
               <span id="modalArtImgCountBadge" class="eticket-status-badge" style="font-size: 0.75rem;">0 ảnh</span>
             </div>
 
             <!-- Drop Zone & Paste Target Box -->
-            <div id="modalArtDropZone" class="image-drop-zone" onclick="document.getElementById('modalArtFileInput').click()">
+            <div id="modalArtDropZone" class="image-drop-zone"
+              onclick="document.getElementById('modalArtFileInput').click()">
               <input type="file" id="modalArtFileInput" accept="image/*" multiple style="display: none;"
                 onchange="handleImageFileSelect(event)">
               <div class="drop-zone-content">
@@ -1822,7 +1879,8 @@
                   <strong>Tải ảnh từ máy tính</strong> (chọn nhiều ảnh) hoặc <strong>Kéo & Thả ảnh vào đây</strong>
                 </div>
                 <div class="drop-zone-subtext">
-                  <i class="fa-solid fa-paste" style="color: var(--primary-gold);"></i> Hoặc bấm <kbd class="ctrl-v-kbd">Ctrl + V</kbd> ở bất kỳ đâu trong cửa sổ này để dán ảnh từ bộ nhớ tạm
+                  <i class="fa-solid fa-paste" style="color: var(--primary-gold);"></i> Hoặc bấm <kbd
+                    class="ctrl-v-kbd">Ctrl + V</kbd> ở bất kỳ đâu trong cửa sổ này để dán ảnh từ bộ nhớ tạm
                 </div>
               </div>
             </div>
@@ -1846,7 +1904,8 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" id="modalDeleteArtifactBtn" class="btn-danger" style="display: none; margin-right: auto;" onclick="deleteArtifact()">
+          <button type="button" id="modalDeleteArtifactBtn" class="btn-danger"
+            style="display: none; margin-right: auto;" onclick="deleteArtifact()">
             <i class="fa-solid fa-trash-can"></i> Xóa Hiện Vật
           </button>
           <button type="button" class="btn-secondary" onclick="closeArtifactModal()">Hủy Bỏ</button>
@@ -1922,13 +1981,11 @@
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Phường / Xã</label>
-              <input type="text" id="modalTourWard" class="form-input no-icon"
-                placeholder="VD: Phường Hoàn Kiếm">
+              <input type="text" id="modalTourWard" class="form-input no-icon" placeholder="VD: Phường Hoàn Kiếm">
             </div>
             <div class="form-group">
               <label class="form-label">Tỉnh / Thành phố</label>
-              <input type="text" id="modalTourProvince" class="form-input no-icon"
-                placeholder="VD: Thành phố Hà Nội">
+              <input type="text" id="modalTourProvince" class="form-input no-icon" placeholder="VD: Thành phố Hà Nội">
             </div>
           </div>
 
@@ -1967,7 +2024,8 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3 class="modal-title">Thêm Loại Vé & Bảng Giá Mới</h3>
-        <button type="button" class="modal-close-btn" onclick="closeAddTicketPriceModal()"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="modal-close-btn" onclick="closeAddTicketPriceModal()"><i
+            class="fa-solid fa-xmark"></i></button>
       </div>
 
       <form onsubmit="handleAddTicketPrice(event)">
@@ -1979,16 +2037,19 @@
             </div>
             <div class="form-group">
               <label class="form-label">Giá vé (VNĐ)</label>
-              <input type="number" id="modalTicketPrice" class="form-input no-icon" placeholder="15000" min="0" required>
+              <input type="number" id="modalTicketPrice" class="form-input no-icon" placeholder="15000" min="0"
+                required>
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">Tên loại vé</label>
-            <input type="text" id="modalTicketName" class="form-input no-icon" placeholder="Vé Sinh Viên / Học Sinh" required>
+            <input type="text" id="modalTicketName" class="form-input no-icon" placeholder="Vé Sinh Viên / Học Sinh"
+              required>
           </div>
           <div class="form-group">
             <label class="form-label">Ghi chú áp dụng</label>
-            <input type="text" id="modalTicketNote" class="form-input no-icon" placeholder="Áp dụng cho học sinh, sinh viên có thẻ">
+            <input type="text" id="modalTicketNote" class="form-input no-icon"
+              placeholder="Áp dụng cho học sinh, sinh viên có thẻ">
           </div>
         </div>
 
@@ -2005,7 +2066,8 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3 class="modal-title">Thêm Dân Tộc Mới</h3>
-        <button type="button" class="modal-close-btn" onclick="closeAddEthnicityModal()"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="modal-close-btn" onclick="closeAddEthnicityModal()"><i
+            class="fa-solid fa-xmark"></i></button>
       </div>
 
       <form onsubmit="handleAddEthnicity(event)">
@@ -2017,7 +2079,8 @@
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Nhóm ngôn ngữ</label>
-              <input type="text" id="modalEthLanguage" class="form-input no-icon" placeholder="Môn - Khmer / Nam Đảo" required>
+              <input type="text" id="modalEthLanguage" class="form-input no-icon" placeholder="Môn - Khmer / Nam Đảo"
+                required>
             </div>
             <div class="form-group">
               <label class="form-label">Vùng văn hóa sinh thái</label>
@@ -2039,12 +2102,14 @@
     <div class="modal-card" style="max-width: 680px;">
       <div class="modal-header">
         <h3 class="modal-title"><i class="fa-solid fa-camera-retro"></i> Thay Đổi Ảnh Đại Diện</h3>
-        <button type="button" class="modal-close-btn" onclick="closeAvatarModal()"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="modal-close-btn" onclick="closeAvatarModal()"><i
+            class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="modal-body" style="padding: 1.25rem;">
         <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-          Chọn ảnh đại diện yêu thích từ bộ sưu tập <strong>40 Avatar</strong> của Bảo tàng hoặc tải ảnh từ máy tính của bạn:
+          Chọn ảnh đại diện yêu thích từ bộ sưu tập <strong>40 Avatar</strong> của Bảo tàng hoặc tải ảnh từ máy tính của
+          bạn:
         </p>
 
         <!-- Preview & Custom Upload Bar -->
@@ -2052,16 +2117,19 @@
           <div class="avatar-current-box">
             <img id="avatarModalPreviewImg" src="avatar/01.jpg" alt="Preview Avatar" class="avatar-preview-large">
             <div>
-              <strong id="avatarModalSelectedName" style="display: block; font-size: 0.95rem; color: var(--text-primary);">avatar/01.jpg</strong>
+              <strong id="avatarModalSelectedName"
+                style="display: block; font-size: 0.95rem; color: var(--text-primary);">avatar/01.jpg</strong>
               <span style="font-size: 0.8rem; color: var(--text-muted);">Ảnh đang được chọn</span>
             </div>
           </div>
 
           <div class="avatar-upload-box">
-            <label for="customAvatarFileInput" class="btn-secondary btn-sm" style="cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <label for="customAvatarFileInput" class="btn-secondary btn-sm"
+              style="cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 0.4rem;">
               <i class="fa-solid fa-cloud-arrow-up"></i> Tải ảnh từ máy tính
             </label>
-            <input type="file" id="customAvatarFileInput" accept="image/*" style="display: none;" onchange="handleCustomAvatarUpload(event)">
+            <input type="file" id="customAvatarFileInput" accept="image/*" style="display: none;"
+              onchange="handleCustomAvatarUpload(event)">
           </div>
         </div>
 
@@ -2084,7 +2152,7 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- JavaScript Controller -->
-  <script src="app.js?v=2"></script>
+  <script src="frontend.js?v=3"></script>
 </body>
 
 </html>
