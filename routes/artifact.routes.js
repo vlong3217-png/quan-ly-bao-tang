@@ -1,118 +1,307 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { verifyToken, authorizeRoles } = require('../middlewares/auth');
-
-// Heritage Artifacts Database
-let MOCK_ARTIFACTS = [];
 
 /**
  * GET /api/artifacts
- * Query artifacts catalog with optional search & filter
+ * Lấy danh sách hiện vật từ MySQL
  */
 router.get('/', async (req, res) => {
-  const { search, region, ethnic } = req.query;
+  const { search } = req.query;
 
   try {
-    let results = MOCK_ARTIFACTS;
+    let sql = `
+      SELECT
+        hienvat_id AS id,
+        ma_hienvat AS code,
+        ten_hienvat AS title,
+        chat_lieu AS material,
+        hinh_anh AS img,
+        nien_dai AS era,
+        tinh_trang AS status,
+        y_nghia_van_hoa AS meaning
+      FROM HienVat
+    `;
 
-    try {
-      const [rows] = await pool.query(`
-        SELECT 
-          hienvat_id as id,
-          ma_hienvat as code,
-          ten_hienvat as title,
-          chat_lieu as material,
-          hinh_anh as img,
-          nien_dai as era,
-          tinh_trang as status,
-          y_nghia_van_hoa as meaning
-        FROM HienVat
-        ORDER BY hienvat_id DESC
-      `);
-      if (rows.length > 0) {
-        results = rows.map(r => ({
-          ...r,
-          ethnic: r.ethnic || 'Chưa xác định',
-          region: r.region || 'Vùng núi cao phía Bắc',
-          location: r.location || 'Kho Bảo Quản 1',
-          img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80'
-        }));
-      }
-    } catch (err) {}
+    const params = [];
 
     if (search) {
-      const q = search.toLowerCase();
-      results = results.filter(art => (art.title && art.title.toLowerCase().includes(q)) || (art.code && art.code.toLowerCase().includes(q)));
+      sql += `
+        WHERE ten_hienvat LIKE ?
+        OR ma_hienvat LIKE ?
+      `;
+
+      params.push(`%${search}%`, `%${search}%`);
     }
 
-    return res.json({ success: true, count: results.length, data: results });
+    sql += ` ORDER BY hienvat_id DESC`;
+
+    const [rows] = await pool.query(sql, params);
+
+    const data = rows.map(r => ({
+      id: r.id,
+      code: r.code,
+      title: r.title,
+      ethnic: 'Chưa xác định',
+      region: 'Vùng núi cao phía Bắc',
+      material: r.material || 'Chưa xác định',
+      era: r.era || 'Chưa xác định',
+      location: 'Kho Bảo Quản 1',
+      status: r.status || 'Nguyên vẹn',
+      img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
+      images: r.img ? [r.img] : [],
+      meaning: r.meaning || 'Hồ sơ di sản.',
+      audioText: ''
+    }));
+
+    return res.json({
+      success: true,
+      count: data.length,
+      data: data
+    });
+
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('❌ Lỗi GET /api/artifacts:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lấy dữ liệu hiện vật từ database!',
+      error: error.message
+    });
   }
 });
+
 
 /**
  * GET /api/artifacts/:id
+ * Lấy một hiện vật theo ID hoặc mã hiện vật
  */
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const idStr = String(req.params.id);
-  const art = MOCK_ARTIFACTS.find(item => String(item.id) === idStr || item.code === idStr);
-  if (!art) return res.status(404).json({ success: false, message: 'Không tìm thấy hiện vật!' });
-  return res.json({ success: true, data: art });
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT
+        hienvat_id AS id,
+        ma_hienvat AS code,
+        ten_hienvat AS title,
+        chat_lieu AS material,
+        hinh_anh AS img,
+        nien_dai AS era,
+        tinh_trang AS status,
+        y_nghia_van_hoa AS meaning
+      FROM HienVat
+      WHERE hienvat_id = ? OR ma_hienvat = ?
+      LIMIT 1
+      `,
+      [idStr, idStr]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy hiện vật!'
+      });
+    }
+
+    const r = rows[0];
+
+    const artifact = {
+      id: r.id,
+      code: r.code,
+      title: r.title,
+      ethnic: 'Chưa xác định',
+      region: 'Vùng núi cao phía Bắc',
+      material: r.material || 'Chưa xác định',
+      era: r.era || 'Chưa xác định',
+      location: 'Kho Bảo Quản 1',
+      status: r.status || 'Nguyên vẹn',
+      img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
+      images: r.img ? [r.img] : [],
+      meaning: r.meaning || 'Hồ sơ di sản.',
+      audioText: ''
+    };
+
+    return res.json({
+      success: true,
+      data: artifact
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi GET /api/artifacts/:id:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lấy thông tin hiện vật!',
+      error: error.message
+    });
+  }
 });
 
+
 /**
- * POST /api/artifacts (Staff inventory addition)
+ * POST /api/artifacts
+ * Thêm hoặc cập nhật hiện vật vào MySQL
  */
 router.post('/', async (req, res) => {
-  const { id, code, title, ethnic, region, material, location, status, img, images, meaning, audioText } = req.body;
+  const {
+    code,
+    title,
+    ethnic,
+    region,
+    material,
+    location,
+    status,
+    img,
+    images,
+    meaning,
+    audioText
+  } = req.body;
 
-  const newArt = {
-    id: id || Date.now(),
-    code: code || `HV-${String(MOCK_ARTIFACTS.length + 1).padStart(3, '0')}`,
-    title: title || 'Hiện vật mới',
-    ethnic: ethnic || 'Chưa xác định',
-    region: region || 'Vùng núi cao phía Bắc',
-    material: material || 'Chưa xác định',
-    era: 'Thế kỷ XX',
-    location: location || 'Kho Bảo Quản 1',
-    status: status || 'Nguyên vẹn',
-    img: img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
-    images: Array.isArray(images) && images.length > 0 ? images : [img],
-    meaning: meaning || 'Hồ sơ di sản mới bổ sung.',
-    audioText: audioText || `Hiện vật ${title} của Dân tộc ${ethnic}.`
-  };
+  if (!code || !title) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mã hiện vật và tên hiện vật không được để trống!'
+    });
+  }
 
   try {
     await pool.query(
-      'INSERT INTO HienVat (ma_hienvat, ten_hienvat, chat_lieu, hinh_anh, tinh_trang, y_nghia_van_hoa) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE ten_hienvat = VALUES(ten_hienvat), chat_lieu = VALUES(chat_lieu), hinh_anh = VALUES(hinh_anh)',
-      [newArt.code, newArt.title, newArt.material, newArt.img, newArt.status, newArt.meaning]
+      `
+      INSERT INTO HienVat
+        (
+          ma_hienvat,
+          ten_hienvat,
+          chat_lieu,
+          hinh_anh,
+          tinh_trang,
+          y_nghia_van_hoa
+        )
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        ten_hienvat = VALUES(ten_hienvat),
+        chat_lieu = VALUES(chat_lieu),
+        hinh_anh = VALUES(hinh_anh),
+        tinh_trang = VALUES(tinh_trang),
+        y_nghia_van_hoa = VALUES(y_nghia_van_hoa)
+      `,
+      [
+        code,
+        title,
+        material || null,
+        img || null,
+        status || 'Nguyên vẹn',
+        meaning || null
+      ]
     );
-  } catch (err) {}
 
-  const existingIdx = MOCK_ARTIFACTS.findIndex(a => String(a.id) === String(newArt.id) || a.code === newArt.code);
-  if (existingIdx !== -1) {
-    MOCK_ARTIFACTS[existingIdx] = newArt;
-  } else {
-    MOCK_ARTIFACTS.unshift(newArt);
+    // Lấy lại dữ liệu vừa lưu từ MySQL
+    const [rows] = await pool.query(
+      `
+      SELECT
+        hienvat_id AS id,
+        ma_hienvat AS code,
+        ten_hienvat AS title,
+        chat_lieu AS material,
+        hinh_anh AS img,
+        nien_dai AS era,
+        tinh_trang AS status,
+        y_nghia_van_hoa AS meaning
+      FROM HienVat
+      WHERE ma_hienvat = ?
+      LIMIT 1
+      `,
+      [code]
+    );
+
+    if (rows.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: 'Đã lưu nhưng không thể đọc lại dữ liệu từ database!'
+      });
+    }
+
+    const r = rows[0];
+
+    const savedArtifact = {
+      id: r.id,
+      code: r.code,
+      title: r.title,
+      ethnic: ethnic || 'Chưa xác định',
+      region: region || 'Vùng núi cao phía Bắc',
+      material: r.material || 'Chưa xác định',
+      era: r.era || 'Chưa xác định',
+      location: location || 'Kho Bảo Quản 1',
+      status: r.status || 'Nguyên vẹn',
+      img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
+      images: Array.isArray(images) && images.length > 0
+        ? images
+        : (r.img ? [r.img] : []),
+      meaning: r.meaning || 'Hồ sơ di sản mới bổ sung.',
+      audioText: audioText || `Hiện vật ${title} của Dân tộc ${ethnic || 'chưa xác định'}.`
+    };
+
+    console.log('✅ Đã lưu hiện vật vào MySQL:', savedArtifact.code);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Thêm mới hồ sơ hiện vật thành công!',
+      data: savedArtifact
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi INSERT HienVat:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lưu hiện vật vào database!',
+      error: error.message
+    });
   }
-
-  return res.status(201).json({ success: true, message: 'Thêm mới hồ sơ hiện vật kho thành công!', data: newArt });
 });
 
+
 /**
- * DELETE /api/artifacts/:id (Staff inventory artifact deletion)
+ * DELETE /api/artifacts/:id
+ * Xóa hiện vật khỏi MySQL
  */
 router.delete('/:id', async (req, res) => {
   const idStr = String(req.params.id);
-  MOCK_ARTIFACTS = MOCK_ARTIFACTS.filter(item => String(item.id) !== idStr && item.code !== idStr);
 
   try {
-    await pool.query('DELETE FROM HienVat WHERE hienvat_id = ? OR ma_hienvat = ?', [idStr, idStr]);
-  } catch (err) {}
+    const [result] = await pool.query(
+      `
+      DELETE FROM HienVat
+      WHERE hienvat_id = ? OR ma_hienvat = ?
+      `,
+      [idStr, idStr]
+    );
 
-  return res.json({ success: true, message: 'Xóa hồ sơ hiện vật thành công!' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy hiện vật để xóa!'
+      });
+    }
+
+    console.log('🗑️ Đã xóa hiện vật:', idStr);
+
+    return res.json({
+      success: true,
+      message: 'Xóa hồ sơ hiện vật thành công!'
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi DELETE HienVat:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể xóa hiện vật khỏi database!',
+      error: error.message
+    });
+  }
 });
+
 
 module.exports = router;
