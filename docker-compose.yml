@@ -3,34 +3,10 @@ services:
     build: .
     container_name: bao_tang_app
     ports:
-      - "8080:5000"
+      - "5000:5000"
     env_file:
       - .env
-    environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=vu123456
-      - DB_NAME=quan_ly_bao_tang
-    depends_on:
-      - db
     volumes:
       - .:/app
       - /app/node_modules
     restart: unless-stopped
-
-  db:
-    image: mysql:8.0
-    container_name: bao_tang_db
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: quan_ly_bao_tang
-    ports:
-      - "3307:3306"
-    volumes:
-      - ./schema_quan_ly_bao_tang.sql:/docker-entrypoint-initdb.d/schema.sql:ro
-      - mysql_data:/var/lib/mysql
-    restart: unless-stopped
-
-volumes:
-  mysql_data:
