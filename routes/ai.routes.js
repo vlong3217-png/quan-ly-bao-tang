@@ -37,7 +37,7 @@ function getOfflineCuratorResponse(question, artifactContext) {
   const q = (question || '').trim().toLowerCase();
   
   if (q.includes('xin chào') || q.includes('chào') || q.includes('hello') || q.includes('hi')) {
-    return 'Xin chào quý khách! Tôi là Trợ lý Virtual AI của Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi có thể hỗ trợ bạn tìm hiểu về 54 dân tộc, 5 phòng trưng bày, giá vé, giờ mở cửa cũng như thông tin các di sản văn hóa độc đáo. Bạn cần tư vấn thông tin gì hôm nay?';
+    return 'Xin chào quý khách! Tôi là Trợ lý Virtual AI của Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi có thể hỗ trợ bạn tìm hiểu về 54 dân tộc, 5 phòng trưng bày, giá vé, giờ mở cửa. Bạn cần tư vấn thông tin gì hôm nay?';
   }
 
   if (q.includes('giá vé') || q.includes('bao nhiêu') || q.includes('vé vào')) {
@@ -49,26 +49,8 @@ function getOfflineCuratorResponse(question, artifactContext) {
   if (q.includes('phòng') || q.includes('trưng bày')) {
     return 'Bảo tàng gồm 5 Phòng trưng bày trong nhà theo nhóm ngôn ngữ:\n- Phòng 1: Nhóm Việt - Mường.\n- Phòng 2: Nhóm Tày - Thái.\n- Phòng 3: Nhóm H\'mông - Dao, Ka Đai & Tạng Miến.\n- Phòng 4: Nhóm Môn - Khơ mer.\n- Phòng 5: Nhóm Nam Đảo & Nhóm Hán.\nNgoài ra có 6 Vùng không gian văn hóa ngoài trời tái hiện chân thực các ngôi nhà nguyên gốc.';
   }
-  if (q.includes('tày') || q.includes('trang phục tày') || q.includes('chàm')) {
-    return 'Trang phục cổ truyền người Tày nổi bật với sắc chàm mộc mạc mà trang nhã. Áo cánh ngắn mặc bên trong kết hợp áo dài năm thân cài khuy đồng bên nách phải, thắt lưng lụa rực rỡ và nón lá chóp nhọn đan bằng tre cật.';
-  }
-  if (q.includes('trống đồng') || q.includes('đông sơn')) {
-    return 'Trống đồng Đông Sơn là đỉnh cao của nền văn minh kim khí Lạc Việt thế kỷ II-III TCN. Hoa văn ngôi sao mặt trời tỏa sáng ở tâm, bao quanh là các vành chim Lạc bay ngược chiều kim đồng hồ cùng cảnh chiến binh trên thuyền và giã gạo.';
-  }
-  if (q.includes('t\'rưng') || q.includes('trưng') || q.includes('đàn')) {
-    return 'Đàn T\'rưng là nhạc cụ gõ độc đáo của các dân tộc Tây Nguyên (Gia Rai, Ba Na). Đàn được chế tác từ những ống nứa tự nhiên có độ dài ngắn khác nhau, âm thanh vang vọng, ngân nga như suối reo giữa núi rừng.';
-  }
-  if (q.includes('khèn') || q.includes('mông') || q.includes('h\'mông')) {
-    return 'Khèn là linh hồn của đồng bào H\'Mông. Khèn vừa là nhạc cụ gọi bạn tình trong các phiên chợ phiên mùa xuân, vừa là cầu nối tâm linh không thể thiếu trong các nghi lễ vòng đời truyền thống.';
-  }
-  if (q.includes('piêu') || q.includes('thái')) {
-    return 'Khăn Piêu là kiệt tác thêu thùa của phụ nữ Thái Tây Bắc. Họa tiết cút piêu hình trăng sao, ngọn rau dớn, con bướm thể hiện thế giới quan sinh động và tấm lòng thủy chung, khéo léo của người con gái Thái.';
-  }
-  if (q.includes('cồng chiêng') || q.includes('ba na')) {
-    return 'Không gian Văn hóa Cồng chiêng Tây Nguyên là Di sản phi vật thể đại diện của nhân loại được UNESCO vinh danh. Tiếng chiêng là tiếng nói thiêng liêng kết nối con người với thần linh Yang trong các lễ hội đâm trâu, mừng lúa mới.';
-  }
 
-  return 'Chào bạn! Tôi là Trợ lý AI Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi luôn sẵn sàng hỗ trợ bạn tra cứu lịch sử, văn hóa dân tộc và hiện vật di sản. Bạn có thể hỏi bất kỳ câu hỏi nào liên quan đến bảo tàng nhé!';
+  return 'Chào bạn! Tôi là Trợ lý AI Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi luôn sẵn sàng hỗ trợ bạn tra cứu thông tin vận hành, dịch vụ tham quan và di sản văn hóa dân tộc. Bạn có thể hỏi bất kỳ câu hỏi nào liên quan đến bảo tàng nhé!';
 }
 
 /**
