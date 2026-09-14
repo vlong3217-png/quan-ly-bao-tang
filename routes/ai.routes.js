@@ -8,9 +8,7 @@ let ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 // Helper function calling Gemini AI with automatic model fallback for high availability
 async function generateGeminiWithFallback(contents, systemInstruction) {
   const models = [
-    'gemini-3.6-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro'
+    'gemini-3.6-flash'
   ];
   let lastErr = null;
 
