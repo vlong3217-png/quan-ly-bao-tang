@@ -12,9 +12,16 @@ async function generateGeminiWithFallback(contents, systemInstruction) {
   ];
   let lastErr = null;
 
+  const currentKey = process.env.GEMINI_API_KEY;
+  if (!currentKey) {
+    throw new Error('GEMINI_API_KEY chưa được cấu hình!');
+  }
+
+  const client = new GoogleGenAI({ apiKey: currentKey });
+
   for (const model of models) {
     try {
-      const response = await ai.models.generateContent({
+      const response = await client.models.generateContent({
         model: model,
         contents: contents,
         config: { systemInstruction }
