@@ -34,8 +34,12 @@ async function generateGeminiWithFallback(contents, systemInstruction) {
 
 // Smart offline curator knowledge fallback when external network/API is momentarily unreachable
 function getOfflineCuratorResponse(question, artifactContext) {
-  const q = (question || '').toLowerCase();
+  const q = (question || '').trim().toLowerCase();
   
+  if (q.includes('xin chào') || q.includes('chào') || q.includes('hello') || q.includes('hi')) {
+    return 'Xin chào quý khách! Tôi là Trợ lý Virtual AI của Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi có thể hỗ trợ bạn tìm hiểu về 54 dân tộc, 5 phòng trưng bày, giá vé, giờ mở cửa cũng như thông tin các di sản văn hóa độc đáo. Bạn cần tư vấn thông tin gì hôm nay?';
+  }
+
   if (q.includes('giá vé') || q.includes('bao nhiêu') || q.includes('vé vào')) {
     return 'Bảo tàng áp dụng mức giá vé tham quan quy định:\n- Vé người lớn / phổ thông: 30.000 VNĐ/lượt.\n- Vé trẻ em dưới 5 tuổi: Miễn phí hoàn toàn (0 VNĐ).\nQuý khách có thể mua vé trực tuyến và quét mã QR tại cổng kiểm soát tự động.';
   }
@@ -64,7 +68,7 @@ function getOfflineCuratorResponse(question, artifactContext) {
     return 'Không gian Văn hóa Cồng chiêng Tây Nguyên là Di sản phi vật thể đại diện của nhân loại được UNESCO vinh danh. Tiếng chiêng là tiếng nói thiêng liêng kết nối con người với thần linh Yang trong các lễ hội đâm trâu, mừng lúa mới.';
   }
 
-  return 'Chào bạn! Tôi là Trợ lý AI Bảo tàng Văn hóa các Dân tộc Việt Nam. Hiện vật này lưu giữ giá trị lịch sử và mỹ thuật thủ công truyền thống độc đáo của 54 dân tộc anh em. Bạn có thể hỏi thêm về nguồn gốc, chất liệu, niên đại hoặc ý nghĩa hoa văn của hiện vật nhé!';
+  return 'Chào bạn! Tôi là Trợ lý AI Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi luôn sẵn sàng hỗ trợ bạn tra cứu lịch sử, văn hóa dân tộc và hiện vật di sản. Bạn có thể hỏi bất kỳ câu hỏi nào liên quan đến bảo tàng nhé!';
 }
 
 /**
