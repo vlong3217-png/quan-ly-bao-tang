@@ -169,22 +169,22 @@ router.post('/', async (req, res) => {
   try {
     await pool.query(
       `
-      INSERT INTO HienVat
-        (
-          ma_hienvat,
-          ten_hienvat,
-          chat_lieu,
-          hinh_anh,
-          tinh_trang,
-          y_nghia_van_hoa
-        )
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-        ten_hienvat = VALUES(ten_hienvat),
-        chat_lieu = VALUES(chat_lieu),
-        hinh_anh = VALUES(hinh_anh),
-        tinh_trang = VALUES(tinh_trang),
-        y_nghia_van_hoa = VALUES(y_nghia_van_hoa)
+        INSERT INTO HienVat
+(
+  ma_hienvat,
+  ten_hienvat,
+  chat_lieu,
+  hinh_anh,
+  tinh_trang,
+  y_nghia_van_hoa
+)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(ma_hienvat) DO UPDATE SET
+  ten_hienvat = excluded.ten_hienvat,
+  chat_lieu = excluded.chat_lieu,
+  hinh_anh = excluded.hinh_anh,
+  tinh_trang = excluded.tinh_trang,
+  y_nghia_van_hoa = excluded.y_nghia_van_hoa
       `,
       [
         code,
