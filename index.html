@@ -1058,6 +1058,14 @@
           </div>
 
           <div class="kpi-card">
+            <div class="kpi-icon"><i class="fa-solid fa-bus-simple"></i></div>
+            <div>
+              <div class="kpi-title">Đoàn Đã Đặt Lịch</div>
+              <div class="kpi-value" id="kpiTotalTours">0</div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
             <div class="kpi-icon"><i class="fa-solid fa-sack-dollar"></i></div>
             <div>
               <div class="kpi-title">Tổng Doanh Thu</div>
@@ -1139,6 +1147,37 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Real-time Group Tour Widget on Dashboard -->
+        <div class="chart-card" style="margin-bottom: 1.5rem;">
+          <div class="chart-header" style="margin-bottom: 0.85rem;">
+            <div class="chart-title">
+              <i class="fa-solid fa-bus-simple" style="color: var(--primary-gold);"></i> 
+              Lịch Đoàn Tham Quan Đã Đăng Ký (Đồng Bộ Real-time)
+            </div>
+            <button type="button" class="btn-secondary btn-sm" onclick="switchNav('viewTourManagement')">
+              <i class="fa-solid fa-arrow-right"></i> Quản Lý Chi Tiết Lịch Đoàn
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="inventory-table">
+              <thead>
+                <tr>
+                  <th>Mã Đoàn</th>
+                  <th>Tên Đoàn / Đơn Vị</th>
+                  <th>Đối Tượng</th>
+                  <th>Số Lượng Khách</th>
+                  <th>Thời Gian</th>
+                  <th>Hướng Dẫn Viên</th>
+                  <th>Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody id="dashToursTableBody">
+                <!-- Dynamic tour rows rendered from TOURS_DATA -->
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -1733,7 +1772,7 @@
           <div>
             <span class="footer-col-label">Phát triển bởi</span>
             <p class="footer-col-text">Hoàng Vũ · Hà Minh · Luyện Sơn</p>
-            <p class="footer-col-sub">ĐH CNTT&TT Thái Nguyên</p>
+            <p class="footer-col-sub">Trường Đại học CNTT&TT (Phường Quyết Thắng, Tỉnh Thái Nguyên) </p>
           </div>
         </div>
       </div>
