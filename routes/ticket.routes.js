@@ -1,148 +1,753 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken, authorizeRoles } = require('../middlewares/auth');
+const pool = require('../config/db');
 
-let TICKETS_DB = [];
+/* =========================================================
+   VÉ THAM QUAN
+   ========================================================= */
 
 /**
  * POST /api/tickets/book
- * Online ticket booking API
+ * Đặt vé tham quan trực tuyến
  */
-router.post('/book', (req, res) => {
-  const { name, phone, date, slot, adultQty, studentQty, foreignerQty, paymentMethod } = req.body;
+router.post('/book', async (req, res) => {
+  try {
+    const {
+      name,
+      phone,
+      date,
+      slot,
+      adultQty,
+      studentQty,
+      childQty,
+      foreignerQty,
+      paymentMethod
+    } = req.body;
 
-  const adult = parseInt(adultQty) || 0;
-  const student = parseInt(studentQty) || 0;
-  const child = parseInt(req.body.childQty) || 0;
-  const foreigner = parseInt(foreignerQty) || 0;
+    const adult = parseInt(adultQty) || 0;
+    const student = parseInt(studentQty) || 0;
+    const child = parseInt(childQty) || 0;
+    const foreigner = parseInt(foreignerQty) || 0;
 
-  const totalAmount = adult * 30000 + student * 15000 + foreigner * 50000;
-  const randomNum = Math.floor(10000 + Math.random() * 90000);
-  const ticketCode = `VE-2026-${randomNum}`;
-  const qrCodeData = `BAOTANG-#${ticketCode}-${phone}`;
+    const totalAmount =
+      adult * 30000 +
+      student * 15000 +
+      foreigner * 50000;
 
-  const newTicket = {
-    id: TICKETS_DB.length + 1,
-    ticketCode: `#${ticketCode}`,
-    name: name || 'Khách Đặt Vé',
-    phone: phone || '0987654321',
-    date: date || 'Hôm nay',
-    slot: slot || 'Sáng (08:00 - 11:30)',
-    adultQty: adult,
-    studentQty: student,
-    foreignerQty: foreigner,
-    totalAmount: totalAmount,
-    paymentMethod: paymentMethod || 'QR_BANK',
-    qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrCodeData}`,
-    status: 'CHUA_SU_DUNG',
-    createdAt: new Date().toISOString()
-  };
+    const randomNum = Math.floor(10000 + Math.random() * 90000);
+    const ticketCode = `VE-2026-${randomNum}`;
+    const qrCodeData = `BAOTANG-#${ticketCode}-${phone || ''}`;
 
-  TICKETS_DB.push(newTicket);
+    const qrUrl =
+      `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrCodeData)}`;
 
-  return res.json({
-    success: true,
-    message: 'Đặt vé tham quan trực tuyến thành công!',
-    data: newTicket
-  });
+    // Lấy loại vé mặc định
+    const [loaiVeRows] = await pool.query(`
+      SELECT loaive_id
+      FROM LoaiVe
+      ORDER BY loaive_id
+      LIMIT 1
+    `);
+
+    if (!loaiVeRows.length) {
+      return res.status(500).json({
+        success: false,
+        message: 'Chưa có loại vé trong cơ sở dữ liệu!'
+      });
+    }
+
+    const loaiveId = loaiVeRows[0].loaive_id;
+
+    await pool.query(`
+      INSERT INTO VeThamQuan
+      (
+        ma_qr,
+        loaive_id,
+        ten_khach,
+        so_dien_thoai,
+        ngay_tham_quan,
+        khung_gio,
+        so_nguoi_lon,
+        so_sinh_vien,
+        so_tre_em,
+        so_nguoi_nuoc_ngoai,
+        tong_tien,
+        phuong_thuc_thanh_toan,
+        trang_thai
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      `#${ticketCode}`,
+      loaiveId,
+      name || 'Khách Đặt Vé',
+      phone || '',
+      date || null,
+      slot || 'Sáng (08:00 - 11:30)',
+      adult,
+      student,
+      child,
+      foreigner,
+      totalAmount,
+      paymentMethod || 'QR_BANK',
+      'CHUA_SU_DUNG'
+    ]);
+
+    const [rows] = await pool.query(`
+      SELECT *
+      FROM VeThamQuan
+      WHERE ma_qr = ?
+      LIMIT 1
+    `, [`#${ticketCode}`]);
+
+    const ticket = rows[0];
+
+    return res.status(201).json({
+      success: true,
+      message: 'Đặt vé tham quan trực tuyến thành công!',
+      data: {
+        id: ticket.ve_id,
+        ticketCode: ticket.ma_qr,
+        name: ticket.ten_khach,
+        phone: ticket.so_dien_thoai,
+        date: ticket.ngay_tham_quan,
+        slot: ticket.khung_gio,
+        adultQty: ticket.so_nguoi_lon,
+        studentQty: ticket.so_sinh_vien,
+        childQty: ticket.so_tre_em,
+        foreignerQty: ticket.so_nguoi_nuoc_ngoai,
+        totalAmount: ticket.tong_tien,
+        paymentMethod: ticket.phuong_thuc_thanh_toan,
+        qrUrl: qrUrl,
+        status: ticket.trang_thai,
+        createdAt: ticket.ngay_mua
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi đặt vé:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lưu vé vào cơ sở dữ liệu!',
+      error: error.message
+    });
+  }
 });
+
 
 /**
- * POST /api/tickets/scan (Gate scanner verification - Restricted to BANVE, ADMIN)
+ * POST /api/tickets/scan
+ * Soát vé
  */
-router.post('/scan', verifyToken, authorizeRoles('BANVE', 'ADMIN'), (req, res) => {
-  const { qrCode } = req.body;
+router.post(
+  '/scan',
+  verifyToken,
+  authorizeRoles('BANVE', 'ADMIN'),
+  async (req, res) => {
+    try {
+      const { qrCode } = req.body;
 
-  if (!qrCode) {
-    return res.status(400).json({ success: false, message: 'Vui lòng cung cấp mã QR Code soát vé!' });
-  }
+      if (!qrCode) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng cung cấp mã QR Code soát vé!'
+        });
+      }
 
-  const found = TICKETS_DB.find(t => t.ticketCode === qrCode || qrCode.includes(t.ticketCode));
+      const [rows] = await pool.query(`
+        SELECT *
+        FROM VeThamQuan
+        WHERE ma_qr = ?
+           OR ma_qr LIKE ?
+        LIMIT 1
+      `, [
+        qrCode,
+        `%${qrCode}%`
+      ]);
 
-  if (found) {
-    if (found.status === 'DA_SU_DUNG') {
-      return res.status(400).json({ success: false, message: `VÉ ĐÃ SỬ DỤNG LÚC ${found.usedAt || 'trước đó'}! Không hợp lệ.` });
+      if (!rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy vé trong hệ thống!'
+        });
+      }
+
+      const ticket = rows[0];
+
+      if (ticket.trang_thai === 'DA_SOAT_VE') {
+        return res.status(400).json({
+          success: false,
+          message: `VÉ ĐÃ SỬ DỤNG LÚC ${ticket.used_at || 'trước đó'}! Không hợp lệ.`,
+          data: ticket
+        });
+      }
+
+      if (ticket.trang_thai === 'HUY') {
+        return res.status(400).json({
+          success: false,
+          message: 'Vé đã bị hủy!',
+          data: ticket
+        });
+      }
+
+      const usedAt = new Date().toISOString();
+
+      await pool.query(`
+        UPDATE VeThamQuan
+        SET trang_thai = ?,
+            used_at = ?
+        WHERE ve_id = ?
+      `, [
+        'DA_SOAT_VE',
+        usedAt,
+        ticket.ve_id
+      ]);
+
+      const [updatedRows] = await pool.query(`
+        SELECT *
+        FROM VeThamQuan
+        WHERE ve_id = ?
+        LIMIT 1
+      `, [ticket.ve_id]);
+
+      return res.json({
+        success: true,
+        message: `VÉ HỢP LỆ! Đã xác thực lượt vào cửa cho ${ticket.ten_khach}.`,
+        data: updatedRows[0]
+      });
+
+    } catch (error) {
+      console.error('❌ Lỗi soát vé:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Không thể kiểm tra vé!',
+        error: error.message
+      });
     }
-    found.status = 'DA_SU_DUNG';
-    found.usedAt = new Date().toLocaleTimeString('vi-VN');
-    return res.json({ success: true, message: `VÉ HỢP LỆ! Đã xác thực lượt vào cửa cho ${found.name}.`, data: found });
   }
+);
 
-  return res.json({
-    success: true,
-    message: `VÉ HỢP LỆ (Mã QR: ${qrCode})! Mời du khách vào cửa.`,
-    data: { qrCode: qrCode, status: 'CHUA_SU_DUNG' }
-  });
+
+/**
+ * GET /api/tickets
+ * Lấy toàn bộ vé
+ */
+router.get('/', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT *
+      FROM VeThamQuan
+      ORDER BY ve_id DESC
+    `);
+
+    return res.json({
+      success: true,
+      count: rows.length,
+      data: rows
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi lấy danh sách vé:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lấy danh sách vé!',
+      error: error.message
+    });
+  }
 });
 
-let TOURS_DB = [];
-let BORROWS_DB = [];
+
+/* =========================================================
+   LỊCH ĐOÀN THAM QUAN
+   ========================================================= */
 
 /**
  * GET /api/tickets/tours
  */
-router.get('/tours', (req, res) => {
-  return res.json({ success: true, count: TOURS_DB.length, data: TOURS_DB });
+router.get('/tours', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT *
+      FROM LichDoan
+      ORDER BY id DESC
+    `);
+
+    const data = rows.map(tour => ({
+      id: tour.id,
+      code: tour.code,
+      name: tour.name,
+      ward: tour.ward || '',
+      province: tour.province || '',
+      target: tour.target || 'Du khách',
+      size: tour.size || '',
+      time: tour.time || '',
+      guide: tour.guide || 'Cán bộ trực',
+      status: tour.status || 'Chờ Đón Tiếp',
+      createdAt: tour.created_at,
+      updatedAt: tour.updated_at
+    }));
+
+    return res.json({
+      success: true,
+      count: data.length,
+      data
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi lấy lịch đoàn:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lấy lịch đoàn!',
+      error: error.message
+    });
+  }
 });
+
 
 /**
  * POST /api/tickets/tours
  */
-router.post('/tours', (req, res) => {
-  const { id, code, name, ward, province, target, size, time, guide, status } = req.body;
-  const newTour = {
-    id: id || Date.now(),
-    code: code || `#DOAN-${Math.floor(100 + Math.random() * 900)}`,
-    name: name || 'Đoàn tham quan',
-    ward: ward || '',
-    province: province || '',
-    target: target || 'Du khách',
-    size: size || '50 Khách',
-    time: time || 'Hôm nay',
-    guide: guide || 'Cán bộ trực',
-    status: status || 'Chờ Đón Tiếp'
-  };
+router.post('/tours', async (req, res) => {
+  try {
+    const {
+      id,
+      code,
+      name,
+      ward,
+      province,
+      target,
+      size,
+      time,
+      guide,
+      status
+    } = req.body;
 
-  const idx = TOURS_DB.findIndex(t => String(t.id) === String(newTour.id) || t.code === newTour.code);
-  if (idx !== -1) {
-    TOURS_DB[idx] = newTour;
-  } else {
-    TOURS_DB.unshift(newTour);
+    const tourCode =
+      code || `#DOAN-${Math.floor(100 + Math.random() * 900)}`;
+
+    const tourName =
+      name || 'Đoàn tham quan';
+
+    const tour = {
+      code: tourCode,
+      name: tourName,
+      ward: ward || '',
+      province: province || '',
+      target: target || 'Du khách',
+      size: size || '50 Khách',
+      time: time || 'Hôm nay',
+      guide: guide || 'Cán bộ trực',
+      status: status || 'Chờ Đón Tiếp'
+    };
+
+    /*
+     * Nếu có id → cập nhật bản ghi đó.
+     * Nếu không có id → kiểm tra code.
+     */
+    if (id) {
+      const [existing] = await pool.query(`
+        SELECT id
+        FROM LichDoan
+        WHERE id = ?
+        LIMIT 1
+      `, [id]);
+
+      if (existing.length) {
+        await pool.query(`
+          UPDATE LichDoan
+          SET code = ?,
+              name = ?,
+              ward = ?,
+              province = ?,
+              target = ?,
+              size = ?,
+              time = ?,
+              guide = ?,
+              status = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `, [
+          tour.code,
+          tour.name,
+          tour.ward,
+          tour.province,
+          tour.target,
+          tour.size,
+          tour.time,
+          tour.guide,
+          tour.status,
+          id
+        ]);
+
+        const [rows] = await pool.query(`
+          SELECT *
+          FROM LichDoan
+          WHERE id = ?
+        `, [id]);
+
+        return res.json({
+          success: true,
+          message: 'Cập nhật lịch đoàn thành công!',
+          data: rows[0]
+        });
+      }
+    }
+
+    /*
+     * Nếu code đã tồn tại → cập nhật
+     */
+    const [existingCode] = await pool.query(`
+      SELECT id
+      FROM LichDoan
+      WHERE code = ?
+      LIMIT 1
+    `, [tour.code]);
+
+    if (existingCode.length) {
+      const existingId = existingCode[0].id;
+
+      await pool.query(`
+        UPDATE LichDoan
+        SET name = ?,
+            ward = ?,
+            province = ?,
+            target = ?,
+            size = ?,
+            time = ?,
+            guide = ?,
+            status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [
+        tour.name,
+        tour.ward,
+        tour.province,
+        tour.target,
+        tour.size,
+        tour.time,
+        tour.guide,
+        tour.status,
+        existingId
+      ]);
+
+      const [rows] = await pool.query(`
+        SELECT *
+        FROM LichDoan
+        WHERE id = ?
+      `, [existingId]);
+
+      return res.json({
+        success: true,
+        message: 'Cập nhật lịch đoàn thành công!',
+        data: rows[0]
+      });
+    }
+
+    /*
+     * Không tồn tại → tạo mới
+     */
+    const [result] = await pool.query(`
+      INSERT INTO LichDoan
+      (
+        code,
+        name,
+        ward,
+        province,
+        target,
+        size,
+        time,
+        guide,
+        status
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      tour.code,
+      tour.name,
+      tour.ward,
+      tour.province,
+      tour.target,
+      tour.size,
+      tour.time,
+      tour.guide,
+      tour.status
+    ]);
+
+    const [rows] = await pool.query(`
+      SELECT *
+      FROM LichDoan
+      WHERE id = ?
+    `, [result.insertId]);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Lưu lịch đoàn thành công!',
+      data: rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi lưu lịch đoàn:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lưu lịch đoàn!',
+      error: error.message
+    });
   }
-
-  return res.status(201).json({ success: true, message: 'Lưu lịch đoàn thành công!', data: newTour });
 });
+
 
 /**
  * DELETE /api/tickets/tours/:id
  */
-router.delete('/tours/:id', (req, res) => {
-  const idStr = String(req.params.id);
-  TOURS_DB = TOURS_DB.filter(t => String(t.id) !== idStr && t.code !== idStr);
-  return res.json({ success: true, message: 'Xóa lịch đoàn thành công!' });
+router.delete('/tours/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const [result] = await pool.query(`
+      DELETE FROM LichDoan
+      WHERE id = ?
+         OR code = ?
+    `, [id, id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy lịch đoàn cần xóa!'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Xóa lịch đoàn thành công!'
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi xóa lịch đoàn:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể xóa lịch đoàn!',
+      error: error.message
+    });
+  }
 });
 
 
+/* =========================================================
+   MƯỢN / TRẢ HIỆN VẬT
+   ========================================================= */
 
 /**
  * GET /api/tickets/borrows
  */
-router.get('/borrows', (req, res) => {
-  return res.json({ success: true, count: BORROWS_DB.length, data: BORROWS_DB });
+router.get('/borrows', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT
+        mt.muontra_id AS id,
+        mt.hienvat_id,
+        hv.ma_hienvat AS artifactCode,
+        hv.ten_hienvat AS artifactName,
+        mt.ngay_muon,
+        mt.ngay_tra_du_kien,
+        mt.ngay_tra_thuc_te,
+        mt.don_vi_muon,
+        mt.muc_dich,
+        mt.trang_thai
+      FROM LichSuMuonTra mt
+      LEFT JOIN HienVat hv
+        ON mt.hienvat_id = hv.hienvat_id
+      ORDER BY mt.muontra_id DESC
+    `);
+
+    return res.json({
+      success: true,
+      count: rows.length,
+      data: rows
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi lấy lịch sử mượn trả:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lấy lịch sử mượn trả!',
+      error: error.message
+    });
+  }
 });
+
 
 /**
  * POST /api/tickets/borrows
  */
-router.post('/borrows', (req, res) => {
-  const item = req.body;
-  const idx = BORROWS_DB.findIndex(b => String(b.id) === String(item.id) || b.code === item.code);
-  if (idx !== -1) {
-    BORROWS_DB[idx] = item;
-  } else {
-    BORROWS_DB.unshift(item);
+router.post('/borrows', async (req, res) => {
+  try {
+    const item = req.body;
+
+    const hienvatId =
+      item.hienvat_id ||
+      item.hienvatId ||
+      item.artifactId;
+
+    if (!hienvatId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu mã hiện vật!'
+      });
+    }
+
+    /*
+     * Có id → cập nhật
+     */
+    if (item.id) {
+      const [existing] = await pool.query(`
+        SELECT muontra_id
+        FROM LichSuMuonTra
+        WHERE muontra_id = ?
+        LIMIT 1
+      `, [item.id]);
+
+      if (existing.length) {
+        await pool.query(`
+          UPDATE LichSuMuonTra
+          SET hienvat_id = ?,
+              ngay_muon = ?,
+              ngay_tra_du_kien = ?,
+              ngay_tra_thuc_te = ?,
+              don_vi_muon = ?,
+              muc_dich = ?,
+              trang_thai = ?
+          WHERE muontra_id = ?
+        `, [
+          hienvatId,
+          item.ngay_muon || item.borrowDate || new Date().toISOString().slice(0, 10),
+          item.ngay_tra_du_kien || item.expectedReturnDate || null,
+          item.ngay_tra_thuc_te || item.actualReturnDate || null,
+          item.don_vi_muon || item.borrower || '',
+          item.muc_dich || item.purpose || '',
+          item.trang_thai || item.status || 'DANG_MUON',
+          item.id
+        ]);
+
+        const [rows] = await pool.query(`
+          SELECT *
+          FROM LichSuMuonTra
+          WHERE muontra_id = ?
+        `, [item.id]);
+
+        return res.json({
+          success: true,
+          message: 'Cập nhật phiếu mượn trả thành công!',
+          data: rows[0]
+        });
+      }
+    }
+
+    /*
+     * Tạo phiếu mới
+     */
+    const [result] = await pool.query(`
+      INSERT INTO LichSuMuonTra
+      (
+        hienvat_id,
+        ngay_muon,
+        ngay_tra_du_kien,
+        ngay_tra_thuc_te,
+        don_vi_muon,
+        muc_dich,
+        trang_thai
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [
+      hienvatId,
+      item.ngay_muon ||
+      item.borrowDate ||
+      new Date().toISOString().slice(0, 10),
+
+      item.ngay_tra_du_kien ||
+      item.expectedReturnDate ||
+      null,
+
+      item.ngay_tra_thuc_te ||
+      item.actualReturnDate ||
+      null,
+
+      item.don_vi_muon ||
+      item.borrower ||
+      '',
+
+      item.muc_dich ||
+      item.purpose ||
+      '',
+
+      item.trang_thai ||
+      item.status ||
+      'DANG_MUON'
+    ]);
+
+    const [rows] = await pool.query(`
+      SELECT *
+      FROM LichSuMuonTra
+      WHERE muontra_id = ?
+    `, [result.insertId]);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Lưu phiếu mượn trả thành công!',
+      data: rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi lưu mượn trả:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lưu phiếu mượn trả!',
+      error: error.message
+    });
   }
-  return res.status(201).json({ success: true, data: item });
 });
+
+
+/**
+ * DELETE /api/tickets/borrows/:id
+ */
+router.delete('/borrows/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const [result] = await pool.query(`
+      DELETE FROM LichSuMuonTra
+      WHERE muontra_id = ?
+    `, [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy phiếu mượn trả!'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Xóa phiếu mượn trả thành công!'
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi xóa phiếu mượn trả:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể xóa phiếu mượn trả!',
+      error: error.message
+    });
+  }
+});
+
 
 module.exports = router;

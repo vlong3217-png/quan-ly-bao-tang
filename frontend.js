@@ -1400,7 +1400,7 @@ function closeTourModal() {
   if (modal) modal.classList.remove('active');
 }
 
-function handleSaveTour(event) {
+async function handleSaveTour(event) {
   event.preventDefault();
 
   const tourName = document.getElementById('modalTourName').value.trim();
@@ -1426,25 +1426,53 @@ function handleSaveTour(event) {
     status: 'Chờ Đón Tiếp'
   };
 
-  TOURS_DATA.unshift(newTour);
-  localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
-
-  // Sync to REST API backend for multi-device support
   try {
-    fetch(`${API_BASE}/tickets/tours`, {
+    const response = await fetch(`${API_BASE}/tickets/tours`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(newTour)
-    }).catch(() => { });
-  } catch (err) { }
+    });
 
-  renderTourTable(TOURS_DATA);
-  renderDashboardStats();
-  closeTourModal();
-  showToast(`Đã đăng ký thành công lịch đoàn ${newTour.code}!`, 'success');
+    const result = await response.json();
+
+    if (!response.ok || !result.success || !result.data) {
+      throw new Error(
+        result.message || result.error || `HTTP ${response.status}`
+      );
+    }
+
+    // Backend SQLite là nguồn dữ liệu chính
+    const savedTour = result.data;
+
+    TOURS_DATA.unshift(savedTour);
+
+    // LocalStorage chỉ dùng làm cache
+    localStorage.setItem(
+      'baotang_tours_data',
+      JSON.stringify(TOURS_DATA)
+    );
+
+    renderTourTable(TOURS_DATA);
+    closeTourModal();
+
+    showToast(
+      `Đã đăng ký thành công lịch đoàn ${savedTour.code}!`,
+      'success'
+    );
+
+  } catch (err) {
+    console.error('❌ Lỗi lưu lịch đoàn:', err);
+
+    showToast(
+      `Không thể lưu lịch đoàn: ${err.message}`,
+      'error'
+    );
+  }
 }
 
-function deleteTour(id) {
+async function deleteTour(id) {
   const tour = TOURS_DATA.find(t => String(t.id) === String(id) || t.code === String(id));
   const tourName = tour ? `${tour.code} - ${tour.name}` : 'lịch đoàn';
 
@@ -1452,19 +1480,45 @@ function deleteTour(id) {
     return;
   }
 
-  TOURS_DATA = TOURS_DATA.filter(t => String(t.id) !== String(id) && t.code !== String(id));
-  localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
-
-  // Sync DELETE to REST API backend
   try {
-    fetch(`${API_BASE}/tickets/tours/${id}`, {
-      method: 'DELETE'
-    }).catch(() => { });
-  } catch (err) { }
+    const response = await fetch(
+      `${API_BASE}/tickets/tours/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE'
+      }
+    );
 
-  renderTourTable(TOURS_DATA);
-  renderDashboardStats();
-  showToast(`Đã xóa thành công ${tourName}!`, 'info');
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || result.error || `HTTP ${response.status}`
+      );
+    }
+
+    // Chỉ xóa khỏi frontend sau khi SQLite xóa thành công
+    TOURS_DATA = TOURS_DATA.filter(
+      t => String(t.id) !== String(id) && t.code !== String(id)
+    );
+
+    // LocalStorage chỉ là cache
+    localStorage.setItem(
+      'baotang_tours_data',
+      JSON.stringify(TOURS_DATA)
+    );
+
+    renderTourTable(TOURS_DATA);
+
+    showToast(`Đã xóa thành công ${tourName}!`, 'info');
+
+  } catch (err) {
+    console.error('❌ Lỗi xóa lịch đoàn:', err);
+
+    showToast(
+      `Không thể xóa lịch đoàn: ${err.message}`,
+      'error'
+    );
+  }
 }
 
 function renderTourTable(tours) {
