@@ -492,6 +492,7 @@ function renderDashboardStats() {
   const elRevenue = document.getElementById('kpiTotalRevenue');
   const elArtifacts = document.getElementById('kpiTotalArtifacts');
   const elUsers = document.getElementById('kpiTotalUsers');
+  const elTours = document.getElementById('kpiTotalTours');
 
   let totalVisitors = 0;
   let totalRevenue = 0;
@@ -499,16 +500,25 @@ function renderDashboardStats() {
   let childCount = 0;
 
   (TICKETS_PURCHASED_DATA || []).forEach(t => {
-    totalVisitors += (t.totalQty || t.adultQty + t.childQty || 1);
+    totalVisitors += (t.totalQty || (t.adultQty || 0) + (t.childQty || 0) || 1);
     totalRevenue += (t.amount || 0);
     adultRevenue += (t.adultQty || 0) * 30000;
     childCount += (t.childQty || 0);
   });
 
-  if (elVisitors) elVisitors.textContent = totalVisitors;
+  // Calculate visitors from group tour bookings
+  let totalTourGuests = 0;
+  (TOURS_DATA || []).forEach(t => {
+    const qty = parseInt(t.size) || parseInt((t.size || '').replace(/\D/g, '')) || 0;
+    totalTourGuests += qty;
+  });
+  totalVisitors += totalTourGuests;
+
+  if (elVisitors) elVisitors.textContent = totalVisitors.toLocaleString('vi-VN');
   if (elRevenue) elRevenue.textContent = totalRevenue.toLocaleString('vi-VN') + ' VNĐ';
   if (elArtifacts) elArtifacts.textContent = (ARTIFACTS_DATA || []).length;
   if (elUsers) elUsers.textContent = (USERS_DATA || []).length;
+  if (elTours) elTours.textContent = (TOURS_DATA || []).length;
 
   // Render Tỷ Lệ Loại Vé
   const elAdultDisplay = document.getElementById('kpiAdultRevenueDisplay');
@@ -533,6 +543,41 @@ function renderDashboardStats() {
     if (elChildDisplay) elChildDisplay.textContent = '0 VNĐ (0%)';
     if (elChildBar) elChildBar.style.width = '0%';
   }
+
+  // Render group tours table widget on dashboard
+  renderDashboardToursWidget();
+}
+
+/**
+ * Render real-time Group Tour Bookings Table on Dashboard
+ */
+function renderDashboardToursWidget() {
+  const tbody = document.getElementById('dashToursTableBody');
+  if (!tbody) return;
+
+  if (!TOURS_DATA || TOURS_DATA.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+          <i class="fa-solid fa-bus-simple" style="font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--primary-gold); display: block;"></i>
+          <strong>Chưa có lịch đoàn tham quan nào được đăng ký.</strong>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = TOURS_DATA.map(t => `
+    <tr>
+      <td><strong>${t.code}</strong></td>
+      <td>${t.name}</td>
+      <td><span class="badge-status badge-info">${t.target || 'Du khách'}</span></td>
+      <td><strong>${t.size}</strong></td>
+      <td>${t.time}</td>
+      <td>${t.guide}</td>
+      <td><span class="badge-status badge-warning">${t.status}</span></td>
+    </tr>
+  `).join('');
 }
 
 /**
@@ -1394,6 +1439,7 @@ function handleSaveTour(event) {
   } catch (err) { }
 
   renderTourTable(TOURS_DATA);
+  renderDashboardStats();
   closeTourModal();
   showToast(`Đã đăng ký thành công lịch đoàn ${newTour.code}!`, 'success');
 }
@@ -1417,6 +1463,7 @@ function deleteTour(id) {
   } catch (err) { }
 
   renderTourTable(TOURS_DATA);
+  renderDashboardStats();
   showToast(`Đã xóa thành công ${tourName}!`, 'info');
 }
 
