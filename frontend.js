@@ -267,11 +267,11 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Setup Responsive Custom Dropdown for Select elements to prevent OS-level overflow on all devices
  */
 function initCustomSelects() {
-  const selectIds = ['filterRegionSelect', 'filterLanguageSelect', 'bookingSlot', 'filterInventoryLoc', 'modalTourProvince', 'modalTourTarget'];
-  selectIds.forEach(id => {
-    const select = document.getElementById(id);
+  const selects = Array.from(document.querySelectorAll('select.form-select, select.custom-select-target'));
+  selects.forEach(select => {
     if (!select || select.dataset.customized === 'true') return;
     select.dataset.customized = 'true';
+    const id = select.id || `sel_${Math.random().toString(36).substr(2, 7)}`;
 
     // Hide original native select
     select.style.display = 'none';
@@ -317,7 +317,7 @@ function initCustomSelects() {
       const searchBox = document.createElement('div');
       searchBox.className = 'custom-select-search-container';
       searchBox.style.cssText = 'padding: 6px; position: sticky; top: 0; background: #ffffff; z-index: 10; border-bottom: 1px solid rgba(217, 119, 6, 0.2); margin-bottom: 4px;';
-      
+
       searchInput = document.createElement('input');
       searchInput.type = 'text';
       searchInput.className = 'form-input custom-select-search-input';
@@ -699,7 +699,7 @@ function renderCatalog(artifacts) {
       <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 3.5rem 1.5rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">
         <i class="fa-solid fa-boxes-packing" style="font-size: 3rem; margin-bottom: 1rem; color: var(--primary-gold); display: block;"></i>
         <strong style="font-size: 1.15rem; color: var(--text-primary);">Chưa có dữ liệu di sản / dân tộc nào được khởi tạo.</strong>
-        <p style="font-size: 0.9rem; margin-top: 0.5rem; color: var(--text-muted);">Cán bộ có thể nhập hồ sơ di sản mới tại màn hình <strong>Kho Di Sản</strong> (UI-13).</p>
+        <p style="font-size: 0.9rem; margin-top: 0.5rem; color: var(--text-muted);">Cán bộ có thể nhập hồ sơ di sản mới tại màn hình <strong>Kho Di Sản</strong>.</p>
       </div>
     `;
     return;
@@ -1142,6 +1142,11 @@ function openArtifactModal(id = null) {
     document.getElementById('modalArtImgUrl').value = '';
     editingArtifactImages = [];
   }
+
+  ['modalArtEthnic', 'modalArtRegion', 'modalArtLocation'].forEach(sId => {
+    const sEl = document.getElementById(sId);
+    if (sEl) sEl.dispatchEvent(new Event('change'));
+  });
 
   renderModalGallery();
 
