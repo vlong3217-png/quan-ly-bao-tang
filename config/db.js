@@ -38,9 +38,25 @@ async function getDb() {
           full_name TEXT,
           email TEXT,
           phone TEXT,
-          role TEXT DEFAULT 'STAFF'
+          role TEXT DEFAULT 'STAFF',
+          avatar TEXT
         );
       `);
+
+      try {
+        await db.exec(`ALTER TABLE Users ADD COLUMN avatar TEXT;`);
+      } catch (e) { }
+
+      const existingUser = await db.get('SELECT user_id FROM Users LIMIT 1');
+      if (!existingUser) {
+        await db.run(`
+          INSERT INTO Users (username, password, full_name, email, phone, role, avatar)
+          VALUES 
+          ('admin', 'admin123', 'Phạm Đức Quang', 'admin@baotang.gov.vn', '0909090909', 'ADMIN', 'avatar/01.jpg'),
+          ('banve01', 'password123', 'Trần Thị Mai', 'mai.tran@baotang.gov.vn', '0912345678', 'BANVE', 'avatar/02.jpg'),
+          ('thukho01', 'password123', 'Lê Hoàng Nam', 'nam.le@baotang.gov.vn', '0934567890', 'THUKHO', 'avatar/05.jpg');
+        `);
+      }
 
       // Auto-create LoaiVe table if not exists
       await db.exec(`

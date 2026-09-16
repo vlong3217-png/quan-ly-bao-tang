@@ -52,9 +52,17 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    const roleNameMap = {
+      ADMIN: 'Quản Trị Viên Hệ Thống',
+      THUKHO: 'Cán Bộ Kiểm Kê & Thủ Kho',
+      BANVE: 'Nhân Viên Bán Vé & Đón Tiếp',
+      DUKHACH: 'Hội Viên Khách Tham Quan',
+      KHACH: 'Hội Viên Khách Tham Quan'
+    };
+
     return res.json({
       success: true,
-      message: `Đăng nhập thành công! Vai trò: ${user.roleName || user.role}`,
+      message: `Đăng nhập thành công! Vai trò: ${roleNameMap[user.role] || user.role}`,
       token: token,
       user: {
         id: user.user_id || user.id,
@@ -63,7 +71,8 @@ router.post('/login', async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        roleName: user.roleName || user.role
+        roleName: roleNameMap[user.role] || user.role,
+        avatar: user.avatar || (user.role === 'THUKHO' ? 'avatar/05.jpg' : (user.role === 'BANVE' ? 'avatar/02.jpg' : 'avatar/01.jpg'))
       }
     });
   } catch (error) {
