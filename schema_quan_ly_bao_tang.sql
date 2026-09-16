@@ -1,129 +1,422 @@
 -- ============================================================
--- SCRIPT KHOI TAO CO SO DU LIEU - HE THONG QUAN LY BAO TANG
+-- DATABASE: HE THONG QUAN LY BAO TANG
+-- PHIEN BAN SQLITE
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS quan_ly_bao_tang 
-CHARACTER SET utf8mb4 
-COLLATE utf8mb4_unicode_ci;
+PRAGMA foreign_keys = ON;
 
-USE quan_ly_bao_tang;
 
+-- ============================================================
 -- 1. BANG NGUOI DUNG
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS Users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100),
-    phone VARCHAR(20),
-    role ENUM('ADMIN', 'THUKHO', 'BANVE', 'DUKHACH') NOT NULL DEFAULT 'DUKHACH',
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT,
+    role TEXT NOT NULL DEFAULT 'DUKHACH'
+        CHECK (role IN ('ADMIN', 'THUKHO', 'BANVE', 'DUKHACH')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
+
+-- ============================================================
 -- 2. BANG VUNG VAN HOA
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS VungVanHoa (
-    vung_id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_vung VARCHAR(100) NOT NULL,
+    vung_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ten_vung TEXT NOT NULL,
     mo_ta TEXT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
+
+-- ============================================================
 -- 3. BANG DAN TOC
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS DanToc (
-    dantoc_id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_dantoc VARCHAR(100) NOT NULL,
-    nhom_ngon_ngu VARCHAR(100),
-    vung_id INT,
-    FOREIGN KEY (vung_id) REFERENCES VungVanHoa(vung_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    dantoc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ten_dantoc TEXT NOT NULL,
+    nhom_ngon_ngu TEXT,
+    vung_id INTEGER,
 
+    FOREIGN KEY (vung_id)
+        REFERENCES VungVanHoa(vung_id)
+        ON DELETE SET NULL
+);
+
+
+-- ============================================================
 -- 4. BANG KHU TRUNG BAY / KHO
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS KhuTrungBay (
-    khu_id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_khu VARCHAR(100) NOT NULL,
-    loai_khu ENUM('KHO_BAO_QUAN', 'TRUNG_BAY_INDOOR', 'TRUNG_BAY_OUTDOOR') NOT NULL DEFAULT 'TRUNG_BAY_INDOOR',
-    vi_tri VARCHAR(255)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    khu_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ten_khu TEXT NOT NULL,
 
+    loai_khu TEXT NOT NULL DEFAULT 'TRUNG_BAY_INDOOR'
+        CHECK (
+            loai_khu IN (
+                'KHO_BAO_QUAN',
+                'TRUNG_BAY_INDOOR',
+                'TRUNG_BAY_OUTDOOR'
+            )
+        ),
+
+    vi_tri TEXT
+);
+
+
+-- ============================================================
 -- 5. BANG HIEN VAT
-CREATE TABLE IF NOT EXISTS HienVat (
-    hienvat_id INT AUTO_INCREMENT PRIMARY KEY,
-    ma_hienvat VARCHAR(50) NOT NULL UNIQUE,
-    ten_hienvat VARCHAR(200) NOT NULL,
-    hinh_anh VARCHAR(255),
-    nien_dai VARCHAR(100),
-    chat_lieu VARCHAR(100),
-    kich_thuoc VARCHAR(100),
-    tinh_trang VARCHAR(100) DEFAULT 'Nguyên vẹn',
-    y_nghia_van_hoa TEXT,
-    dantoc_id INT,
-    khu_id INT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (dantoc_id) REFERENCES DanToc(dantoc_id) ON DELETE SET NULL,
-    FOREIGN KEY (khu_id) REFERENCES KhuTrungBay(khu_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- ============================================================
 
+CREATE TABLE IF NOT EXISTS HienVat (
+    hienvat_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    ma_hienvat TEXT NOT NULL UNIQUE,
+    ten_hienvat TEXT NOT NULL,
+
+    hinh_anh TEXT,
+    nien_dai TEXT,
+    chat_lieu TEXT,
+    kich_thuoc TEXT,
+
+    tinh_trang TEXT DEFAULT 'Nguyên vẹn',
+
+    y_nghia_van_hoa TEXT,
+
+    dantoc_id INTEGER,
+    khu_id INTEGER,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (dantoc_id)
+        REFERENCES DanToc(dantoc_id)
+        ON DELETE SET NULL,
+
+    FOREIGN KEY (khu_id)
+        REFERENCES KhuTrungBay(khu_id)
+        ON DELETE SET NULL
+);
+
+
+-- ============================================================
 -- 6. BANG LICH SU MUON TRA
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS LichSuMuonTra (
-    muontra_id INT AUTO_INCREMENT PRIMARY KEY,
-    hienvat_id INT NOT NULL,
+    muontra_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    hienvat_id INTEGER NOT NULL,
+
     ngay_muon DATE NOT NULL,
     ngay_tra_du_kien DATE,
     ngay_tra_thuc_te DATE,
-    don_vi_muon VARCHAR(255),
-    muc_dich TEXT,
-    trang_thai ENUM('DANG_MUON', 'DA_TRA') DEFAULT 'DANG_MUON',
-    FOREIGN KEY (hienvat_id) REFERENCES HienVat(hienvat_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+    don_vi_muon TEXT,
+    muc_dich TEXT,
+
+    trang_thai TEXT DEFAULT 'DANG_MUON'
+        CHECK (
+            trang_thai IN (
+                'DANG_MUON',
+                'DA_TRA'
+            )
+        ),
+
+    FOREIGN KEY (hienvat_id)
+        REFERENCES HienVat(hienvat_id)
+        ON DELETE CASCADE
+);
+
+
+-- ============================================================
 -- 7. BANG LICH SU BAO QUAN
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS LichSuBaoQuan (
-    baoquan_id INT AUTO_INCREMENT PRIMARY KEY,
-    hienvat_id INT NOT NULL,
+    baoquan_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    hienvat_id INTEGER NOT NULL,
+
     ngay_kiem_tra DATE NOT NULL,
+
     mo_ta_tinh_trang TEXT,
     bien_phap_khac_phuc TEXT,
-    nguoi_thuc_hien VARCHAR(100),
-    FOREIGN KEY (hienvat_id) REFERENCES HienVat(hienvat_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    nguoi_thuc_hien TEXT,
 
+    FOREIGN KEY (hienvat_id)
+        REFERENCES HienVat(hienvat_id)
+        ON DELETE CASCADE
+);
+
+
+-- ============================================================
 -- 8. BANG LOAI VE
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS LoaiVe (
-    loaive_id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_loaive VARCHAR(100) NOT NULL,
-    gia_ve DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    loaive_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    ten_loaive TEXT NOT NULL,
+
+    gia_ve REAL NOT NULL DEFAULT 0,
+
     ghi_chu TEXT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
+
+-- ============================================================
 -- 9. BANG VE THAM QUAN
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS VeThamQuan (
-    ve_id INT AUTO_INCREMENT PRIMARY KEY,
-    ma_qr VARCHAR(255) NOT NULL UNIQUE,
-    loaive_id INT NOT NULL,
-    user_id INT,
+    ve_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    ma_qr TEXT NOT NULL UNIQUE,
+
+    loaive_id INTEGER NOT NULL,
+
+    user_id INTEGER,
+
+    -- Thong tin khach dat ve
+    ten_khach TEXT,
+    so_dien_thoai TEXT,
+
+    -- Thong tin lich tham quan
+    ngay_tham_quan DATE,
+    khung_gio TEXT,
+
+    -- So luong ve
+    so_nguoi_lon INTEGER DEFAULT 0,
+    so_sinh_vien INTEGER DEFAULT 0,
+    so_tre_em INTEGER DEFAULT 0,
+    so_nguoi_nuoc_ngoai INTEGER DEFAULT 0,
+
+    -- Thanh tien
+    tong_tien REAL DEFAULT 0,
+
+    -- Phuong thuc thanh toan
+    phuong_thuc_thanh_toan TEXT DEFAULT 'QR_BANK',
+
     ngay_mua DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ngay_su_dung DATE NOT NULL,
-    trang_thai ENUM('CHUA_SU_DUNG', 'DA_SOAT_VE', 'HUY') DEFAULT 'CHUA_SU_DUNG',
-    FOREIGN KEY (loaive_id) REFERENCES LoaiVe(loaive_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- DULIEU MAU DEMO (SEED DATA)
-INSERT INTO VungVanHoa (ten_vung, mo_ta) VALUES 
-('Vùng Việt Bắc', 'Khu vực trưng bày di sản văn hóa các dân tộc vùng núi phía Bắc'),
-('Vùng Tây Nguyên', 'Khu vực không gian văn hóa cồng chiêng và nhà Rông Tây Nguyên');
+    -- Trang thai ve
+    trang_thai TEXT DEFAULT 'CHUA_SU_DUNG'
+        CHECK (
+            trang_thai IN (
+                'CHUA_SU_DUNG',
+                'DA_SOAT_VE',
+                'HUY'
+            )
+        ),
 
-INSERT INTO DanToc (ten_dantoc, nhom_ngon_ngu, vung_id) VALUES 
-('Tày', 'Tày - Thái', 1),
-('Gia Rai', 'Môn - Khmer', 2);
+    used_at DATETIME,
 
-INSERT INTO KhuTrungBay (ten_khu, loai_khu, vi_tri) VALUES 
-('Phòng Trưng Bày 1', 'TRUNG_BAY_INDOOR', 'Tầng 1 - Khu A'),
-('Phòng Trưng Bày 2', 'TRUNG_BAY_INDOOR', 'Tầng 1 - Khu B'),
-('Phòng Trưng Bày 3', 'TRUNG_BAY_INDOOR', 'Tầng 2 - Khu A'),
-('Phòng Trưng Bày 4', 'TRUNG_BAY_INDOOR', 'Tầng 2 - Khu B'),
-('Phòng Trưng Bày 5', 'TRUNG_BAY_INDOOR', 'Tầng 2 - Khu C'),
-('Kho Bảo Quản 1', 'KHO_BAO_QUAN', 'Tầng Hầm - Khu B');
+    FOREIGN KEY (loaive_id)
+        REFERENCES LoaiVe(loaive_id)
+        ON DELETE CASCADE,
 
-INSERT INTO LoaiVe (ten_loaive, gia_ve, ghi_chu) VALUES 
-('Vé Tham Quan Bảo Tàng', 30000.00, 'Vé vào cổng phổ thông'),
-('Vé Trẻ Em Dưới 5 Tuổi', 0.00, 'Miễn phí 100% cho trẻ em dưới 5 tuổi');
+    FOREIGN KEY (user_id)
+        REFERENCES Users(user_id)
+        ON DELETE SET NULL
+);
+
+
+-- ============================================================
+-- 10. BANG LICH DOAN THAM QUAN
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS LichDoan (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    code TEXT NOT NULL UNIQUE,
+
+    name TEXT NOT NULL,
+
+    ward TEXT,
+    province TEXT,
+
+    target TEXT,
+
+    size TEXT,
+
+    time TEXT,
+
+    guide TEXT,
+
+    status TEXT DEFAULT 'Chờ Đón Tiếp',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- ============================================================
+-- INDEX
+-- ============================================================
+
+CREATE INDEX IF NOT EXISTS idx_hienvat_ma
+ON HienVat(ma_hienvat);
+
+
+CREATE INDEX IF NOT EXISTS idx_hienvat_ten
+ON HienVat(ten_hienvat);
+
+
+CREATE INDEX IF NOT EXISTS idx_hienvat_dantoc
+ON HienVat(dantoc_id);
+
+
+CREATE INDEX IF NOT EXISTS idx_hienvat_khu
+ON HienVat(khu_id);
+
+
+CREATE INDEX IF NOT EXISTS idx_muontra_hienvat
+ON LichSuMuonTra(hienvat_id);
+
+
+CREATE INDEX IF NOT EXISTS idx_muontra_trangthai
+ON LichSuMuonTra(trang_thai);
+
+
+CREATE INDEX IF NOT EXISTS idx_ve_maqr
+ON VeThamQuan(ma_qr);
+
+
+CREATE INDEX IF NOT EXISTS idx_ve_trangthai
+ON VeThamQuan(trang_thai);
+
+
+CREATE INDEX IF NOT EXISTS idx_ve_ngaythamquan
+ON VeThamQuan(ngay_tham_quan);
+
+
+CREATE INDEX IF NOT EXISTS idx_lichdoan_code
+ON LichDoan(code);
+
+
+CREATE INDEX IF NOT EXISTS idx_lichdoan_status
+ON LichDoan(status);
+
+
+-- ============================================================
+-- DU LIEU MAU
+-- ============================================================
+
+
+-- ------------------------------------------------------------
+-- VUNG VAN HOA
+-- ------------------------------------------------------------
+
+INSERT OR IGNORE INTO VungVanHoa
+(vung_id, ten_vung, mo_ta)
+VALUES
+(
+    1,
+    'Vùng Việt Bắc',
+    'Khu vực trưng bày di sản văn hóa các dân tộc vùng núi phía Bắc'
+),
+(
+    2,
+    'Vùng Tây Nguyên',
+    'Khu vực không gian văn hóa cồng chiêng và nhà Rông Tây Nguyên'
+);
+
+
+-- ------------------------------------------------------------
+-- DAN TOC
+-- ------------------------------------------------------------
+
+INSERT OR IGNORE INTO DanToc
+(dantoc_id, ten_dantoc, nhom_ngon_ngu, vung_id)
+VALUES
+(
+    1,
+    'Tày',
+    'Tày - Thái',
+    1
+),
+(
+    2,
+    'Gia Rai',
+    'Môn - Khmer',
+    2
+);
+
+
+-- ------------------------------------------------------------
+-- KHU TRUNG BAY
+-- ------------------------------------------------------------
+
+INSERT OR IGNORE INTO KhuTrungBay
+(khu_id, ten_khu, loai_khu, vi_tri)
+VALUES
+(
+    1,
+    'Phòng Trưng Bày 1',
+    'TRUNG_BAY_INDOOR',
+    'Tầng 1 - Khu A'
+),
+(
+    2,
+    'Phòng Trưng Bày 2',
+    'TRUNG_BAY_INDOOR',
+    'Tầng 1 - Khu B'
+),
+(
+    3,
+    'Phòng Trưng Bày 3',
+    'TRUNG_BAY_INDOOR',
+    'Tầng 2 - Khu A'
+),
+(
+    4,
+    'Phòng Trưng Bày 4',
+    'TRUNG_BAY_INDOOR',
+    'Tầng 2 - Khu B'
+),
+(
+    5,
+    'Phòng Trưng Bày 5',
+    'TRUNG_BAY_INDOOR',
+    'Tầng 2 - Khu C'
+),
+(
+    6,
+    'Kho Bảo Quản 1',
+    'KHO_BAO_QUAN',
+    'Tầng Hầm - Khu B'
+);
+
+
+-- ------------------------------------------------------------
+-- LOAI VE
+-- ------------------------------------------------------------
+
+INSERT OR IGNORE INTO LoaiVe
+(loaive_id, ten_loaive, gia_ve, ghi_chu)
+VALUES
+(
+    1,
+    'Vé Tham Quan Bảo Tàng',
+    30000,
+    'Vé vào cổng phổ thông'
+),
+(
+    2,
+    'Vé Trẻ Em Dưới 5 Tuổi',
+    0,
+    'Miễn phí 100% cho trẻ em dưới 5 tuổi'
+);
+
+
+-- ============================================================
+-- KET THUC
+-- ============================================================

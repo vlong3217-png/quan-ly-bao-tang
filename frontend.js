@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Setup Responsive Custom Dropdown for Select elements to prevent OS-level overflow on all devices
  */
 function initCustomSelects() {
-  const selectIds = ['filterRegionSelect', 'filterLanguageSelect', 'bookingSlot', 'filterInventoryLoc'];
+  const selectIds = ['filterRegionSelect', 'filterLanguageSelect', 'bookingSlot', 'filterInventoryLoc', 'modalTourProvince', 'modalTourTarget'];
   selectIds.forEach(id => {
     const select = document.getElementById(id);
     if (!select || select.dataset.customized === 'true') return;
@@ -312,8 +312,39 @@ function initCustomSelects() {
     menu.className = 'custom-select-menu';
     menu.setAttribute('role', 'listbox');
 
+    let searchInput = null;
+    if (select.options.length > 5) {
+      const searchBox = document.createElement('div');
+      searchBox.className = 'custom-select-search-container';
+      searchBox.style.cssText = 'padding: 6px; position: sticky; top: 0; background: #ffffff; z-index: 10; border-bottom: 1px solid rgba(217, 119, 6, 0.2); margin-bottom: 4px;';
+      
+      searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.className = 'form-input custom-select-search-input';
+      searchInput.placeholder = '🔍 Tìm kiếm...';
+      searchInput.style.cssText = 'width: 100%; height: 34px; padding: 4px 10px; font-size: 0.85rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; background: #f8fafc; color: #0f172a;';
+
+      const normalizeStr = (str) => (str || '').toLowerCase().replace(/đ/g, "d").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      searchInput.addEventListener('click', (e) => e.stopPropagation());
+      searchInput.addEventListener('input', (e) => {
+        const term = normalizeStr(e.target.value);
+        const options = optionsList.querySelectorAll('.custom-select-option');
+        options.forEach(optEl => {
+          const text = normalizeStr(optEl.textContent);
+          optEl.style.display = text.includes(term) ? 'flex' : 'none';
+        });
+      });
+
+      searchBox.appendChild(searchInput);
+      menu.appendChild(searchBox);
+    }
+
+    const optionsList = document.createElement('div');
+    optionsList.className = 'custom-select-options-list';
+
     function buildOptions() {
-      menu.innerHTML = '';
+      optionsList.innerHTML = '';
       Array.from(select.options).forEach((opt, idx) => {
         const optionEl = document.createElement('div');
         const isSelected = idx === select.selectedIndex;
@@ -336,7 +367,7 @@ function initCustomSelects() {
           select.value = opt.value;
           labelSpan.textContent = opt.text;
 
-          menu.querySelectorAll('.custom-select-option').forEach(el => {
+          optionsList.querySelectorAll('.custom-select-option').forEach(el => {
             el.classList.remove('selected');
             const ck = el.querySelector('.fa-check');
             if (ck) ck.remove();
@@ -351,11 +382,12 @@ function initCustomSelects() {
           select.dispatchEvent(new Event('change', { bubbles: true }));
         });
 
-        menu.appendChild(optionEl);
+        optionsList.appendChild(optionEl);
       });
     }
 
     buildOptions();
+    menu.appendChild(optionsList);
     wrapper.appendChild(menu);
     select.parentNode.insertBefore(wrapper, select.nextSibling);
 
@@ -366,14 +398,24 @@ function initCustomSelects() {
       document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
         if (w !== wrapper) w.classList.remove('open');
       });
-      wrapper.classList.toggle('open', !isOpen);
+      const willOpen = !isOpen;
+      wrapper.classList.toggle('open', willOpen);
+      if (willOpen && searchInput) {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
+        setTimeout(() => searchInput.focus(), 60);
+      }
     });
 
     // Keyboard navigation
     trigger.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        wrapper.classList.toggle('open');
+        const willOpen = !wrapper.classList.contains('open');
+        wrapper.classList.toggle('open', willOpen);
+        if (willOpen && searchInput) {
+          setTimeout(() => searchInput.focus(), 60);
+        }
       } else if (e.key === 'Escape') {
         wrapper.classList.remove('open');
       }
@@ -382,21 +424,19 @@ function initCustomSelects() {
     // Sync if native select changed programmatically
     select.addEventListener('change', () => {
       const curOpt = select.options[select.selectedIndex];
-      if (curOpt) {
-        labelSpan.textContent = curOpt.text;
-        menu.querySelectorAll('.custom-select-option').forEach(el => {
-          const isSel = el.getAttribute('data-value') === curOpt.value;
-          el.classList.toggle('selected', isSel);
-          const ck = el.querySelector('.fa-check');
-          if (isSel && !ck) {
-            const checkIcon = document.createElement('i');
-            checkIcon.className = 'fa-solid fa-check';
-            el.appendChild(checkIcon);
-          } else if (!isSel && ck) {
-            ck.remove();
-          }
-        });
-      }
+      labelSpan.textContent = curOpt ? curOpt.text : '';
+      optionsList.querySelectorAll('.custom-select-option').forEach(el => {
+        const isSel = curOpt && el.getAttribute('data-value') === curOpt.value;
+        el.classList.toggle('selected', isSel);
+        const ck = el.querySelector('.fa-check');
+        if (isSel && !ck) {
+          const checkIcon = document.createElement('i');
+          checkIcon.className = 'fa-solid fa-check';
+          el.appendChild(checkIcon);
+        } else if (!isSel && ck) {
+          ck.remove();
+        }
+      });
     });
   });
 
@@ -1441,7 +1481,10 @@ function openTourModal() {
     const elGuide = document.getElementById('modalTourGuide');
     if (elName) elName.value = '';
     if (elWard) elWard.value = '';
-    if (elProv) elProv.value = '';
+    if (elProv) {
+      elProv.value = '';
+      elProv.dispatchEvent(new Event('change'));
+    }
     if (elSize) elSize.value = '';
     if (elGuide) elGuide.value = '';
     modal.classList.add('active');
