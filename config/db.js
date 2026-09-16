@@ -42,6 +42,79 @@ async function getDb() {
         );
       `);
 
+      // Auto-create LoaiVe table if not exists
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS LoaiVe (
+          loaive_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ten_loaive TEXT NOT NULL,
+          gia_ve REAL NOT NULL DEFAULT 0.00,
+          ghi_chu TEXT
+        );
+      `);
+
+      // Seed default LoaiVe if table is empty
+      const existingLoaiVe = await db.get('SELECT loaive_id FROM LoaiVe LIMIT 1');
+      if (!existingLoaiVe) {
+        await db.run(`
+          INSERT INTO LoaiVe (ten_loaive, gia_ve, ghi_chu)
+          VALUES ('Vé Tham Quan Phổ Thông', 30000, 'Vé mặc định')
+        `);
+      }
+
+      // Auto-create VeThamQuan table if not exists
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS VeThamQuan (
+          ve_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ma_qr TEXT UNIQUE NOT NULL,
+          loaive_id INTEGER,
+          ten_khach TEXT,
+          so_dien_thoai TEXT,
+          ngay_tham_quan TEXT,
+          khung_gio TEXT,
+          so_nguoi_lon INTEGER DEFAULT 0,
+          so_sinh_vien INTEGER DEFAULT 0,
+          so_tre_em INTEGER DEFAULT 0,
+          so_nguoi_nuoc_ngoai INTEGER DEFAULT 0,
+          tong_tien REAL DEFAULT 0.00,
+          phuong_thuc_thanh_toan TEXT DEFAULT 'QR_BANK',
+          trang_thai TEXT DEFAULT 'CHUA_SU_DUNG',
+          used_at TEXT,
+          ngay_mua TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // Auto-create LichDoan table if not exists
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS LichDoan (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          code TEXT UNIQUE,
+          name TEXT NOT NULL,
+          ward TEXT,
+          province TEXT,
+          target TEXT,
+          size TEXT,
+          time TEXT,
+          guide TEXT,
+          status TEXT DEFAULT 'Chờ Đón Tiếp',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // Auto-create LichSuMuonTra table if not exists
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS LichSuMuonTra (
+          muontra_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hienvat_id INTEGER NOT NULL,
+          ngay_muon TEXT NOT NULL,
+          ngay_tra_du_kien TEXT,
+          ngay_tra_thuc_te TEXT,
+          don_vi_muon TEXT,
+          muc_dich TEXT,
+          trang_thai TEXT DEFAULT 'DANG_MUON'
+        );
+      `);
+
       return db;
     })();
   }

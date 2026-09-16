@@ -589,16 +589,41 @@ router.post('/borrows', async (req, res) => {
   try {
     const item = req.body;
 
-    const hienvatId =
+    const rawArtifact =
       item.hienvat_id ||
       item.hienvatId ||
-      item.artifactId;
+      item.artifactId ||
+      item.artifact;
+
+    let hienvatId = null;
+
+    if (rawArtifact) {
+      const [hvRows] = await pool.query(`
+        SELECT hienvat_id
+        FROM HienVat
+        WHERE hienvat_id = ?
+           OR ma_hienvat = ?
+           OR ten_hienvat = ?
+           OR ten_hienvat LIKE ?
+        LIMIT 1
+      `, [rawArtifact, rawArtifact, rawArtifact, `%${rawArtifact}%`]);
+
+      if (hvRows.length) {
+        hienvatId = hvRows[0].hienvat_id;
+      }
+    }
 
     if (!hienvatId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thiếu mã hiện vật!'
-      });
+      const [firstHv] = await pool.query(`SELECT hienvat_id FROM HienVat LIMIT 1`);
+      if (firstHv.length) {
+        hienvatId = firstHv[0].hienvat_id;
+      } else {
+        const [insertedHv] = await pool.query(`
+          INSERT INTO HienVat (ma_hienvat, ten_hienvat)
+          VALUES (?, ?)
+        `, [`HV-${Date.now()}`, rawArtifact || 'Hiện vật di sản']);
+        hienvatId = insertedHv.insertId;
+      }
     }
 
     /*
@@ -606,38 +631,51 @@ router.post('/borrows', async (req, res) => {
      */
     if (item.id) {
       const [existing] = await pool.query(`
-        SELECT muontra_id
+        SELECT muontra_id, hienvat_id
         FROM LichSuMuonTra
         WHERE muontra_id = ?
         LIMIT 1
       `, [item.id]);
 
       if (existing.length) {
+        const targetHienVatId = hienvatId || existing[0].hienvat_id;
+
         await pool.query(`
           UPDATE LichSuMuonTra
           SET hienvat_id = ?,
-              ngay_muon = ?,
-              ngay_tra_du_kien = ?,
-              ngay_tra_thuc_te = ?,
-              don_vi_muon = ?,
-              muc_dich = ?,
-              trang_thai = ?
+              ngay_muon = COALESCE(?, ngay_muon),
+              ngay_tra_du_kien = COALESCE(?, ngay_tra_du_kien),
+              ngay_tra_thuc_te = COALESCE(?, ngay_tra_thuc_te),
+              don_vi_muon = COALESCE(?, don_vi_muon),
+              muc_dich = COALESCE(?, muc_dich),
+              trang_thai = COALESCE(?, trang_thai)
           WHERE muontra_id = ?
         `, [
-          hienvatId,
-          item.ngay_muon || item.borrowDate || new Date().toISOString().slice(0, 10),
-          item.ngay_tra_du_kien || item.expectedReturnDate || null,
+          targetHienVatId,
+          item.ngay_muon || item.borrowDate || null,
+          item.ngay_tra_du_kien || item.expectedReturnDate || item.returnDate || null,
           item.ngay_tra_thuc_te || item.actualReturnDate || null,
-          item.don_vi_muon || item.borrower || '',
-          item.muc_dich || item.purpose || '',
-          item.trang_thai || item.status || 'DANG_MUON',
+          item.don_vi_muon || item.borrower || null,
+          item.muc_dich || item.purpose || null,
+          item.trang_thai || item.status || null,
           item.id
         ]);
 
         const [rows] = await pool.query(`
-          SELECT *
-          FROM LichSuMuonTra
-          WHERE muontra_id = ?
+          SELECT
+            mt.muontra_id AS id,
+            mt.hienvat_id,
+            hv.ma_hienvat AS artifactCode,
+            COALESCE(hv.ten_hienvat, 'Hiện vật di sản') AS artifactName,
+            mt.ngay_muon,
+            mt.ngay_tra_du_kien,
+            mt.ngay_tra_thuc_te,
+            mt.don_vi_muon,
+            mt.muc_dich,
+            mt.trang_thai
+          FROM LichSuMuonTra mt
+          LEFT JOIN HienVat hv ON mt.hienvat_id = hv.hienvat_id
+          WHERE mt.muontra_id = ?
         `, [item.id]);
 
         return res.json({
@@ -665,35 +703,29 @@ router.post('/borrows', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `, [
       hienvatId,
-      item.ngay_muon ||
-      item.borrowDate ||
-      new Date().toISOString().slice(0, 10),
-
-      item.ngay_tra_du_kien ||
-      item.expectedReturnDate ||
-      null,
-
-      item.ngay_tra_thuc_te ||
-      item.actualReturnDate ||
-      null,
-
-      item.don_vi_muon ||
-      item.borrower ||
-      '',
-
-      item.muc_dich ||
-      item.purpose ||
-      '',
-
-      item.trang_thai ||
-      item.status ||
-      'DANG_MUON'
+      item.ngay_muon || item.borrowDate || new Date().toISOString().slice(0, 10),
+      item.ngay_tra_du_kien || item.expectedReturnDate || item.returnDate || null,
+      item.ngay_tra_thuc_te || item.actualReturnDate || null,
+      item.don_vi_muon || item.borrower || 'Đơn vị triển lãm',
+      item.muc_dich || item.purpose || 'Mượn triển lãm',
+      item.trang_thai || item.status || 'DANG_MUON'
     ]);
 
     const [rows] = await pool.query(`
-      SELECT *
-      FROM LichSuMuonTra
-      WHERE muontra_id = ?
+      SELECT
+        mt.muontra_id AS id,
+        mt.hienvat_id,
+        hv.ma_hienvat AS artifactCode,
+        COALESCE(hv.ten_hienvat, 'Hiện vật di sản') AS artifactName,
+        mt.ngay_muon,
+        mt.ngay_tra_du_kien,
+        mt.ngay_tra_thuc_te,
+        mt.don_vi_muon,
+        mt.muc_dich,
+        mt.trang_thai
+      FROM LichSuMuonTra mt
+      LEFT JOIN HienVat hv ON mt.hienvat_id = hv.hienvat_id
+      WHERE mt.muontra_id = ?
     `, [result.insertId]);
 
     return res.status(201).json({
