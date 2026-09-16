@@ -153,10 +153,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Sync with live Node.js REST API Backend for real-time multi-device synchronization
   try {
-    const [resArt, resTour, resBorrow] = await Promise.all([
+    const [resArt, resTour, resBorrow, resTicket] = await Promise.all([
       fetch(`${API_BASE}/artifacts`),
       fetch(`${API_BASE}/tickets/tours`),
-      fetch(`${API_BASE}/tickets/borrows`)
+      fetch(`${API_BASE}/tickets/borrows`),
+      fetch(`${API_BASE}/tickets`)
     ]);
 
     if (resArt.ok) {
@@ -177,42 +178,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (resTour.ok) {
       const tourResult = await resTour.json();
       if (tourResult.success && Array.isArray(tourResult.data)) {
-        if (tourResult.data.length > 0) {
-          const map = new Map();
-          TOURS_DATA.forEach(t => map.set(String(t.id), t));
-          tourResult.data.forEach(t => map.set(String(t.id), t));
-          TOURS_DATA = Array.from(map.values());
-          localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
-        } else if (TOURS_DATA.length > 0) {
-          TOURS_DATA.forEach(item => {
-            fetch(`${API_BASE}/tickets/tours`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(item)
-            }).catch(() => { });
-          });
-        }
+        TOURS_DATA = tourResult.data;
+        localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
       }
     }
 
     if (resBorrow && resBorrow.ok) {
       const borrowResult = await resBorrow.json();
       if (borrowResult.success && Array.isArray(borrowResult.data)) {
-        if (borrowResult.data.length > 0) {
-          const map = new Map();
-          BORROW_DATA.forEach(b => map.set(String(b.id), b));
-          borrowResult.data.forEach(b => map.set(String(b.id), b));
-          BORROW_DATA = Array.from(map.values());
-          localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
-        } else if (BORROW_DATA.length > 0) {
-          BORROW_DATA.forEach(item => {
-            fetch(`${API_BASE}/tickets/borrows`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(item)
-            }).catch(() => { });
-          });
-        }
+        BORROW_DATA = borrowResult.data;
+        localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
+      }
+    }
+
+    if (resTicket && resTicket.ok) {
+      const ticketResult = await resTicket.json();
+      if (ticketResult.success && Array.isArray(ticketResult.data)) {
+        TICKETS_PURCHASED_DATA = ticketResult.data.map(t => ({
+          id: t.ve_id || t.id,
+          code: t.ma_qr || t.code,
+          name: t.ten_khach || t.name,
+          phone: t.so_dien_thoai || t.phone,
+          date: t.ngay_tham_quan || t.date,
+          slot: t.khung_gio || t.slot,
+          adultQty: t.so_nguoi_lon !== undefined ? t.so_nguoi_lon : (t.adultQty || 0),
+          childQty: t.so_tre_em !== undefined ? t.so_tre_em : (t.childQty || 0),
+          studentQty: t.so_sinh_vien !== undefined ? t.so_sinh_vien : (t.studentQty || 0),
+          foreignerQty: t.so_nguoi_nuoc_ngoai !== undefined ? t.so_nguoi_nuoc_ngoai : (t.foreignerQty || 0),
+          totalQty: (t.so_nguoi_lon || t.adultQty || 0) + (t.so_tre_em || t.childQty || 0) + (t.so_sinh_vien || t.studentQty || 0) + (t.so_nguoi_nuoc_ngoai || t.foreignerQty || 0),
+          amount: t.tong_tien !== undefined ? t.tong_tien : (t.amount || 0),
+          type: (t.ma_qr && t.ma_qr.includes('POS')) ? 'POS' : 'ONLINE',
+          paymentMethod: t.phuong_thuc_thanh_toan || t.paymentMethod || 'Chuyển khoản QR code',
+          status: t.trang_thai || t.status || 'CHUA_SU_DUNG',
+          createdAt: t.ngay_mua || t.createdAt
+        }));
+        localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
       }
     }
   } catch (apiErr) {
@@ -1345,16 +1345,14 @@ function closeBorrowModal() {
   if (modal) modal.classList.remove('active');
 }
 
-function handleSaveBorrow(event) {
+async function handleSaveBorrow(event) {
   event.preventDefault();
   const artName = document.getElementById('modalBorrowArtifact').value.trim();
   const borrower = document.getElementById('modalBorrower').value.trim();
   const returnDate = document.getElementById('modalBorrowReturnDate').value;
   const purpose = document.getElementById('modalBorrowPurpose').value.trim();
 
-  const newBorrow = {
-    id: BORROW_DATA.length + 1,
-    code: `PM-2026-0${BORROW_DATA.length + 1}`,
+  const payload = {
     artifact: artName,
     borrower: borrower,
     purpose: purpose,
@@ -1362,20 +1360,40 @@ function handleSaveBorrow(event) {
     status: 'DANG_MUON'
   };
 
-  BORROW_DATA.unshift(newBorrow);
-  localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
-
   try {
-    fetch(`${API_BASE}/tickets/borrows`, {
+    const response = await fetch(`${API_BASE}/tickets/borrows`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newBorrow)
-    }).catch(() => { });
-  } catch (e) { }
+      body: JSON.stringify(payload)
+    });
 
-  renderBorrowTable(BORROW_DATA);
-  closeBorrowModal();
-  showToast(`Đã lập thành công phiếu mượn di sản ${newBorrow.code}!`, 'success');
+    const result = await response.json();
+    if (!response.ok || !result.success || !result.data) {
+      throw new Error(result.message || result.error || `HTTP ${response.status}`);
+    }
+
+    const saved = result.data;
+    const borrowRecord = {
+      id: saved.id || saved.muontra_id,
+      code: `PM-2026-${String(saved.id || saved.muontra_id).padStart(3, '0')}`,
+      artifact: saved.artifactName || saved.artifactCode || artName,
+      borrower: saved.don_vi_muon || borrower,
+      purpose: saved.muc_dich || purpose,
+      returnDate: saved.ngay_tra_du_kien || returnDate,
+      status: saved.trang_thai || 'DANG_MUON'
+    };
+
+    BORROW_DATA.unshift(borrowRecord);
+    localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
+
+    renderBorrowTable(BORROW_DATA);
+    closeBorrowModal();
+    showToast(`Đã lập thành công phiếu mượn di sản ${borrowRecord.code}!`, 'success');
+
+  } catch (err) {
+    console.error('❌ Lỗi lập phiếu mượn:', err);
+    showToast(`Không thể lập phiếu mượn: ${err.message}`, 'error');
+  }
 }
 
 function openTourModal() {
@@ -1455,6 +1473,8 @@ async function handleSaveTour(event) {
     );
 
     renderTourTable(TOURS_DATA);
+    renderDashboardStats();
+    renderDashboardToursWidget();
     closeTourModal();
 
     showToast(
@@ -1508,6 +1528,8 @@ async function deleteTour(id) {
     );
 
     renderTourTable(TOURS_DATA);
+    renderDashboardStats();
+    renderDashboardToursWidget();
 
     showToast(`Đã xóa thành công ${tourName}!`, 'info');
 
@@ -1625,67 +1647,40 @@ function renderBorrowTable(borrows) {
   `).join('');
 }
 
-function handleReturnArtifact(id) {
+async function handleReturnArtifact(id) {
   const b = BORROW_DATA.find(item => item.id === id);
-  if (b) {
-    b.status = 'DA_TRA';
+  const code = b ? b.code : `phiếu #${id}`;
+
+  try {
+    const response = await fetch(`${API_BASE}/tickets/borrows`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: id,
+        status: 'DA_TRA',
+        actualReturnDate: new Date().toISOString().slice(0, 10)
+      })
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || result.error || `HTTP ${response.status}`);
+    }
+
+    if (b) {
+      b.status = 'DA_TRA';
+    }
+    localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
     renderBorrowTable(BORROW_DATA);
-    showToast(`Đã ghi nhận trả hiện vật cho phiếu ${b.code}!`, 'success');
+    showToast(`Đã ghi nhận trả hiện vật thành công cho ${code}!`, 'success');
+
+  } catch (err) {
+    console.error('❌ Lỗi trả hiện vật:', err);
+    showToast(`Không thể ghi nhận trả hiện vật: ${err.message}`, 'error');
   }
 }
 
-/**
- * UI-18: POS Ticket Counter
- */
-function addPosItem(name, price) {
-  posCartTotal = price;
-  const priceDisplay = price === 0 ? 'MIỄN PHÍ' : price.toLocaleString('vi-VN') + ' VNĐ';
-  document.getElementById('posTotalText').textContent = priceDisplay;
-  document.getElementById('posCartItems').innerHTML = `
-    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-      <span>01x ${name}</span>
-      <strong>${priceDisplay}</strong>
-    </div>
-  `;
-}
 
-function handlePosCheckout() {
-  const randomNum = Math.floor(10000 + Math.random() * 90000);
-  const ticketCode = `#POS-VE-${randomNum}`;
-
-  document.getElementById('ticketCodeText').textContent = `Mã Vé Quầy: ${ticketCode}`;
-  document.getElementById('ticketOwnerName').textContent = 'Khách Mua Tại Quầy POS';
-  document.getElementById('ticketUseDate').textContent = 'Hôm Nay';
-  document.getElementById('ticketDetailText').textContent = '01 Vé Tham quan tại quầy (30.000 VNĐ)';
-
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=POS-${ticketCode}`;
-  document.getElementById('ticketQrImage').src = qrUrl;
-
-  const isFree = posCartTotal === 0;
-  const ticketRecord = {
-    id: Date.now(),
-    code: ticketCode,
-    name: 'Khách Quầy POS',
-    phone: '',
-    adultQty: isFree ? 0 : 1,
-    childQty: isFree ? 1 : 0,
-    totalQty: 1,
-    amount: posCartTotal,
-    type: 'POS',
-    paymentMethod: 'Tiền mặt thu tại quầy',
-    createdAt: new Date().toISOString()
-  };
-  TICKETS_PURCHASED_DATA.unshift(ticketRecord);
-  try {
-    localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
-  } catch (e) { }
-
-  renderDashboardStats();
-  renderShiftReportStats();
-
-  switchNav('viewMyTickets');
-  showToast(`Đã in vé tại quầy POS thành công! Mã QR: ${ticketCode}`, 'success');
-}
 
 /**
  * UI-19: Gate QR Scanner
@@ -1739,10 +1734,12 @@ function changeTicketQty(qtyId, delta) {
   document.getElementById('bookingTotalPrice').textContent = total.toLocaleString('vi-VN') + ' VNĐ';
 }
 
-function handleProcessBooking(event) {
+async function handleProcessBooking(event) {
   event.preventDefault();
   const name = document.getElementById('bookingName').value.trim();
   const phone = document.getElementById('bookingPhone').value.trim();
+  const date = document.getElementById('bookingDate') ? document.getElementById('bookingDate').value : '';
+  const slot = document.getElementById('bookingSlot') ? document.getElementById('bookingSlot').value : 'Sáng (08:00 - 11:30)';
 
   const adult = parseInt((document.getElementById('qtyAdult') || {}).textContent) || 0;
   const child = parseInt((document.getElementById('qtyChild') || {}).textContent) || 0;
@@ -1753,46 +1750,85 @@ function handleProcessBooking(event) {
     return;
   }
 
-  const randomNum = Math.floor(10000 + Math.random() * 90000);
-  const ticketCode = `#VE-2026-${randomNum}`;
-
-  document.getElementById('ticketCodeText').textContent = `Mã Vé: ${ticketCode}`;
-  document.getElementById('ticketOwnerName').textContent = name;
-  document.getElementById('ticketUseDate').textContent = 'Hôm nay';
-
-  let detailDesc = `${totalQty} vé (${adult} Vé Tham quan - 30k`;
-  if (child > 0) detailDesc += `, ${child} Trẻ dưới 5t - Miễn phí`;
-  detailDesc += ')';
-
-  document.getElementById('ticketDetailText').textContent = detailDesc;
-
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BAOTANG-${ticketCode}-${phone}`;
-  document.getElementById('ticketQrImage').src = qrUrl;
-
-  // Record purchased ticket data
-  const ticketRecord = {
-    id: Date.now(),
-    code: ticketCode,
+  const payload = {
     name: name,
     phone: phone,
+    date: date,
+    slot: slot,
     adultQty: adult,
+    studentQty: 0,
     childQty: child,
-    totalQty: totalQty,
-    amount: adult * 30000,
-    type: 'ONLINE',
-    paymentMethod: 'Chuyển khoản QR code',
-    createdAt: new Date().toISOString()
+    foreignerQty: 0,
+    paymentMethod: 'Chuyển khoản QR code'
   };
-  TICKETS_PURCHASED_DATA.unshift(ticketRecord);
+
   try {
-    localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
-  } catch (e) { }
+    const response = await fetch(`${API_BASE}/tickets/book`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
 
-  renderDashboardStats();
-  renderShiftReportStats();
+    const result = await response.json();
 
-  switchNav('viewMyTickets');
-  showToast('Đặt vé thành công! Mã QR vé điện tử đã được khởi tạo.', 'success');
+    if (!response.ok || !result.success || !result.data) {
+      throw new Error(
+        result.message || result.error || `HTTP ${response.status}`
+      );
+    }
+
+    const savedTicket = result.data;
+    const ticketCode = savedTicket.ticketCode || savedTicket.code || `#VE-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+    const qrUrl = savedTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BAOTANG-${ticketCode}-${phone}`;
+
+    document.getElementById('ticketCodeText').textContent = `Mã Vé: ${ticketCode}`;
+    document.getElementById('ticketOwnerName').textContent = savedTicket.name || name;
+    document.getElementById('ticketUseDate').textContent = savedTicket.date || date || 'Hôm nay';
+
+    let detailDesc = `${totalQty} vé (${adult} Vé Tham quan - 30k`;
+    if (child > 0) detailDesc += `, ${child} Trẻ dưới 5t - Miễn phí`;
+    detailDesc += ')';
+
+    document.getElementById('ticketDetailText').textContent = detailDesc;
+    if (document.getElementById('ticketQrImage')) {
+      document.getElementById('ticketQrImage').src = qrUrl;
+    }
+
+    // Save returned ticket data to local list & cache
+    const ticketRecord = {
+      id: savedTicket.id,
+      code: ticketCode,
+      name: savedTicket.name || name,
+      phone: savedTicket.phone || phone,
+      date: savedTicket.date || date,
+      slot: savedTicket.slot || slot,
+      adultQty: adult,
+      childQty: child,
+      totalQty: totalQty,
+      amount: savedTicket.totalAmount !== undefined ? savedTicket.totalAmount : (adult * 30000),
+      type: 'ONLINE',
+      paymentMethod: savedTicket.paymentMethod || 'Chuyển khoản QR code',
+      status: savedTicket.status || 'CHUA_SU_DUNG',
+      createdAt: savedTicket.createdAt || new Date().toISOString()
+    };
+
+    TICKETS_PURCHASED_DATA.unshift(ticketRecord);
+    try {
+      localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+    } catch (e) { }
+
+    renderDashboardStats();
+    renderShiftReportStats();
+
+    switchNav('viewMyTickets');
+    showToast('Đặt vé thành công! Đã lưu thông tin vé vào cơ sở dữ liệu SQLite.', 'success');
+
+  } catch (err) {
+    console.error('❌ Lỗi đặt vé online:', err);
+    showToast(`Không thể lưu vé: ${err.message}`, 'error');
+  }
 }
 
 /* ============================================================
@@ -1921,7 +1957,7 @@ function renderPosCart() {
 /**
  * Xử lý thanh toán quầy POS & in vé
  */
-function handlePosCheckout() {
+async function handlePosCheckout() {
   if (posCart.length === 0) {
     showToast('Hóa đơn đang trống! Vui lòng chọn loại vé cần bán tại quầy.', 'warning');
     return;
@@ -1939,36 +1975,68 @@ function handlePosCheckout() {
     else childQty += item.qty;
   });
 
-  const randomNum = Math.floor(1000 + Math.random() * 9000);
-  const posCode = `#POS-2026-${randomNum}`;
-
-  const posRecord = {
-    id: Date.now(),
-    code: posCode,
+  const payload = {
     name: 'Khách mua tại quầy POS',
     phone: 'Quầy bán vé số 1',
+    date: new Date().toISOString().split('T')[0],
+    slot: 'Tại Quầy POS',
     adultQty: adultQty,
+    studentQty: 0,
     childQty: childQty,
-    totalQty: totalQty,
-    amount: totalAmount,
-    type: 'POS',
-    paymentMethod: 'Tiền mặt tại quầy',
-    createdAt: new Date().toISOString()
+    foreignerQty: 0,
+    paymentMethod: 'Tiền mặt tại quầy'
   };
 
-  TICKETS_PURCHASED_DATA.unshift(posRecord);
   try {
-    localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
-  } catch (e) { }
+    const response = await fetch(`${API_BASE}/tickets/book`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
 
-  renderDashboardStats();
-  renderShiftReportStats();
+    const result = await response.json();
+    if (!response.ok || !result.success || !result.data) {
+      throw new Error(result.message || result.error || `HTTP ${response.status}`);
+    }
 
-  showToast(`Đã thanh toán thành công ${totalAmount.toLocaleString('vi-VN')} VNĐ! Đang in ${totalQty} vé (${posCode}).`, 'success');
+    const savedTicket = result.data;
+    const posCode = savedTicket.ticketCode || savedTicket.code || `#POS-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  // Đặt lại giỏ hàng POS
-  posCart = [];
-  renderPosCart();
+    const posRecord = {
+      id: savedTicket.id,
+      code: posCode,
+      name: 'Khách mua tại quầy POS',
+      phone: 'Quầy bán vé số 1',
+      adultQty: adultQty,
+      childQty: childQty,
+      totalQty: totalQty,
+      amount: totalAmount,
+      type: 'POS',
+      paymentMethod: 'Tiền mặt tại quầy',
+      status: savedTicket.status || 'CHUA_SU_DUNG',
+      createdAt: savedTicket.createdAt || new Date().toISOString()
+    };
+
+    TICKETS_PURCHASED_DATA.unshift(posRecord);
+    try {
+      localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+    } catch (e) { }
+
+    renderDashboardStats();
+    renderShiftReportStats();
+
+    showToast(`Đã thanh toán thành công ${totalAmount.toLocaleString('vi-VN')} VNĐ! Đã lưu vé POS vào SQLite (${posCode}).`, 'success');
+
+    // Đặt lại giỏ hàng POS
+    posCart = [];
+    renderPosCart();
+
+  } catch (err) {
+    console.error('❌ Lỗi bán vé POS:', err);
+    showToast(`Không thể lưu vé POS: ${err.message}`, 'error');
+  }
 }
 
 /**
