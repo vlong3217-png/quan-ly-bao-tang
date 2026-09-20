@@ -2,9 +2,27 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 
+function detectEthnicFromTitle(title, fallback = 'Chưa xác định') {
+  if (!title) return fallback;
+  const ethnicKeywords = [
+    'Sán Dìu', 'Sán Chay', 'Kinh', 'Tày', 'Thái', 'Hoa', 'Mường',
+    'H\'Mông', 'Hmong', 'H Mông', 'Dao', 'Gia Rai', 'Ê Đê', 'Ba Na', 'Chăm',
+    'Xơ Đăng', 'Cơ Ho', 'Chơ Ro', 'Nùng', 'Hre', 'Khơ Me', 'Khmer', 'M\'Nông',
+    'Raglai', 'Xtiêng', 'Bru', 'Vân Kiều', 'Giáy', 'Cơ Tu', 'Giẻ Triêng', 'Ta Ôi',
+    'Mạ', 'Co', 'Thổ', 'Khơ Mú', 'Xinh Mun', 'Chu Ru'
+  ];
+
+  for (const eth of ethnicKeywords) {
+    if (title.toLowerCase().includes(eth.toLowerCase())) {
+      return eth.startsWith('Dân tộc') ? eth : `Dân tộc ${eth}`;
+    }
+  }
+  return fallback;
+}
+
 /**
  * GET /api/artifacts
- * Lấy danh sách hiện vật từ MySQL
+ * Lấy danh sách hiện vật từ SQLite
  */
 router.get('/', async (req, res) => {
   const { search } = req.query;
@@ -19,7 +37,10 @@ router.get('/', async (req, res) => {
         hinh_anh AS img,
         nien_dai AS era,
         tinh_trang AS status,
-        y_nghia_van_hoa AS meaning
+        y_nghia_van_hoa AS meaning,
+        dan_toc AS ethnic,
+        vung_van_hoa AS region,
+        vi_tri_kho AS location
       FROM HienVat
     `;
 
@@ -38,21 +59,27 @@ router.get('/', async (req, res) => {
 
     const [rows] = await pool.query(sql, params);
 
-    const data = rows.map(r => ({
-      id: r.id,
-      code: r.code,
-      title: r.title,
-      ethnic: 'Chưa xác định',
-      region: 'Vùng núi cao phía Bắc',
-      material: r.material || 'Chưa xác định',
-      era: r.era || 'Chưa xác định',
-      location: 'Kho Bảo Quản 1',
-      status: r.status || 'Nguyên vẹn',
-      img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
-      images: r.img ? [r.img] : [],
-      meaning: r.meaning || 'Hồ sơ di sản.',
-      audioText: ''
-    }));
+    const data = rows.map(r => {
+      const resolvedEthnic = (r.ethnic && r.ethnic !== 'Chưa xác định')
+        ? r.ethnic
+        : detectEthnicFromTitle(r.title, 'Chưa xác định');
+
+      return {
+        id: r.id,
+        code: r.code,
+        title: r.title,
+        ethnic: resolvedEthnic,
+        region: r.region || 'Vùng núi cao phía Bắc',
+        material: r.material || 'Chưa xác định',
+        era: r.era || 'Thế kỷ XX',
+        location: r.location || 'Kho Bảo Quản 1',
+        status: r.status || 'Nguyên vẹn',
+        img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
+        images: r.img ? [r.img] : [],
+        meaning: r.meaning || 'Hồ sơ di sản.',
+        audioText: `Hiện vật ${r.title} của Dân tộc ${resolvedEthnic}.`
+      };
+    });
 
     return res.json({
       success: true,
@@ -90,7 +117,10 @@ router.get('/:id', async (req, res) => {
         hinh_anh AS img,
         nien_dai AS era,
         tinh_trang AS status,
-        y_nghia_van_hoa AS meaning
+        y_nghia_van_hoa AS meaning,
+        dan_toc AS ethnic,
+        vung_van_hoa AS region,
+        vi_tri_kho AS location
       FROM HienVat
       WHERE hienvat_id = ? OR ma_hienvat = ?
       LIMIT 1
@@ -106,21 +136,24 @@ router.get('/:id', async (req, res) => {
     }
 
     const r = rows[0];
+    const resolvedEthnic = (r.ethnic && r.ethnic !== 'Chưa xác định')
+      ? r.ethnic
+      : detectEthnicFromTitle(r.title, 'Chưa xác định');
 
     const artifact = {
       id: r.id,
       code: r.code,
       title: r.title,
-      ethnic: 'Chưa xác định',
-      region: 'Vùng núi cao phía Bắc',
+      ethnic: resolvedEthnic,
+      region: r.region || 'Vùng núi cao phía Bắc',
       material: r.material || 'Chưa xác định',
-      era: r.era || 'Chưa xác định',
-      location: 'Kho Bảo Quản 1',
+      era: r.era || 'Thế kỷ XX',
+      location: r.location || 'Kho Bảo Quản 1',
       status: r.status || 'Nguyên vẹn',
       img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
       images: r.img ? [r.img] : [],
       meaning: r.meaning || 'Hồ sơ di sản.',
-      audioText: ''
+      audioText: `Hiện vật ${r.title} của Dân tộc ${resolvedEthnic}.`
     };
 
     return res.json({
@@ -142,7 +175,7 @@ router.get('/:id', async (req, res) => {
 
 /**
  * POST /api/artifacts
- * Thêm hoặc cập nhật hiện vật vào MySQL
+ * Thêm hoặc cập nhật hiện vật vào Database
  */
 router.post('/', async (req, res) => {
   const {
@@ -166,6 +199,12 @@ router.post('/', async (req, res) => {
     });
   }
 
+  const finalEthnic = (ethnic && ethnic !== 'Chưa xác định')
+    ? ethnic
+    : detectEthnicFromTitle(title, 'Chưa xác định');
+  const finalRegion = region || 'Vùng núi cao phía Bắc';
+  const finalLocation = location || 'Kho Bảo Quản 1';
+
   try {
     await pool.query(
       `
@@ -176,15 +215,21 @@ router.post('/', async (req, res) => {
   chat_lieu,
   hinh_anh,
   tinh_trang,
-  y_nghia_van_hoa
+  y_nghia_van_hoa,
+  dan_toc,
+  vung_van_hoa,
+  vi_tri_kho
 )
-VALUES (?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(ma_hienvat) DO UPDATE SET
   ten_hienvat = excluded.ten_hienvat,
   chat_lieu = excluded.chat_lieu,
   hinh_anh = excluded.hinh_anh,
   tinh_trang = excluded.tinh_trang,
-  y_nghia_van_hoa = excluded.y_nghia_van_hoa
+  y_nghia_van_hoa = excluded.y_nghia_van_hoa,
+  dan_toc = excluded.dan_toc,
+  vung_van_hoa = excluded.vung_van_hoa,
+  vi_tri_kho = excluded.vi_tri_kho
       `,
       [
         code,
@@ -192,11 +237,14 @@ ON CONFLICT(ma_hienvat) DO UPDATE SET
         material || null,
         img || null,
         status || 'Nguyên vẹn',
-        meaning || null
+        meaning || null,
+        finalEthnic,
+        finalRegion,
+        finalLocation
       ]
     );
 
-    // Lấy lại dữ liệu vừa lưu từ MySQL
+    // Lấy lại dữ liệu vừa lưu từ Database
     const [rows] = await pool.query(
       `
       SELECT
@@ -207,7 +255,10 @@ ON CONFLICT(ma_hienvat) DO UPDATE SET
         hinh_anh AS img,
         nien_dai AS era,
         tinh_trang AS status,
-        y_nghia_van_hoa AS meaning
+        y_nghia_van_hoa AS meaning,
+        dan_toc AS ethnic,
+        vung_van_hoa AS region,
+        vi_tri_kho AS location
       FROM HienVat
       WHERE ma_hienvat = ?
       LIMIT 1
@@ -228,21 +279,21 @@ ON CONFLICT(ma_hienvat) DO UPDATE SET
       id: r.id,
       code: r.code,
       title: r.title,
-      ethnic: ethnic || 'Chưa xác định',
-      region: region || 'Vùng núi cao phía Bắc',
+      ethnic: r.ethnic || finalEthnic,
+      region: r.region || finalRegion,
       material: r.material || 'Chưa xác định',
-      era: r.era || 'Chưa xác định',
-      location: location || 'Kho Bảo Quản 1',
+      era: r.era || 'Thế kỷ XX',
+      location: r.location || finalLocation,
       status: r.status || 'Nguyên vẹn',
       img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
       images: Array.isArray(images) && images.length > 0
         ? images
         : (r.img ? [r.img] : []),
       meaning: r.meaning || 'Hồ sơ di sản mới bổ sung.',
-      audioText: audioText || `Hiện vật ${title} của Dân tộc ${ethnic || 'chưa xác định'}.`
+      audioText: audioText || `Hiện vật ${title} của Dân tộc ${r.ethnic || finalEthnic}.`
     };
 
-    console.log('✅ Đã lưu hiện vật vào MySQL:', savedArtifact.code);
+    console.log('✅ Đã lưu hiện vật vào SQLite:', savedArtifact.code);
 
     return res.status(201).json({
       success: true,

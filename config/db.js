@@ -25,9 +25,16 @@ async function getDb() {
           hinh_anh TEXT,
           nien_dai TEXT,
           tinh_trang TEXT DEFAULT 'Nguyên vẹn',
-          y_nghia_van_hoa TEXT
+          y_nghia_van_hoa TEXT,
+          dan_toc TEXT,
+          vung_van_hoa TEXT,
+          vi_tri_kho TEXT
         );
       `);
+
+      try { await db.exec(`ALTER TABLE HienVat ADD COLUMN dan_toc TEXT;`); } catch (e) { }
+      try { await db.exec(`ALTER TABLE HienVat ADD COLUMN vung_van_hoa TEXT;`); } catch (e) { }
+      try { await db.exec(`ALTER TABLE HienVat ADD COLUMN vi_tri_kho TEXT;`); } catch (e) { }
 
       // Auto-create Users table if not exists
       await db.exec(`

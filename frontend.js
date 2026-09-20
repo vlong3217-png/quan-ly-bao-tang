@@ -77,14 +77,37 @@ let posCartTotal = 30000;
 /**
  * Helper to normalize and sanitize artifact objects from LocalStorage or Backend API
  */
+function detectEthnicFromTitle(title, fallback = 'Chưa xác định') {
+  if (!title) return fallback;
+  const ethnicKeywords = [
+    'Sán Dìu', 'Sán Chay', 'Kinh', 'Tày', 'Thái', 'Hoa', 'Mường',
+    'H\'Mông', 'Hmong', 'H Mông', 'Dao', 'Gia Rai', 'Ê Đê', 'Ba Na', 'Chăm',
+    'Xơ Đăng', 'Cơ Ho', 'Chơ Ro', 'Nùng', 'Hre', 'Khơ Me', 'Khmer', 'M\'Nông',
+    'Raglai', 'Xtiêng', 'Bru', 'Vân Kiều', 'Giáy', 'Cơ Tu', 'Giẻ Triêng', 'Ta Ôi',
+    'Mạ', 'Co', 'Thổ', 'Khơ Mú', 'Xinh Mun', 'Chu Ru'
+  ];
+
+  for (const eth of ethnicKeywords) {
+    if (title.toLowerCase().includes(eth.toLowerCase())) {
+      return eth.startsWith('Dân tộc') ? eth : `Dân tộc ${eth}`;
+    }
+  }
+  return fallback;
+}
+
 function normalizeArtifact(art) {
   if (!art || typeof art !== 'object') return null;
 
   const code = art.code || art.ma_hien_vat || art.MaHienVat || (art.id ? `HV-00${art.id}` : null);
   const title = art.title || art.ten_hien_vat || art.TenHienVat || art.ten || null;
-  const ethnic = art.ethnic || art.dan_toc || art.DanToc || 'Đang cập nhật';
+  let ethnic = art.ethnic || art.dan_toc || art.DanToc || null;
+
+  if (!ethnic || ethnic === 'undefined' || ethnic === 'Chưa xác định' || ethnic === 'Đang cập nhật') {
+    ethnic = detectEthnicFromTitle(title, 'Chưa xác định');
+  }
+
   const region = art.region || art.vung_van_hoa || art.VungVanHoa || 'Vùng núi cao phía Bắc';
-  const material = art.material || art.chat_lieu || art.ChatLieu || 'Đang cập nhật';
+  const material = art.material || art.chat_lieu || art.ChatLieu || 'Chưa xác định';
   const location = art.location || art.vi_tri_kho || art.ViTriKho || 'Kho Bảo Quản 1';
   const status = art.status || art.tinh_trang || art.TinhTrang || 'Nguyên vẹn';
   const era = art.era || art.nien_dai || art.NienDai || 'Thế kỷ XX';
@@ -100,16 +123,16 @@ function normalizeArtifact(art) {
     id: art.id || Date.now(),
     code: (code && code !== 'undefined') ? code : `HV-${art.id || 1}`,
     title: (title && title !== 'undefined') ? title : 'Hiện vật di sản',
-    ethnic: (ethnic && ethnic !== 'undefined') ? ethnic : 'Đang cập nhật',
+    ethnic: ethnic,
     region: (region && region !== 'undefined') ? region : 'Vùng núi cao phía Bắc',
-    material: (material && material !== 'undefined') ? material : 'Đang cập nhật',
+    material: (material && material !== 'undefined') ? material : 'Chưa xác định',
     location: (location && location !== 'undefined') ? location : 'Kho Bảo Quản 1',
     status: (status && status !== 'undefined') ? status : 'Nguyên vẹn',
     era: (era && era !== 'undefined') ? era : 'Thế kỷ XX',
     img: img,
     images: images,
     meaning: art.meaning || 'Hồ sơ di sản được bổ sung vào hệ thống kiểm kê kho.',
-    audioText: art.audioText || `Hiện vật ${title || 'di sản'} của Dân tộc ${ethnic || 'Đang cập nhật'}.`
+    audioText: art.audioText || `Hiện vật ${title || 'di sản'} của Dân tộc ${ethnic}.`
   };
 }
 
