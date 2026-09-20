@@ -917,24 +917,31 @@
         <div class="qr-scanner-container">
           <!-- Viewfinder Camera Box -->
           <div class="scanner-viewfinder" id="scannerViewfinder">
-            <video id="gateCameraVideo" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; display:none; border-radius:12px;"></video>
-            <div id="html5QrCodeReader" style="width:100%; height:100%; overflow:hidden; border-radius:12px; display:none;"></div>
+            <video id="gateCameraVideo" autoplay playsinline muted
+              style="width:100%; height:100%; object-fit:cover; display:none; border-radius:12px;"></video>
+            <div id="html5QrCodeReader"
+              style="width:100%; height:100%; overflow:hidden; border-radius:12px; display:none;"></div>
             <div class="scanner-line"></div>
-            <div class="scanner-fallback-icon" id="scannerFallbackIcon" style="display: flex; align-items: center; justify-content: center; height: 100%;">
-              <i class="fa-solid fa-camera" style="font-size: 4.5rem; opacity: 0.5; color: var(--accent-gold, #d97706);"></i>
+            <div class="scanner-fallback-icon" id="scannerFallbackIcon"
+              style="display: flex; align-items: center; justify-content: center; height: 100%;">
+              <i class="fa-solid fa-camera"
+                style="font-size: 4.5rem; opacity: 0.5; color: var(--accent-gold, #d97706);"></i>
             </div>
           </div>
 
           <div style="margin: 1rem 0; text-align: center;">
-            <p id="gateCameraStatusText" style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem; min-height: 1.4rem;">
+            <p id="gateCameraStatusText"
+              style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem; min-height: 1.4rem;">
               📷 Đang khởi tạo... Vui lòng Bật Camera để thực hiện quét mã QR tự động.
             </p>
 
             <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-              <button type="button" id="btnStartGateCamera" class="btn-primary" style="width: auto; padding: 0.5rem 1.25rem;" onclick="startGateQrCamera()">
+              <button type="button" id="btnStartGateCamera" class="btn-primary"
+                style="width: auto; padding: 0.5rem 1.25rem;" onclick="startGateQrCamera()">
                 <i class="fa-solid fa-video"></i> Bật Camera Quét Mã QR
               </button>
-              <button type="button" id="btnStopGateCamera" class="btn-secondary" style="width: auto; padding: 0.5rem 1.25rem; display: none;" onclick="stopGateQrCamera()">
+              <button type="button" id="btnStopGateCamera" class="btn-secondary"
+                style="width: auto; padding: 0.5rem 1.25rem; display: none;" onclick="stopGateQrCamera()">
                 <i class="fa-solid fa-video-slash"></i> Tắt Camera
               </button>
             </div>
@@ -954,7 +961,8 @@
             </button>
           </form>
 
-          <div id="scanResultBadge" style="margin-top: 1.25rem; display: none; padding: 1rem; border-radius: 12px;"></div>
+          <div id="scanResultBadge" style="margin-top: 1.25rem; display: none; padding: 1rem; border-radius: 12px;">
+          </div>
         </div>
 
       </div>
@@ -2098,38 +2106,38 @@
               <label class="form-label">Tỉnh / Thành phố</label>
               <select id="modalTourProvince" class="form-select no-icon" required>
                 <option value="" disabled selected>-- Chọn Tỉnh / Thành phố --</option>
-                <option value="Tuyên Quang">Tuyên Quang</option>
-                <option value="Lào Cai">Lào Cai</option>
-                <option value="Thái Nguyên">Thái Nguyên</option>
-                <option value="Phú Thọ">Phú Thọ</option>
+                <option value="Tuyên Quang">Tỉnh Tuyên Quang</option>
+                <option value="Lào Cai">Tỉnh Lào Cai</option>
+                <option value="Thái Nguyên">Tỉnh Thái Nguyên</option>
+                <option value="Phú Thọ">Tỉnh Phú Thọ</option>
                 <option value="Thành phố Bắc Ninh">Thành phố Bắc Ninh</option>
-                <option value="Hưng Yên">Hưng Yên</option>
-                <option value="Hải Phòng">Hải Phòng</option>
-                <option value="Ninh Bình">Ninh Bình</option>
-                <option value="Quảng Trị">Quảng Trị</option>
+                <option value="Hưng Yên">Tỉnh Hưng Yên</option>
+                <option value="Hải Phòng">Thành phố Hải Phòng</option>
+                <option value="Ninh Bình">Tỉnh Ninh Bình</option>
+                <option value="Quảng Trị">Tỉnh Quảng Trị</option>
                 <option value="Thành phố Đà Nẵng">Thành phố Đà Nẵng</option>
-                <option value="Quảng Ngãi">Quảng Ngãi</option>
-                <option value="Gia Lai">Gia Lai</option>
-                <option value="Khánh Hòa">Khánh Hòa</option>
-                <option value="Lâm Đồng">Lâm Đồng</option>
-                <option value="Đắk Lắk">Đắk Lắk</option>
+                <option value="Quảng Ngãi">Tỉnh Quảng Ngãi</option>
+                <option value="Gia Lai">Tỉnh Gia Lai</option>
+                <option value="Khánh Hòa">Tỉnh Khánh Hòa</option>
+                <option value="Lâm Đồng">Tỉnh Lâm Đồng</option>
+                <option value="Đắk Lắk">Tỉnh Đắk Lắk</option>
                 <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
                 <option value="Thành phố Đồng Nai">Thành phố Đồng Nai</option>
-                <option value="Tây Ninh">Tây Ninh</option>
+                <option value="Tây Ninh">Tỉnh Tây Ninh</option>
                 <option value="Thành phố Cần Thơ">Thành phố Cần Thơ</option>
-                <option value="Vĩnh Long">Vĩnh Long</option>
-                <option value="Đồng Tháp">Đồng Tháp</option>
-                <option value="Cà Mau">Cà Mau</option>
-                <option value="An Giang">An Giang</option>
-                <option value="Cao Bằng">Cao Bằng</option>
-                <option value="Điện Biên">Điện Biên</option>
-                <option value="Hà Tĩnh">Hà Tĩnh</option>
-                <option value="Lai Châu">Lai Châu</option>
-                <option value="Lạng Sơn">Lạng Sơn</option>
-                <option value="Nghệ An">Nghệ An</option>
+                <option value="Vĩnh Long">Tỉnh Vĩnh Long</option>
+                <option value="Đồng Tháp">Tỉnh Đồng Tháp</option>
+                <option value="Cà Mau">Tỉnh Cà Mau</option>
+                <option value="An Giang">Tỉnh An Giang</option>
+                <option value="Cao Bằng">Tỉnh Cao Bằng</option>
+                <option value="Điện Biên">Tỉnh Điện Biên</option>
+                <option value="Hà Tĩnh">Tỉnh Hà Tĩnh</option>
+                <option value="Lai Châu">Tỉnh Lai Châu</option>
+                <option value="Lạng Sơn">Tỉnh Lạng Sơn</option>
+                <option value="Nghệ An">Tỉnh Nghệ An</option>
                 <option value="Thành phố Quảng Ninh">Thành phố Quảng Ninh</option>
-                <option value="Thanh Hóa">Thanh Hóa</option>
-                <option value="Sơn La">Sơn La</option>
+                <option value="Thanh Hóa">Tỉnh Thanh Hóa</option>
+                <option value="Sơn La">Tỉnh Sơn La</option>
                 <option value="Thành phố Hà Nội">Thành phố Hà Nội</option>
                 <option value="Thành phố Huế">Thành phố Huế</option>
               </select>
