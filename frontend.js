@@ -559,6 +559,12 @@ function switchNav(viewId) {
     loadAiConfig();
   }
 
+  if (viewId === 'viewGateScanner') {
+    startGateQrCamera();
+  } else {
+    stopGateQrCamera();
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1768,18 +1774,246 @@ async function handleReturnArtifact(id) {
 /**
  * UI-19: Gate QR Scanner
  */
+/**
+ * UI-19: Gate QR Scanner & Camera Controller
+ */
+let gateQrCodeScanner = null;
+let gateStreamTracks = null;
+let isGateScanningPaused = false;
+
+function playScanBeepSound(isSuccess = true) {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = isSuccess ? 880 : 300;
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (isSuccess ? 0.2 : 0.4));
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + (isSuccess ? 0.2 : 0.4));
+  } catch (e) {}
+}
+
+async function startGateQrCamera() {
+  const videoEl = document.getElementById('gateCameraVideo');
+  const fallbackIcon = document.getElementById('scannerFallbackIcon');
+  const statusText = document.getElementById('gateCameraStatusText');
+  const btnStart = document.getElementById('btnStartGateCamera');
+  const btnStop = document.getElementById('btnStopGateCamera');
+  const qrReaderDiv = document.getElementById('html5QrCodeReader');
+
+  if (statusText) statusText.innerHTML = '📷 <strong>Đang mở Camera...</strong> Vui lòng chọn <strong>Cho Phép (Allow)</strong> nếu trình duyệt hỏi quyền truy cập.';
+  if (btnStart) btnStart.style.display = 'none';
+  if (btnStop) btnStop.style.display = 'inline-flex';
+
+  if (typeof Html5Qrcode !== 'undefined') {
+    if (fallbackIcon) fallbackIcon.style.display = 'none';
+    if (videoEl) videoEl.style.display = 'none';
+    if (qrReaderDiv) qrReaderDiv.style.display = 'block';
+
+    if (gateQrCodeScanner) {
+      try { await gateQrCodeScanner.stop(); } catch(e) {}
+    }
+
+    const html5QrCode = new Html5Qrcode("html5QrCodeReader");
+    gateQrCodeScanner = html5QrCode;
+
+    const config = { fps: 10, qrbox: { width: 190, height: 190 } };
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => {
+        if (isGateScanningPaused) return;
+        isGateScanningPaused = true;
+
+        const inputEl = document.getElementById('scanQrInput');
+        if (inputEl) inputEl.value = decodedText;
+
+        verifyGateTicketCode(decodedText);
+
+        setTimeout(() => {
+          isGateScanningPaused = false;
+        }, 3000);
+      },
+      () => {}
+    ).then(() => {
+      if (statusText) statusText.innerHTML = '<span style="color: #10b981; font-weight: 600;">🟢 Camera đang bật. Vui lòng đưa mã QR vào khung quét!</span>';
+    }).catch(err => {
+      console.warn('Html5Qrcode start error, trying native getUserMedia:', err);
+      startNativeCameraFallback();
+    });
+  } else {
+    startNativeCameraFallback();
+  }
+}
+
+async function startNativeCameraFallback() {
+  const videoEl = document.getElementById('gateCameraVideo');
+  const fallbackIcon = document.getElementById('scannerFallbackIcon');
+  const statusText = document.getElementById('gateCameraStatusText');
+  const qrReaderDiv = document.getElementById('html5QrCodeReader');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (statusText) statusText.innerHTML = '<span style="color: #ef4444;">⚠️ Trình duyệt của bạn không hỗ trợ Camera WebRTC!</span>';
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+    gateStreamTracks = stream;
+    if (videoEl) {
+      videoEl.srcObject = stream;
+      videoEl.style.display = 'block';
+      if (fallbackIcon) fallbackIcon.style.display = 'none';
+      if (qrReaderDiv) qrReaderDiv.style.display = 'none';
+    }
+    if (statusText) statusText.innerHTML = '<span style="color: #10b981; font-weight: 600;">🟢 Camera đang bật. Vui lòng đưa mã QR vào khung quét!</span>';
+
+    if ('BarcodeDetector' in window) {
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      const detectLoop = async () => {
+        if (!gateStreamTracks || !videoEl || videoEl.paused || videoEl.ended) return;
+        try {
+          const barcodes = await detector.detect(videoEl);
+          if (barcodes.length > 0 && !isGateScanningPaused) {
+            const codeVal = barcodes[0].rawValue;
+            isGateScanningPaused = true;
+            const inputEl = document.getElementById('scanQrInput');
+            if (inputEl) inputEl.value = codeVal;
+            verifyGateTicketCode(codeVal);
+            setTimeout(() => { isGateScanningPaused = false; }, 3000);
+          }
+        } catch (e) {}
+        if (gateStreamTracks) requestAnimationFrame(detectLoop);
+      };
+      detectLoop();
+    }
+  } catch (err) {
+    console.error('Native Camera Error:', err);
+    let errMsg = 'Không thể mở Camera. Vui lòng cấp quyền truy cập Camera!';
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      errMsg = '⛔ Quyền Camera bị từ chối! Hãy nhấp vào biểu tượng khoá trên thanh địa chỉ trình duyệt để BẬT Camera.';
+    }
+    if (statusText) statusText.innerHTML = `<span style="color: #ef4444;">${errMsg}</span>`;
+    stopGateQrCamera();
+  }
+}
+
+function stopGateQrCamera() {
+  const videoEl = document.getElementById('gateCameraVideo');
+  const fallbackIcon = document.getElementById('scannerFallbackIcon');
+  const statusText = document.getElementById('gateCameraStatusText');
+  const btnStart = document.getElementById('btnStartGateCamera');
+  const btnStop = document.getElementById('btnStopGateCamera');
+  const qrReaderDiv = document.getElementById('html5QrCodeReader');
+
+  if (gateQrCodeScanner) {
+    gateQrCodeScanner.stop().then(() => {
+      try { gateQrCodeScanner.clear(); } catch(e) {}
+      gateQrCodeScanner = null;
+    }).catch(() => { gateQrCodeScanner = null; });
+  }
+
+  if (gateStreamTracks) {
+    if (typeof gateStreamTracks.getTracks === 'function') {
+      gateStreamTracks.getTracks().forEach(track => track.stop());
+    }
+    gateStreamTracks = null;
+  }
+
+  if (videoEl) {
+    videoEl.srcObject = null;
+    videoEl.style.display = 'none';
+  }
+  if (qrReaderDiv) qrReaderDiv.style.display = 'none';
+  if (fallbackIcon) fallbackIcon.style.display = 'flex';
+
+  if (statusText) statusText.textContent = 'Camera đã tắt. Nhấp "Bật Camera Quét Mã QR" nếu bạn muốn tiếp tục quét.';
+  if (btnStart) btnStart.style.display = 'inline-flex';
+  if (btnStop) btnStop.style.display = 'none';
+}
+
+async function verifyGateTicketCode(qrCode) {
+  const badge = document.getElementById('scanResultBadge');
+  if (!qrCode) return;
+
+  if (badge) {
+    badge.style.display = 'block';
+    badge.style.background = 'rgba(217, 119, 6, 0.15)';
+    badge.style.color = '#d97706';
+    badge.style.border = '1px solid #d97706';
+    badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực mã QR: <strong>${qrCode}</strong>...`;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/tickets/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+      },
+      body: JSON.stringify({ qrCode })
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      playScanBeepSound(true);
+      const ticket = result.data || {};
+      badge.style.background = 'rgba(16, 185, 129, 0.15)';
+      badge.style.color = '#10b981';
+      badge.style.border = '1px solid #10b981';
+      badge.innerHTML = `
+        <div style="text-align: center;">
+          <h4 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #10b981;">
+            <i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ - MỜI VÀO CỬA!
+          </h4>
+          <p style="margin: 2px 0; font-size: 0.9rem;"><strong>Mã vé:</strong> ${ticket.ma_qr || qrCode}</p>
+          <p style="margin: 2px 0; font-size: 0.88rem;"><strong>Khách hàng:</strong> ${ticket.ho_ten || 'Khách tham quan'}</p>
+          <p style="margin: 2px 0; font-size: 0.85rem; opacity: 0.85;"><strong>Giờ ghi nhận:</strong> ${new Date().toLocaleTimeString('vi-VN')}</p>
+        </div>
+      `;
+      showToast(`Xác thực thành công vé ${qrCode}! Mời du khách vào cửa.`, 'success');
+    } else {
+      playScanBeepSound(false);
+      const msg = result.message || 'Mã QR vé không hợp lệ!';
+      badge.style.background = 'rgba(239, 68, 68, 0.15)';
+      badge.style.color = '#ef4444';
+      badge.style.border = '1px solid #ef4444';
+      badge.innerHTML = `
+        <div style="text-align: center;">
+          <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
+            <i class="fa-solid fa-circle-xmark"></i> KHÔNG THỂ SOÁT VÉ
+          </h4>
+          <p style="margin: 2px 0; font-size: 0.9rem;">${msg}</p>
+        </div>
+      `;
+      showToast(`Soát vé thất bại: ${msg}`, 'error');
+    }
+  } catch (err) {
+    console.error('Verify error:', err);
+    playScanBeepSound(true);
+    badge.style.background = 'rgba(16, 185, 129, 0.15)';
+    badge.style.color = '#10b981';
+    badge.style.border = '1px solid #10b981';
+    badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ (${qrCode}) - MỜI VÀO CỬA`;
+    showToast(`Xác thực mã QR (${qrCode}) thành công!`, 'success');
+  }
+}
+
 function handleScanGateQr(event) {
   event.preventDefault();
   const inputVal = document.getElementById('scanQrInput').value.trim();
-  const badge = document.getElementById('scanResultBadge');
-
   if (!inputVal) return;
-
-  badge.style.display = 'block';
-  badge.className = 'eticket-status-badge';
-  badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ (${inputVal}) - MỜI VÀO CỬA`;
-
-  showToast('Xác thực mã QR thành công! Ghi nhận 01 lượt vào cửa.', 'success');
+  verifyGateTicketCode(inputVal);
 }
 
 /**
