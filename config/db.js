@@ -46,12 +46,16 @@ async function getDb() {
           email TEXT,
           phone TEXT,
           role TEXT DEFAULT 'STAFF',
-          avatar TEXT
+          avatar TEXT,
+          is_locked INTEGER DEFAULT 0
         );
       `);
 
       try {
         await db.exec(`ALTER TABLE Users ADD COLUMN avatar TEXT;`);
+      } catch (e) { }
+      try {
+        await db.exec(`ALTER TABLE Users ADD COLUMN is_locked INTEGER DEFAULT 0;`);
       } catch (e) { }
 
       const existingUser = await db.get('SELECT user_id FROM Users LIMIT 1');
