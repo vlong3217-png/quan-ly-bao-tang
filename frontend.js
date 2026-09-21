@@ -1505,27 +1505,67 @@ async function handleSaveBorrow(event) {
   }
 }
 
-function openTourModal() {
+let editingTourId = null;
+
+function openTourModal(id = null) {
+  editingTourId = (id !== null && id !== undefined && id !== '') ? id : null;
   const modal = document.getElementById('tourModal');
+  const modalTitle = document.getElementById('tourModalTitle');
+
   if (modal) {
     const elName = document.getElementById('modalTourName');
     const elWard = document.getElementById('modalTourWard');
     const elProv = document.getElementById('modalTourProvince');
+    const elTarget = document.getElementById('modalTourTarget');
     const elSize = document.getElementById('modalTourSize');
     const elGuide = document.getElementById('modalTourGuide');
-    if (elName) elName.value = '';
-    if (elWard) elWard.value = '';
-    if (elProv) {
-      elProv.value = '';
-      elProv.dispatchEvent(new Event('change'));
+
+    if (editingTourId !== null) {
+      if (modalTitle) modalTitle.textContent = 'Chỉnh Sửa Lịch Đoàn Tham Quan';
+      const tour = TOURS_DATA.find(t => String(t.id) === String(editingTourId) || t.code === String(editingTourId));
+      if (tour) {
+        let rawName = tour.name || '';
+        if (rawName.includes(' (')) {
+          rawName = rawName.split(' (')[0].trim();
+        }
+        if (elName) elName.value = rawName;
+        if (elWard) elWard.value = tour.ward || '';
+        if (elProv) {
+          elProv.value = tour.province || '';
+          elProv.dispatchEvent(new Event('change'));
+        }
+        if (elTarget) {
+          elTarget.value = tour.target || 'Du khách';
+          elTarget.dispatchEvent(new Event('change'));
+        }
+        if (elSize) {
+          const num = parseInt(tour.size) || 50;
+          elSize.value = num;
+        }
+        if (elGuide) elGuide.value = tour.guide || '';
+      }
+    } else {
+      if (modalTitle) modalTitle.textContent = 'Đăng Ký Lịch Đoàn Tham Quan Mới';
+      if (elName) elName.value = '';
+      if (elWard) elWard.value = '';
+      if (elProv) {
+        elProv.value = '';
+        elProv.dispatchEvent(new Event('change'));
+      }
+      if (elTarget) {
+        elTarget.value = 'Du khách';
+        elTarget.dispatchEvent(new Event('change'));
+      }
+      if (elSize) elSize.value = '';
+      if (elGuide) elGuide.value = '';
     }
-    if (elSize) elSize.value = '';
-    if (elGuide) elGuide.value = '';
+
     modal.classList.add('active');
   }
 }
 
 function closeTourModal() {
+  editingTourId = null;
   const modal = document.getElementById('tourModal');
   if (modal) modal.classList.remove('active');
 }
@@ -1535,25 +1575,30 @@ async function handleSaveTour(event) {
 
   const tourName = document.getElementById('modalTourName').value.trim();
   const ward = document.getElementById('modalTourWard') ? document.getElementById('modalTourWard').value.trim() : '';
-  const province = document.getElementById('modalTourProvince') ? document.getElementById('modalTourProvince').value.trim() : '';
+  const province = document.getElementById('modalTourProvince') ? document.getElementById('modalTourProvince').value : '';
   const tourTarget = document.getElementById('modalTourTarget') ? document.getElementById('modalTourTarget').value : 'Du khách';
   const tourSize = document.getElementById('modalTourSize').value;
   const guide = document.getElementById('modalTourGuide').value.trim();
 
   const fullNameWithLoc = (ward || province) ? `${tourName} (${[ward, province].filter(Boolean).join(', ')})` : tourName;
 
+  let existingTour = null;
+  if (editingTourId !== null) {
+    existingTour = TOURS_DATA.find(t => String(t.id) === String(editingTourId) || t.code === String(editingTourId));
+  }
+
   const randomNum = Math.floor(100 + Math.random() * 900);
-  const newTour = {
-    id: Date.now(),
-    code: `#DOAN-${randomNum}`,
+  const tourPayload = {
+    id: existingTour ? existingTour.id : Date.now(),
+    code: existingTour ? existingTour.code : `#DOAN-${randomNum}`,
     name: fullNameWithLoc,
     ward: ward,
     province: province,
     target: tourTarget,
     size: `${tourSize} Khách`,
-    time: 'Hôm nay',
+    time: existingTour ? existingTour.time : 'Hôm nay',
     guide: guide,
-    status: 'Chờ Đón Tiếp'
+    status: existingTour ? existingTour.status : 'Chờ Đón Tiếp'
   };
 
   try {
@@ -1562,27 +1607,27 @@ async function handleSaveTour(event) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(newTour)
+      body: JSON.stringify(tourPayload)
     });
 
     const result = await response.json();
 
     if (!response.ok || !result.success || !result.data) {
-      throw new Error(
-        result.message || result.error || `HTTP ${response.status}`
-      );
+      throw new Error(result.message || result.error || `HTTP ${response.status}`);
     }
 
-    // Backend SQLite là nguồn dữ liệu chính
     const savedTour = result.data;
 
-    TOURS_DATA.unshift(savedTour);
+    if (existingTour) {
+      const idx = TOURS_DATA.findIndex(t => String(t.id) === String(existingTour.id) || t.code === existingTour.code);
+      if (idx !== -1) {
+        TOURS_DATA[idx] = savedTour;
+      }
+    } else {
+      TOURS_DATA.unshift(savedTour);
+    }
 
-    // LocalStorage chỉ dùng làm cache
-    localStorage.setItem(
-      'baotang_tours_data',
-      JSON.stringify(TOURS_DATA)
-    );
+    localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
 
     renderTourTable(TOURS_DATA);
     renderDashboardStats();
@@ -1590,17 +1635,15 @@ async function handleSaveTour(event) {
     closeTourModal();
 
     showToast(
-      `Đã đăng ký thành công lịch đoàn ${savedTour.code}!`,
+      existingTour
+        ? `Đã cập nhật thành công thông tin lịch đoàn ${savedTour.code}!`
+        : `Đã đăng ký thành công lịch đoàn ${savedTour.code}!`,
       'success'
     );
 
   } catch (err) {
     console.error('❌ Lỗi lưu lịch đoàn:', err);
-
-    showToast(
-      `Không thể lưu lịch đoàn: ${err.message}`,
-      'error'
-    );
+    showToast(`Không thể lưu lịch đoàn: ${err.message}`, 'error');
   }
 }
 
@@ -1682,6 +1725,9 @@ function renderTourTable(tours) {
       <td>${t.guide}</td>
       <td><span class="badge-status badge-warning">${t.status}</span></td>
       <td>
+        <button type="button" class="btn-secondary btn-sm" style="margin-right: 0.35rem;" onclick="openTourModal('${t.id}')">
+          <i class="fa-solid fa-pen-to-square"></i> Sửa
+        </button>
         <button type="button" class="btn-danger btn-sm" onclick="deleteTour('${t.id}')">
           <i class="fa-solid fa-trash-can"></i> Xóa
         </button>
@@ -2382,6 +2428,8 @@ async function handlePosCheckout() {
 /**
  * UI-10: User Management
  */
+let editingUserId = null;
+
 function renderUserTable(users) {
   const tbody = document.getElementById('userTableBody');
   if (!tbody) return;
@@ -2392,13 +2440,16 @@ function renderUserTable(users) {
       <td><strong>${u.fullName}</strong></td>
       <td><code>${u.username}</code></td>
       <td>${u.email}<br><small style="color: var(--text-dim);">${u.phone}</small></td>
-      <td><span class="profile-role-tag role-${u.role.toLowerCase()}">${u.roleName}</span></td>
+      <td><span class="profile-role-tag role-${(u.role || 'BANVE').toLowerCase()}">${u.roleName}</span></td>
       <td>
         ${u.isLocked
       ? '<span style="color: #dc2626; font-weight:700;"><i class="fa-solid fa-lock"></i> Đã Khóa</span>'
       : '<span style="color: #059669; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Hoạt Động</span>'}
       </td>
       <td>
+        <button type="button" class="btn-secondary btn-sm" style="margin-right: 0.35rem;" onclick="openAddUserModal(${u.id})">
+          <i class="fa-solid fa-pen-to-square"></i> Sửa
+        </button>
         <button type="button" class="btn-secondary btn-sm" onclick="toggleLockUser(${u.id})">
           ${u.isLocked ? 'Mở' : 'Khóa'}
         </button>
@@ -2410,20 +2461,59 @@ function renderUserTable(users) {
 function filterUserTable() {
   const query = document.getElementById('userSearchInput').value.toLowerCase().trim();
   const filtered = USERS_DATA.filter(u =>
-    u.fullName.toLowerCase().includes(query) || u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query)
+    (u.fullName || '').toLowerCase().includes(query) || (u.username || '').toLowerCase().includes(query) || (u.email || '').toLowerCase().includes(query)
   );
   renderUserTable(filtered);
 }
 
-function openAddUserModal() {
-  document.getElementById('userModal').classList.add('active');
+function openAddUserModal(id = null) {
+  editingUserId = (id !== null && id !== undefined && id !== '') ? id : null;
+  const modal = document.getElementById('userModal');
+  const modalTitle = document.getElementById('userModalTitle');
+
+  if (modal) {
+    const elName = document.getElementById('modalUserFullName');
+    const elUsername = document.getElementById('modalUsername');
+    const elRole = document.getElementById('modalUserRole');
+    const elEmail = document.getElementById('modalUserEmail');
+    const elPhone = document.getElementById('modalUserPhone');
+
+    if (editingUserId !== null) {
+      if (modalTitle) modalTitle.textContent = 'Cập Nhật Thông Tin Cán Bộ';
+      const u = USERS_DATA.find(item => String(item.id) === String(editingUserId));
+      if (u) {
+        if (elName) elName.value = u.fullName || '';
+        if (elUsername) elUsername.value = u.username || '';
+        if (elRole) {
+          elRole.value = u.role || 'BANVE';
+          elRole.dispatchEvent(new Event('change'));
+        }
+        if (elEmail) elEmail.value = u.email || '';
+        if (elPhone) elPhone.value = u.phone || '';
+      }
+    } else {
+      if (modalTitle) modalTitle.textContent = 'Tạo Tài Khoản Cán Bộ Mới';
+      if (elName) elName.value = '';
+      if (elUsername) elUsername.value = '';
+      if (elRole) {
+        elRole.value = 'BANVE';
+        elRole.dispatchEvent(new Event('change'));
+      }
+      if (elEmail) elEmail.value = '';
+      if (elPhone) elPhone.value = '';
+    }
+
+    modal.classList.add('active');
+  }
 }
 
 function closeUserModal() {
-  document.getElementById('userModal').classList.remove('active');
+  editingUserId = null;
+  const modal = document.getElementById('userModal');
+  if (modal) modal.classList.remove('active');
 }
 
-function handleSaveUser(event) {
+async function handleSaveUser(event) {
   event.preventDefault();
   const fullName = document.getElementById('modalUserFullName').value.trim();
   const username = document.getElementById('modalUsername').value.trim();
@@ -2433,21 +2523,90 @@ function handleSaveUser(event) {
 
   const roleNameMap = { ADMIN: 'Quản trị viên', THUKHO: 'Kiểm kê & Thủ kho', BANVE: 'Bán vé & Đón tiếp' };
 
-  const newUser = {
-    id: USERS_DATA.length + 1,
-    fullName: fullName,
-    username: username,
-    email: email,
-    phone: phone,
-    role: role,
-    roleName: roleNameMap[role],
-    isLocked: false
-  };
+  if (editingUserId !== null) {
+    try {
+      const response = await fetch(`${API_BASE}/users/${editingUserId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, username, role, email, phone })
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        const idx = USERS_DATA.findIndex(u => String(u.id) === String(editingUserId));
+        if (idx !== -1) {
+          USERS_DATA[idx] = {
+            ...USERS_DATA[idx],
+            fullName,
+            username,
+            email,
+            phone,
+            role,
+            roleName: roleNameMap[role] || 'Cán bộ'
+          };
+        }
+        showToast(`Đã cập nhật thành công thông tin cán bộ ${fullName}!`, 'success');
+      } else {
+        throw new Error(result.message || 'Lỗi cập nhật cán bộ!');
+      }
+    } catch (err) {
+      console.warn('Fallback update local user:', err);
+      const idx = USERS_DATA.findIndex(u => String(u.id) === String(editingUserId));
+      if (idx !== -1) {
+        USERS_DATA[idx] = {
+          ...USERS_DATA[idx],
+          fullName,
+          username,
+          email,
+          phone,
+          role,
+          roleName: roleNameMap[role] || 'Cán bộ'
+        };
+      }
+      showToast(`Đã cập nhật thông tin cán bộ ${fullName}!`, 'success');
+    }
+  } else {
+    try {
+      const response = await fetch(`${API_BASE}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, username, role, email, phone, password: 'password123' })
+      });
+      const result = await response.json();
+      if (response.ok && result.success && result.data) {
+        USERS_DATA.push(result.data);
+        showToast(`Đã tạo tài khoản cán bộ ${fullName} thành công!`, 'success');
+      } else {
+        const newUser = {
+          id: USERS_DATA.length + 1,
+          fullName,
+          username,
+          email,
+          phone,
+          role,
+          roleName: roleNameMap[role] || 'Cán bộ',
+          isLocked: false
+        };
+        USERS_DATA.push(newUser);
+        showToast(`Đã tạo tài khoản cán bộ ${fullName}!`, 'success');
+      }
+    } catch (err) {
+      const newUser = {
+        id: USERS_DATA.length + 1,
+        fullName,
+        username,
+        email,
+        phone,
+        role,
+        roleName: roleNameMap[role] || 'Cán bộ',
+        isLocked: false
+      };
+      USERS_DATA.push(newUser);
+      showToast(`Đã tạo tài khoản cán bộ ${fullName}!`, 'success');
+    }
+  }
 
-  USERS_DATA.push(newUser);
   renderUserTable(USERS_DATA);
   closeUserModal();
-  showToast(`Đã tạo tài khoản cán bộ ${fullName} thành công!`, 'success');
 }
 
 function toggleLockUser(id) {
