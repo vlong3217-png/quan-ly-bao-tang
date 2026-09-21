@@ -544,6 +544,11 @@ body {
   transform: translateY(-50%) rotate(180deg);
 }
 
+.custom-select-wrapper.custom-select-invalid .custom-select-trigger {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
 .custom-select-menu {
   position: absolute;
   top: calc(100% + 6px);

@@ -296,8 +296,14 @@ function initCustomSelects() {
     select.dataset.customized = 'true';
     const id = select.id || `sel_${Math.random().toString(36).substr(2, 7)}`;
 
-    // Hide original native select
-    select.style.display = 'none';
+    // Hide original native select visually while keeping it focusable for HTML5 form validation
+    select.style.cssText = 'position: absolute !important; opacity: 0 !important; width: 1px !important; height: 1px !important; margin: -1px !important; padding: 0 !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; border: 0 !important; pointer-events: none !important;';
+
+    // Handle HTML5 validation invalid event
+    select.addEventListener('invalid', () => {
+      wrapper.classList.add('custom-select-invalid');
+      trigger.focus();
+    });
 
     // Create custom wrapper
     const wrapper = document.createElement('div');
@@ -446,6 +452,9 @@ function initCustomSelects() {
 
     // Sync if native select changed programmatically
     select.addEventListener('change', () => {
+      if (select.value) {
+        wrapper.classList.remove('custom-select-invalid');
+      }
       const curOpt = select.options[select.selectedIndex];
       labelSpan.textContent = curOpt ? curOpt.text : '';
       optionsList.querySelectorAll('.custom-select-option').forEach(el => {
