@@ -1356,71 +1356,17 @@
             style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
             <div>
               <h2 class="card-title">
-                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary-gold);"></i> Trợ Lý AI Bảo Tàng &
-                Cấu Hình API
+                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary-gold);"></i> Trợ Lý AI Bảo Tàng
               </h2>
               <p class="card-subtitle">
-                Quản lý thiết lập kết nối API trợ lý thông minh và truy vấn tổng hợp dữ liệu di sản bằng ngôn ngữ tự
-                nhiên
+                Truy vấn tổng hợp dữ liệu di sản và quản trị bằng ngôn ngữ tự nhiên
               </p>
             </div>
           </div>
         </div>
 
-        <!-- ================= CARD 1: CẤU HÌNH API GEMINI ================= -->
-        <div class="api-config-card">
-          <div class="api-config-header">
-            <div class="api-config-title">
-              <i class="fa-solid fa-sliders"></i> Cấu Hình Kết Nối API Trợ Lý AI (Gemini API Settings)
-            </div>
-            <span class="api-model-tag">
-              <i class="fa-solid fa-microchip"></i> Model: gemini-3.6-flash
-            </span>
-          </div>
-
-          <div class="api-config-body">
-            <form id="aiApiConfigForm" onsubmit="handleSaveAiKey(event)">
-              <div class="form-group">
-                <label class="form-label" for="aiApiKeyInput">
-                  Khóa bí mật API Key (Google AI Studio Key) <span style="color: #ef4444;">*</span>
-                </label>
-                <div class="input-container" style="position: relative;">
-                  <input type="password" id="aiApiKeyInput" class="form-input"
-                    placeholder="Nhập API Key bắt đầu bằng AIzaSy... hoặc AQ..." required
-                    style="padding-right: 5.5rem; font-family: monospace; font-size: 0.95rem;">
-                  <i class="fa-solid fa-key input-icon"></i>
-                  <div
-                    style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); display: flex; gap: 0.35rem;">
-                    <button type="button" class="btn-icon-subtle" title="Hiện/Ẩn Key"
-                      onclick="togglePasswordVisibility('aiApiKeyInput', this)">
-                      <i class="fa-regular fa-eye"></i>
-                    </button>
-                    <button type="button" class="btn-icon-subtle" title="Sao chép Key" onclick="copyAiApiKey()">
-                      <i class="fa-regular fa-copy"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="api-config-actions">
-                <button type="button" id="btnTestAiConnection" class="btn-secondary"
-                  style="width: auto; padding: 0.75rem 1.4rem; font-weight: 600;" onclick="handleTestAiKey()">
-                  <i class="fa-solid fa-bolt" style="color: #d97706;"></i> Kiểm Tra Kết Nối API
-                </button>
-                <button type="submit" id="btnSaveAiKey" class="btn-primary"
-                  style="width: auto; padding: 0.75rem 1.75rem;">
-                  <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình Key
-                </button>
-              </div>
-            </form>
-
-            <!-- Live Test Status Box -->
-            <div id="aiApiTestStatus" class="api-test-result" style="display: none;"></div>
-          </div>
-        </div>
-
-        <!-- ================= CARD 2: TRUY VẤN NGÔN NGỮ TỰ NHIÊN ================= -->
-        <div class="ai-nlq-card" style="margin-top: 2rem;">
+        <!-- ================= TRUY VẤN NGÔN NGỮ TỰ NHIÊN ================= -->
+        <div class="ai-nlq-card" style="margin-top: 1rem;">
           <div class="api-config-header">
             <div class="api-config-title">
               <i class="fa-solid fa-comments"></i> Truy Vấn Dữ Liệu Quản Trị Bằng Ngôn Ngữ Tự Nhiên
