@@ -2874,6 +2874,12 @@ async function handleExecuteAdminNlQuery(event) {
         }
       })
     });
+    
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok || !contentType.includes('application/json')) {
+      throw new Error(`Server phản hồi lỗi (${res.status}). Vui lòng kiểm tra lại dịch vụ backend.`);
+    }
+
     const data = await res.json();
 
     if (data.success && data.data) {
@@ -2889,7 +2895,7 @@ async function handleExecuteAdminNlQuery(event) {
     }
   } catch (err) {
     console.error('Lỗi Admin AI Query:', err);
-    resultBox.innerHTML = `<div style="color: red; padding: 1rem;">Không thể kết nối đến server AI Admin.</div>`;
+    resultBox.innerHTML = `<div style="color: red; padding: 1rem;">Không thể kết nối đến server AI Admin (${err.message}).</div>`;
   }
 }
 

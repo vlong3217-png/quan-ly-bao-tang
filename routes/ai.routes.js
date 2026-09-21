@@ -8,11 +8,14 @@ let ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 // Helper function calling Gemini AI with automatic model fallback for high availability
 async function generateGeminiWithFallback(contents, systemInstruction) {
   const models = [
-    'gemini-3.6-flash'
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro'
   ];
   let lastErr = null;
 
-  const currentKey = process.env.GEMINI_API_KEY;
+  const currentKey = (process.env.GEMINI_API_KEY || '').trim();
   if (!currentKey) {
     throw new Error('GEMINI_API_KEY chưa được cấu hình!');
   }
@@ -21,11 +24,17 @@ async function generateGeminiWithFallback(contents, systemInstruction) {
 
   for (const model of models) {
     try {
-      const response = await client.models.generateContent({
+      const callPromise = client.models.generateContent({
         model: model,
         contents: contents,
         config: { systemInstruction }
       });
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout 10s khi gọi Gemini model ${model}`)), 10000)
+      );
+
+      const response = await Promise.race([callPromise, timeoutPromise]);
       if (response && response.text) {
         return response.text;
       }
@@ -34,7 +43,7 @@ async function generateGeminiWithFallback(contents, systemInstruction) {
       lastErr = err;
     }
   }
-  throw lastErr;
+  throw lastErr || new Error('Không thể phản hồi từ Gemini API.');
 }
 
 // Smart offline curator knowledge fallback when external network/API is momentarily unreachable
