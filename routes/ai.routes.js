@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
+const pool = require('../config/db');
 
 // Khởi tạo Gemini AI Client từ API Key trong .env
 let ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -27,7 +28,7 @@ async function generateGeminiWithFallback(contents, systemInstruction) {
     try {
       console.log(`🤖 Đang gọi Gemini model: ${model}`);
 
-      const geminiRequest = client.models.generateContent({
+      const request = client.models.generateContent({
         model: model,
         contents: contents,
         config: {
@@ -37,12 +38,14 @@ async function generateGeminiWithFallback(contents, systemInstruction) {
 
       const timeout = new Promise((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Gemini API timeout sau 15 giây'));
+          reject(
+            new Error('Gemini API timeout sau 15 giây')
+          );
         }, 15000);
       });
 
       const response = await Promise.race([
-        geminiRequest,
+        request,
         timeout
       ]);
 
@@ -52,8 +55,12 @@ async function generateGeminiWithFallback(contents, systemInstruction) {
       }
 
       throw new Error('Gemini không trả về nội dung');
+
     } catch (err) {
-      console.warn(`⚠️ Gemini ${model} lỗi: ${err.message}`);
+      console.warn(
+        `⚠️ Gemini ${model} lỗi: ${err.message}`
+      );
+
       lastErr = err;
     }
   }
@@ -134,56 +141,310 @@ THÔNG TIN BẢO TÀNG THỰC TẾ:
  * POST /api/ai/query
  * Admin Natural Language NLP Query qua Google Gemini API
  */
+/**
+ * POST /api/ai/query
+ * Admin Natural Language Query - đọc dữ liệu trực tiếp từ SQLite
+ */
 router.post('/query', async (req, res) => {
-  const { prompt, contextStats } = req.body;
+  const { prompt } = req.body;
 
-  if (!prompt) {
-    return res.status(400).json({ success: false, message: 'Vui lòng nhập câu hỏi tự nhiên cho AI Administrator!' });
+  if (!prompt || !prompt.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng nhập câu hỏi tự nhiên cho AI Administrator!'
+    });
   }
 
+  const question = prompt.trim();
+  const q = question.toLowerCase();
+
   try {
-    const stats = contextStats || {};
-    const totalVisitors = stats.totalVisitors || 0;
-    const totalRevenue = stats.totalRevenue || 0;
-    const totalArtifacts = stats.totalArtifacts || 0;
+    // =========================================================
+    // 1. ĐỌC DỮ LIỆU TRỰC TIẾP TỪ SQLITE
+    // =========================================================
 
-    const systemInstruction = `Bạn là AI Trợ lý Quản trị & Trí tuệ Dữ liệu (Admin Data Intelligence AI) của Bảo tàng Văn hóa các Dân tộc Việt Nam (Thái Nguyên). Khi Cán bộ hoặc Lãnh đạo đặt câu hỏi truy vấn tự nhiên về kho hiện vật, báo cáo doanh thu, lượt khách hay công tác bảo quản:
-- Hãy phân tích và trả lời súc tích, cấu trúc rõ ràng với các mục tóm tắt số liệu, thông kê chi tiết và khuyến nghị quản lý.
-- KHÔNG sử dụng ký tự Markdown dạng dấu sao (*) hay (**). Dùng dấu gạch ngang "-" khi liệt kê.
-- DỮ LIỆU THỰC TẾ ĐANG VẬN HÀNH TRÊN HỆ THỐNG QUẢN TRỊ BẢO TÀNG:
-  + Bảng giá vé hiện hành thực tế: Vé Tham Quan Bảo Tàng (Phổ thông/Người lớn): 30.000 VNĐ/lượt; Vé Trẻ Em dưới 5 tuổi: Miễn phí (0 VNĐ).
-  + Báo cáo số liệu thực tế hệ thống đã ghi nhận:
-    * Tổng số vé/lượt khách đã bán và lưu vết: ${totalVisitors} lượt vé.
-    * Tổng doanh thu thực tế ghi nhận: ${totalRevenue.toLocaleString('vi-VN')} VNĐ.
-    * Tổng số hồ sơ hiện vật di sản trong cơ sở dữ liệu: ${totalArtifacts} hiện vật.
-  + Hệ thống cơ sở vật chất bảo tàng:
-    * 5 Phòng trưng bày trong nhà (Phòng 1, Phòng 2, Phòng 3, Phòng 4, Phòng 5) theo các nhóm ngôn ngữ.
-    * 6 Vùng không gian văn hóa sinh thái ngoài trời (Vùng núi cao phía Bắc, Thung lũng, Trung du-Bắc Bộ, Miền Trung-Ven biển, Trường Sơn-Tây Nguyên, Đồng Bằng Nam Bộ).
-    * Hệ thống Kho bảo quản 1.
-  + Tình trạng vật lý hiện vật: Hầu hết nguyên vẹn và được theo dõi lịch bảo quản định kỳ.`;
+    // Tổng số hiện vật
+    const [artifactRows] = await pool.query(`
+      SELECT COUNT(*) AS totalArtifacts
+      FROM HienVat
+    `);
 
-    const detailsText = await generateGeminiWithFallback(prompt, systemInstruction);
+    const totalArtifacts = Number(
+      artifactRows[0]?.totalArtifacts || 0
+    );
 
-    return res.json({
-      success: true,
-      data: {
-        summary: `Kết quả phân tích dữ liệu quản trị thực tế qua Trợ lý AI Bảo tàng`,
-        details: detailsText
+    // =========================================================
+    // 2. TRẢ LỜI TRỰC TIẾP CÁC CÂU HỎI VỀ HIỆN VẬT
+    // =========================================================
+
+    if (
+      q.includes('hiện vật') ||
+      q.includes('hien vat') ||
+      q.includes('di sản') ||
+      q.includes('di san') ||
+      q.includes('kho')
+    ) {
+      // Hỏi số lượng
+      if (
+        q.includes('bao nhiêu') ||
+        q.includes('số lượng') ||
+        q.includes('so luong') ||
+        q.includes('tổng số') ||
+        q.includes('tong so')
+      ) {
+        return res.json({
+          success: true,
+          data: {
+            summary: 'Kết quả truy vấn SQLite',
+            details:
+              `Hiện tại cơ sở dữ liệu bảo tàng đang ghi nhận ${totalArtifacts} hiện vật trong bảng HienVat.`,
+            source: 'SQLite'
+          }
+        });
       }
-    });
+
+      // Hỏi danh sách hiện vật
+      if (
+        q.includes('danh sách') ||
+        q.includes('danh sach') ||
+        q.includes('những hiện vật') ||
+        q.includes('cac hien vat')
+      ) {
+        const [artifactList] = await pool.query(`
+          SELECT
+            hienvat_id,
+            ma_hienvat,
+            ten_hienvat,
+            chat_lieu,
+            nien_dai,
+            tinh_trang
+          FROM HienVat
+          ORDER BY hienvat_id DESC
+          LIMIT 50
+        `);
+
+        if (artifactList.length === 0) {
+          return res.json({
+            success: true,
+            data: {
+              summary: 'Dữ liệu hiện vật',
+              details: 'Hiện tại chưa có hiện vật nào trong cơ sở dữ liệu SQLite.',
+              source: 'SQLite'
+            }
+          });
+        }
+
+        const listText = artifactList.map((item, index) => {
+          return `${index + 1}. ${item.ten_hienvat || 'Chưa có tên'}`
+            + ` | Mã: ${item.ma_hienvat || 'N/A'}`
+            + ` | Chất liệu: ${item.chat_lieu || 'N/A'}`
+            + ` | Niên đại: ${item.nien_dai || 'N/A'}`
+            + ` | Tình trạng: ${item.tinh_trang || 'N/A'}`;
+        }).join('\n');
+
+        return res.json({
+          success: true,
+          data: {
+            summary: `Danh sách ${artifactList.length} hiện vật`,
+            details: listText,
+            source: 'SQLite'
+          }
+        });
+      }
+    }
+
+    // =========================================================
+    // 3. CÁC THỐNG KÊ KHÁC
+    //    Chỉ lấy từ SQLite nếu bảng tồn tại.
+    // =========================================================
+
+    let totalTickets = 0;
+    let totalVisitors = 0;
+    let totalRevenue = 0;
+
+    try {
+      const [ticketRows] = await pool.query(`
+        SELECT
+          COUNT(*) AS totalTickets,
+          COALESCE(SUM(total_qty), 0) AS totalVisitors,
+          COALESCE(SUM(amount), 0) AS totalRevenue
+        FROM VeThamQuan
+      `);
+
+      if (ticketRows.length > 0) {
+        totalTickets = Number(ticketRows[0].totalTickets || 0);
+        totalVisitors = Number(ticketRows[0].totalVisitors || 0);
+        totalRevenue = Number(ticketRows[0].totalRevenue || 0);
+      }
+    } catch (ticketError) {
+      console.warn(
+        'Không thể đọc bảng VeThamQuan:',
+        ticketError.message
+      );
+    }
+
+    // =========================================================
+    // 4. TRẢ LỜI TRỰC TIẾP CÁC CÂU HỎI THỐNG KÊ
+    // =========================================================
+
+    if (
+      q.includes('doanh thu') ||
+      q.includes('doanh số')
+    ) {
+      return res.json({
+        success: true,
+        data: {
+          summary: 'Doanh thu từ SQLite',
+          details:
+            `Tổng doanh thu ghi nhận trong bảng VeThamQuan là ${totalRevenue.toLocaleString('vi-VN')} VNĐ.`,
+          source: 'SQLite'
+        }
+      });
+    }
+
+    if (
+      q.includes('lượt khách') ||
+      q.includes('luot khach') ||
+      q.includes('bao nhiêu khách') ||
+      q.includes('bao nhieu khach')
+    ) {
+      return res.json({
+        success: true,
+        data: {
+          summary: 'Lượt khách từ SQLite',
+          details:
+            `Tổng số lượt khách được ghi nhận trong hệ thống là ${totalVisitors.toLocaleString('vi-VN')} lượt.`,
+          source: 'SQLite'
+        }
+      });
+    }
+
+    if (
+      q.includes('bao nhiêu vé') ||
+      q.includes('bao nhieu ve') ||
+      q.includes('số vé') ||
+      q.includes('so ve')
+    ) {
+      return res.json({
+        success: true,
+        data: {
+          summary: 'Số vé từ SQLite',
+          details:
+            `Hệ thống đang ghi nhận ${totalTickets.toLocaleString('vi-VN')} vé trong bảng VeThamQuan.`,
+          source: 'SQLite'
+        }
+      });
+    }
+
+    // =========================================================
+    // 5. CÂU HỎI TỔNG QUAN
+    // =========================================================
+
+    if (
+      q.includes('tổng quan') ||
+      q.includes('tong quan') ||
+      q.includes('tình hình') ||
+      q.includes('tinh hinh') ||
+      q.includes('thống kê') ||
+      q.includes('thong ke')
+    ) {
+      return res.json({
+        success: true,
+        data: {
+          summary: 'Tổng quan dữ liệu bảo tàng',
+          details:
+            `Báo cáo dữ liệu thực tế từ SQLite:\n` +
+            `- Tổng số hiện vật: ${totalArtifacts.toLocaleString('vi-VN')} hiện vật.\n` +
+            `- Tổng số vé: ${totalTickets.toLocaleString('vi-VN')} vé.\n` +
+            `- Tổng lượt khách: ${totalVisitors.toLocaleString('vi-VN')} lượt.\n` +
+            `- Tổng doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VNĐ.`,
+          source: 'SQLite'
+        }
+      });
+    }
+
+    // =========================================================
+    // 6. NẾU CÂU HỎI PHỨC TẠP -> GỬI GEMINI
+    //    NHƯNG GEMINI NHẬN DỮ LIỆU THẬT TỪ SQLITE
+    // =========================================================
+
+    const databaseContext = `
+DỮ LIỆU THỰC TẾ ĐỌC TRỰC TIẾP TỪ SQLITE:
+
+- Tổng số hiện vật: ${totalArtifacts}
+- Tổng số vé: ${totalTickets}
+- Tổng lượt khách: ${totalVisitors}
+- Tổng doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VNĐ
+
+Nguồn dữ liệu: SQLite database của hệ thống bảo tàng.
+Không được tự bịa thêm số liệu.
+Nếu câu hỏi không thể trả lời từ các số liệu trên, hãy nói rõ rằng dữ liệu hiện tại chưa đủ.
+`;
+
+    const systemInstruction = `
+Bạn là AI Trợ lý Quản trị Dữ liệu của Bảo tàng Văn hóa các Dân tộc Việt Nam.
+
+NHIỆM VỤ:
+- Phân tích câu hỏi của quản trị viên.
+- Sử dụng chính xác dữ liệu SQLite được cung cấp.
+- Không tự tạo hoặc đoán số liệu.
+- Không sử dụng số liệu cũ từ frontend.
+- Trả lời bằng tiếng Việt.
+- Trả lời ngắn gọn, rõ ràng.
+- Không dùng Markdown dạng ** hoặc *.
+- Khi liệt kê, dùng dấu "-".
+
+${databaseContext}
+`;
+
+    try {
+      const detailsText = await generateGeminiWithFallback(
+        question,
+        systemInstruction
+      );
+
+      return res.json({
+        success: true,
+        data: {
+          summary: 'Kết quả phân tích dữ liệu thực tế',
+          details: detailsText,
+          source: 'SQLite + Gemini'
+        }
+      });
+    } catch (geminiError) {
+      console.error(
+        'Gemini không phản hồi, sử dụng dữ liệu SQLite:',
+        geminiError.message
+      );
+
+      // =====================================================
+      // 7. GEMINI LỖI -> VẪN TRẢ DỮ LIỆU SQLITE
+      //    KHÔNG TRẢ CÂU MẪU CŨ
+      // =====================================================
+
+      return res.json({
+        success: true,
+        data: {
+          summary: 'Kết quả truy vấn dữ liệu thực tế',
+          details:
+            `Dữ liệu hiện tại từ cơ sở dữ liệu SQLite:\n` +
+            `- Hiện vật: ${totalArtifacts.toLocaleString('vi-VN')}\n` +
+            `- Vé đã ghi nhận: ${totalTickets.toLocaleString('vi-VN')}\n` +
+            `- Lượt khách: ${totalVisitors.toLocaleString('vi-VN')}\n` +
+            `- Doanh thu: ${totalRevenue.toLocaleString('vi-VN')} VNĐ\n\n` +
+            `Gemini hiện không phản hồi, vì vậy hệ thống đã trả kết quả trực tiếp từ SQLite.`,
+          source: 'SQLite'
+        }
+      });
+    }
+
   } catch (error) {
-    console.error('Lỗi AI Query, kích hoạt fallback:', error.message);
-    const stats = req.body.contextStats || {};
-    const totalVisitors = stats.totalVisitors || 0;
-    const totalRevenue = stats.totalRevenue || 0;
-    const totalArtifacts = stats.totalArtifacts !== undefined ? stats.totalArtifacts : 0;
+    console.error('❌ Lỗi /api/ai/query:', error);
 
-    return res.json({
-      success: true,
-      data: {
-        summary: 'Kết quả phân tích thống kê quản trị bảo tàng',
-        details: `Báo cáo tình hình vận hành bảo tàng:\n- Lượt khách đã đón: ${totalVisitors} lượt khách tham quan.\n- Doanh thu bán vé ghi nhận: ${totalRevenue.toLocaleString('vi-VN')} VNĐ.\n- Tổng số hiện vật trong cơ sở dữ liệu: ${totalArtifacts} hiện vật di sản thuộc 54 dân tộc.\n- Tình trạng kỹ thuật: Hệ thống 5 phòng trưng bày và kho bảo quản vận hành ổn định.`
-      }
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể truy vấn dữ liệu SQLite.',
+      error: error.message
     });
   }
 });
