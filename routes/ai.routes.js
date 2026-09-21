@@ -8,41 +8,33 @@ let ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 // Helper function calling Gemini AI with automatic model fallback for high availability
 async function generateGeminiWithFallback(contents, systemInstruction) {
   const models = [
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash'
+    'gemini-3.6-flash'
   ];
   let lastErr = null;
 
   const currentKey = process.env.GEMINI_API_KEY;
-  if (!currentKey || !currentKey.trim()) {
+  if (!currentKey) {
     throw new Error('GEMINI_API_KEY chưa được cấu hình!');
   }
 
-  const client = new GoogleGenAI({ apiKey: currentKey.trim() });
+  const client = new GoogleGenAI({ apiKey: currentKey });
 
   for (const model of models) {
     try {
-      const generatePromise = client.models.generateContent({
+      const response = await client.models.generateContent({
         model: model,
         contents: contents,
         config: { systemInstruction }
       });
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Quá thời gian phản hồi từ Google AI model ${model} (6s)`)), 6000)
-      );
-
-      const response = await Promise.race([generatePromise, timeoutPromise]);
       if (response && response.text) {
         return response.text;
       }
     } catch (err) {
-      console.warn(`Model ${model} thất bại (${err.message}), thử model dự phòng tiếp theo...`);
+      console.warn(`Model ${model} failed (${err.message}), trying next fallback model...`);
       lastErr = err;
     }
   }
-  throw lastErr || new Error('Không thể phản hồi từ Gemini API');
+  throw lastErr;
 }
 
 // Smart offline curator knowledge fallback when external network/API is momentarily unreachable
@@ -188,7 +180,7 @@ router.get('/config', (req, res) => {
     hasKey,
     maskedKey,
     rawKey: rawKey,
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.6-flash',
     fallbackModels: ['gemini-2.5-flash', 'gemini-flash-latest'],
     status: hasKey ? 'READY' : 'MISSING_KEY',
     statusText: hasKey ? 'Đã kết nối & Sẵn sàng hoạt động' : 'Chưa cấu hình API Key'
@@ -248,7 +240,7 @@ router.post('/test', async (req, res) => {
 
     const testClient = new GoogleGenAI({ apiKey: testKey });
     const response = await testClient.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: 'Xin chào, phản hồi ngắn gọn 1 câu để kiểm tra kết nối hệ thống.'
     });
 
