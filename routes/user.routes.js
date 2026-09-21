@@ -137,4 +137,54 @@ router.post('/', async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/users/:id
+ * Cập nhật thông tin cán bộ theo ID trong SQLite
+ */
+router.put('/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { fullName, username, email, phone, role, password } = req.body;
+
+    const [existing] = await pool.query('SELECT * FROM Users WHERE user_id = ? OR username = ? LIMIT 1', [userId, username]);
+    if (!existing.length) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản cán bộ!' });
+    }
+
+    const u = existing[0];
+    const newName = fullName !== undefined ? fullName : u.full_name;
+    const newEmail = email !== undefined ? email : u.email;
+    const newPhone = phone !== undefined ? phone : u.phone;
+    const newRole = role !== undefined ? role : u.role;
+    const newPassword = password ? password : u.password;
+
+    await pool.query(
+      'UPDATE Users SET full_name = ?, email = ?, phone = ?, role = ?, password = ? WHERE user_id = ?',
+      [newName, newEmail, newPhone, newRole, newPassword, u.user_id]
+    );
+
+    const [updatedRows] = await pool.query('SELECT * FROM Users WHERE user_id = ?', [u.user_id]);
+    const updatedUser = updatedRows[0];
+
+    return res.json({
+      success: true,
+      message: 'Cập nhật thông tin cán bộ thành công!',
+      data: {
+        id: updatedUser.user_id,
+        username: updatedUser.username,
+        fullName: updatedUser.full_name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        roleName: roleNameMap[updatedUser.role] || 'Cán bộ',
+        isLocked: false
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi cập nhật user:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi cập nhật tài khoản cán bộ!', error: error.message });
+  }
+});
+
 module.exports = router;
