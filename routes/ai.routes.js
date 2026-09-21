@@ -5,42 +5,66 @@ const { GoogleGenAI } = require('@google/genai');
 // Khởi tạo Gemini AI Client từ API Key trong .env
 let ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Helper function calling Gemini AI with automatic model fallback for high availability
+// Helper function calling Gemini AI with timeout
 async function generateGeminiWithFallback(contents, systemInstruction) {
   const models = [
     'gemini-3.6-flash'
   ];
+
   let lastErr = null;
 
   const currentKey = process.env.GEMINI_API_KEY;
+
   if (!currentKey) {
     throw new Error('GEMINI_API_KEY chưa được cấu hình!');
   }
 
-  const client = new GoogleGenAI({ apiKey: currentKey });
+  const client = new GoogleGenAI({
+    apiKey: currentKey
+  });
 
   for (const model of models) {
     try {
-      const response = await client.models.generateContent({
+      console.log(`🤖 Đang gọi Gemini model: ${model}`);
+
+      const geminiRequest = client.models.generateContent({
         model: model,
         contents: contents,
-        config: { systemInstruction }
+        config: {
+          systemInstruction
+        }
       });
+
+      const timeout = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Gemini API timeout sau 15 giây'));
+        }, 15000);
+      });
+
+      const response = await Promise.race([
+        geminiRequest,
+        timeout
+      ]);
+
       if (response && response.text) {
+        console.log('✅ Gemini trả lời thành công');
         return response.text;
       }
+
+      throw new Error('Gemini không trả về nội dung');
     } catch (err) {
-      console.warn(`Model ${model} failed (${err.message}), trying next fallback model...`);
+      console.warn(`⚠️ Gemini ${model} lỗi: ${err.message}`);
       lastErr = err;
     }
   }
+
   throw lastErr;
 }
 
 // Smart offline curator knowledge fallback when external network/API is momentarily unreachable
 function getOfflineCuratorResponse(question, artifactContext) {
   const q = (question || '').trim().toLowerCase();
-  
+
   if (q.includes('xin chào') || q.includes('chào') || q.includes('hello') || q.includes('hi')) {
     return 'Xin chào quý khách! Tôi là Trợ lý Virtual AI của Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi có thể hỗ trợ bạn tìm hiểu về 54 dân tộc, 5 phòng trưng bày, giá vé, giờ mở cửa. Bạn cần tư vấn thông tin gì hôm nay?';
   }
@@ -171,8 +195,8 @@ router.post('/query', async (req, res) => {
 router.get('/config', (req, res) => {
   const rawKey = process.env.GEMINI_API_KEY || '';
   const hasKey = Boolean(rawKey && rawKey.trim());
-  const maskedKey = rawKey.length > 10 
-    ? `${rawKey.substring(0, 7)}...${rawKey.substring(rawKey.length - 4)}` 
+  const maskedKey = rawKey.length > 10
+    ? `${rawKey.substring(0, 7)}...${rawKey.substring(rawKey.length - 4)}`
     : (hasKey ? '********' : 'Chưa cấu hình');
 
   res.json({
