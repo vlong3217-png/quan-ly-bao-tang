@@ -281,6 +281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderInventoryTable(ARTIFACTS_DATA);
   renderBorrowTable(BORROW_DATA);
   renderTourTable(TOURS_DATA);
+  renderUserTable(USERS_DATA);
   renderDashboardStats();
   renderShiftReportStats();
   initCustomSelects();
@@ -2459,8 +2460,11 @@ function renderUserTable(users) {
         <button type="button" class="btn-secondary btn-sm" style="margin-right: 0.35rem;" onclick="openAddUserModal(${u.id})">
           <i class="fa-solid fa-pen-to-square"></i> Sửa
         </button>
-        <button type="button" class="btn-secondary btn-sm" onclick="toggleLockUser(${u.id})">
-          ${u.isLocked ? 'Mở' : 'Khóa'}
+        <button type="button" class="btn-secondary btn-sm" style="margin-right: 0.35rem;" onclick="toggleLockUser(${u.id})">
+          ${u.isLocked ? '<i class="fa-solid fa-lock-open"></i> Mở' : '<i class="fa-solid fa-lock"></i> Khóa'}
+        </button>
+        <button type="button" class="btn-danger btn-sm" onclick="deleteUser(${u.id})">
+          <i class="fa-solid fa-trash-can"></i> Xóa
         </button>
       </td>
     </tr>
@@ -2618,12 +2622,58 @@ async function handleSaveUser(event) {
   closeUserModal();
 }
 
-function toggleLockUser(id) {
-  const u = USERS_DATA.find(item => item.id === id);
-  if (u) {
-    u.isLocked = !u.isLocked;
+async function toggleLockUser(id) {
+  const u = USERS_DATA.find(item => String(item.id) === String(id));
+  if (!u) return;
+
+  const newLockState = !u.isLocked;
+
+  try {
+    const response = await fetch(`${API_BASE}/users/${id}/lock`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isLocked: newLockState })
+    });
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      u.isLocked = result.isLocked !== undefined ? result.isLocked : newLockState;
+      renderUserTable(USERS_DATA);
+      showToast(u.isLocked ? `Đã khóa tài khoản ${u.fullName}` : `Đã mở khóa tài khoản ${u.fullName}`, 'info');
+    } else {
+      throw new Error(result.message || 'Lỗi đổi trạng thái khóa!');
+    }
+  } catch (err) {
+    u.isLocked = newLockState;
     renderUserTable(USERS_DATA);
     showToast(u.isLocked ? `Đã khóa tài khoản ${u.fullName}` : `Đã mở khóa tài khoản ${u.fullName}`, 'info');
+  }
+}
+
+async function deleteUser(id) {
+  const u = USERS_DATA.find(item => String(item.id) === String(id));
+  const userName = u ? u.fullName || u.username : 'tài khoản cán bộ';
+
+  if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản ${userName} khỏi hệ thống?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/users/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Không thể xóa cán bộ');
+    }
+
+    USERS_DATA = USERS_DATA.filter(item => String(item.id) !== String(id));
+    renderUserTable(USERS_DATA);
+    showToast(`Đã xóa thành công tài khoản cán bộ ${userName}!`, 'info');
+  } catch (err) {
+    console.error('❌ Lỗi xóa cán bộ:', err);
+    showToast(`Không thể xóa tài khoản cán bộ: ${err.message}`, 'error');
   }
 }
 

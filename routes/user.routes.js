@@ -25,9 +25,10 @@ const roleBadgeMap = {
  */
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT user_id AS id, username, full_name AS fullName, email, phone, role, avatar FROM Users ORDER BY user_id ASC');
+    const [rows] = await pool.query('SELECT user_id AS id, username, full_name AS fullName, email, phone, role, avatar, COALESCE(is_locked, 0) AS isLocked FROM Users ORDER BY user_id ASC');
     const users = rows.map(u => ({
       ...u,
+      isLocked: Boolean(u.isLocked),
       roleName: roleNameMap[u.role] || 'Cán bộ',
       roleBadgeClass: roleBadgeMap[u.role] || 'role-banve'
     }));
@@ -54,7 +55,7 @@ router.put('/profile', async (req, res) => {
     if (!existing.length) {
       // If user doesn't exist yet, insert new user
       await pool.query(
-        'INSERT INTO Users (username, password, full_name, email, phone, avatar) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO Users (username, password, full_name, email, phone, avatar, is_locked) VALUES (?, ?, ?, ?, ?, ?, 0)',
         [username, password || 'password123', fullName || username, email || '', phone || '', avatar || 'avatar/01.jpg']
       );
     } else {
@@ -85,7 +86,8 @@ router.put('/profile', async (req, res) => {
         phone: updatedUser.phone,
         role: updatedUser.role,
         roleName: roleNameMap[updatedUser.role] || 'Cán bộ',
-        avatar: updatedUser.avatar
+        avatar: updatedUser.avatar,
+        isLocked: Boolean(updatedUser.is_locked)
       }
     });
 
@@ -110,7 +112,7 @@ router.post('/', async (req, res) => {
     const userRole = role || 'BANVE';
 
     const [result] = await pool.query(
-      'INSERT INTO Users (username, password, full_name, email, phone, role, avatar) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO Users (username, password, full_name, email, phone, role, avatar, is_locked) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
       [username, password || 'password123', fullName || username, email || '', phone || '', userRole, 'avatar/01.jpg']
     );
 
@@ -134,6 +136,36 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('❌ Lỗi tạo user:', error);
     return res.status(500).json({ success: false, message: 'Lỗi tạo tài khoản cán bộ!', error: error.message });
+  }
+});
+
+/**
+ * PUT /api/users/:id/lock
+ * Khóa hoặc Mở khóa tài khoản cán bộ trong SQLite
+ */
+router.put('/:id/lock', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { isLocked } = req.body;
+
+    const [rows] = await pool.query('SELECT user_id, is_locked FROM Users WHERE user_id = ? OR username = ? LIMIT 1', [userId, userId]);
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản cán bộ!' });
+    }
+
+    const currentLock = rows[0].is_locked ? 1 : 0;
+    const newLockState = isLocked !== undefined ? (isLocked ? 1 : 0) : (currentLock ? 0 : 1);
+
+    await pool.query('UPDATE Users SET is_locked = ? WHERE user_id = ?', [newLockState, rows[0].user_id]);
+
+    return res.json({
+      success: true,
+      message: newLockState ? 'Đã khóa tài khoản cán bộ!' : 'Đã mở khóa tài khoản cán bộ!',
+      isLocked: Boolean(newLockState)
+    });
+  } catch (error) {
+    console.error('❌ Lỗi khóa/mở khóa user:', error);
+    return res.status(500).json({ success: false, message: 'Không thể thay đổi trạng thái khóa cán bộ!', error: error.message });
   }
 });
 
@@ -177,13 +209,31 @@ router.put('/:id', async (req, res) => {
         phone: updatedUser.phone,
         role: updatedUser.role,
         roleName: roleNameMap[updatedUser.role] || 'Cán bộ',
-        isLocked: false
+        isLocked: Boolean(updatedUser.is_locked)
       }
     });
 
   } catch (error) {
     console.error('❌ Lỗi cập nhật user:', error);
     return res.status(500).json({ success: false, message: 'Lỗi cập nhật tài khoản cán bộ!', error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/users/:id
+ * Xóa tài khoản cán bộ khỏi SQLite
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const [result] = await pool.query('DELETE FROM Users WHERE user_id = ? OR username = ?', [userId, userId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản cán bộ!' });
+    }
+    return res.json({ success: true, message: 'Xóa tài khoản cán bộ khỏi hệ thống thành công!' });
+  } catch (error) {
+    console.error('❌ Lỗi xóa user:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi xóa tài khoản cán bộ!', error: error.message });
   }
 });
 
