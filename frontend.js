@@ -2874,15 +2874,14 @@ async function handleExecuteAdminNlQuery(event) {
         }
       })
     });
-    
-    const contentType = res.headers.get('content-type') || '';
-    if (!res.ok || !contentType.includes('application/json')) {
-      throw new Error(`Server phản hồi lỗi (${res.status}). Vui lòng kiểm tra lại dịch vụ backend.`);
+    let data;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      throw new Error(`Máy chủ phản hồi trang lỗi HTML (Mã HTTP ${res.status}). Vui lòng kiểm tra lại API Key.`);
     }
 
-    const data = await res.json();
-
-    if (data.success && data.data) {
+    if (data && data.success && data.data) {
       resultBox.innerHTML = `
         <div style="background: #fdfaef; border: 1.5px solid var(--primary-gold); padding: 1.25rem; border-radius: var(--radius-md);">
           <h4 style="color: #78350f; font-size: 1.05rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-robot"></i> ${data.data.summary}</h4>
@@ -2891,11 +2890,11 @@ async function handleExecuteAdminNlQuery(event) {
       `;
       showToast('Đã phân tích dữ liệu quản trị bằng Trợ lý AI Bảo tàng thành công!', 'success');
     } else {
-      resultBox.innerHTML = `<div style="color: red; padding: 1rem;">${data.message || 'Lỗi xử lý AI Admin'}</div>`;
+      resultBox.innerHTML = `<div style="color: red; padding: 1rem;">${(data && data.message) || 'Lỗi xử lý AI Admin'}</div>`;
     }
   } catch (err) {
     console.error('Lỗi Admin AI Query:', err);
-    resultBox.innerHTML = `<div style="color: red; padding: 1rem;">Không thể kết nối đến server AI Admin (${err.message}).</div>`;
+    resultBox.innerHTML = `<div style="color: red; padding: 1rem;">Không thể kết nối đến server AI Admin.</div>`;
   }
 }
 
