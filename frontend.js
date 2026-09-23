@@ -284,6 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderUserTable(USERS_DATA);
   renderDashboardStats();
   renderShiftReportStats();
+  renderMyTickets();
   initCustomSelects();
 });
 
@@ -569,6 +570,10 @@ function switchNav(viewId) {
   if (linkMap[viewId]) {
     const activeLink = document.getElementById(linkMap[viewId]);
     if (activeLink) activeLink.classList.add('active');
+  }
+
+  if (viewId === 'viewMyTickets') {
+    renderMyTickets();
   }
 
   if (viewId === 'viewAdminDashboard') {
@@ -2114,6 +2119,44 @@ function copyTicketCode() {
 }
 
 /**
+ * Tạo tự động danh sách các ô nhập Họ và tên theo tổng số lượng vé
+ */
+function updateVisitorInputs(totalQty) {
+  const listEl = document.getElementById('visitorInputsList');
+  const badgeEl = document.getElementById('visitorCountBadge');
+  if (!listEl) return;
+
+  const count = Math.max(1, totalQty || 1);
+  if (badgeEl) badgeEl.textContent = `${count} Khách`;
+
+  // Lưu lại tên đã nhập để không bị mất khi tăng/giảm số lượng vé
+  const existingInputs = Array.from(listEl.querySelectorAll('.visitor-name-input'));
+  const currentValues = existingInputs.map(input => input.value);
+
+  listEl.innerHTML = '';
+
+  for (let i = 0; i < count; i++) {
+    const isFirst = i === 0;
+    const labelText = isFirst ? 'Họ và tên Người 1 (Trưởng đoàn)' : `Họ và tên Người ${i + 1}`;
+    const placeholderText = isFirst ? 'Nguyễn Văn A' : `Họ và tên khách ${i + 1}`;
+    const val = currentValues[i] || '';
+
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'visitor-input-item';
+    itemDiv.innerHTML = `
+      <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 600;">
+        <i class="fa-regular fa-id-badge"></i> ${labelText} ${isFirst ? '<span style="color: #dc2626;">*</span>' : ''}
+      </div>
+      <div class="input-container">
+        <input type="text" class="form-input visitor-name-input" placeholder="${placeholderText}" value="${val.replace(/"/g, '&quot;')}" ${isFirst ? 'required id="bookingName"' : ''}>
+        <i class="fa-regular fa-user input-icon"></i>
+      </div>
+    `;
+    listEl.appendChild(itemDiv);
+  }
+}
+
+/**
  * Booking Logics
  */
 function changeTicketQty(qtyId, delta) {
@@ -2125,15 +2168,28 @@ function changeTicketQty(qtyId, delta) {
 
   const adult = parseInt((document.getElementById('qtyAdult') || {}).textContent) || 0;
   const child = parseInt((document.getElementById('qtyChild') || {}).textContent) || 0;
+  const totalQty = Math.max(1, adult + child);
 
   const total = adult * 30000;
-  document.getElementById('bookingTotalPrice').textContent = total.toLocaleString('vi-VN') + ' VNĐ';
+  const totalPriceEl = document.getElementById('bookingTotalPrice');
+  if (totalPriceEl) totalPriceEl.textContent = total.toLocaleString('vi-VN') + ' VNĐ';
+
+  updateVisitorInputs(totalQty);
 }
 
 async function handleProcessBooking(event) {
   event.preventDefault();
-  const name = document.getElementById('bookingName').value.trim();
-  const phone = document.getElementById('bookingPhone').value.trim();
+
+  const visitorInputs = Array.from(document.querySelectorAll('.visitor-name-input'));
+  const visitorNames = visitorInputs.map(input => input.value.trim()).filter(Boolean);
+
+  if (visitorNames.length === 0) {
+    showToast('Vui lòng nhập họ và tên cho ít nhất người 1 (Trưởng đoàn)!', 'error');
+    return;
+  }
+
+  const phoneInput = document.getElementById('bookingPhone');
+  const phone = phoneInput ? phoneInput.value.trim() : ''; // Số điện thoại KHÔNG BẮT BUỘC
   const date = document.getElementById('bookingDate') ? document.getElementById('bookingDate').value : '';
   const slot = document.getElementById('bookingSlot') ? document.getElementById('bookingSlot').value : 'Sáng (08:00 - 11:30)';
 
@@ -2146,8 +2202,10 @@ async function handleProcessBooking(event) {
     return;
   }
 
+  const allNamesStr = visitorNames.join(', ');
+
   const payload = {
-    name: name,
+    name: allNamesStr,
     phone: phone,
     date: date,
     slot: slot,
@@ -2177,26 +2235,14 @@ async function handleProcessBooking(event) {
 
     const savedTicket = result.data;
     const ticketCode = savedTicket.ticketCode || savedTicket.code || `#VE-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    const qrUrl = savedTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BAOTANG-${ticketCode}-${phone}`;
+    const qrUrl = savedTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BAOTANG-${ticketCode}${phone ? '-' + phone : ''}`;
 
-    document.getElementById('ticketCodeText').textContent = `Mã Vé: ${ticketCode}`;
-    document.getElementById('ticketOwnerName').textContent = savedTicket.name || name;
-    document.getElementById('ticketUseDate').textContent = savedTicket.date || date || 'Hôm nay';
-
-    let detailDesc = `${totalQty} vé (${adult} Vé Tham quan - 30k`;
-    if (child > 0) detailDesc += `, ${child} Trẻ dưới 5t - Miễn phí`;
-    detailDesc += ')';
-
-    document.getElementById('ticketDetailText').textContent = detailDesc;
-    if (document.getElementById('ticketQrImage')) {
-      document.getElementById('ticketQrImage').src = qrUrl;
-    }
-
-    // Save returned ticket data to local list & cache
+    // Tạo bản ghi lưu trữ bộ nhớ và cache
     const ticketRecord = {
       id: savedTicket.id,
       code: ticketCode,
-      name: savedTicket.name || name,
+      name: savedTicket.name || allNamesStr,
+      visitorNames: visitorNames,
       phone: savedTicket.phone || phone,
       date: savedTicket.date || date,
       slot: savedTicket.slot || slot,
@@ -2207,6 +2253,7 @@ async function handleProcessBooking(event) {
       type: 'ONLINE',
       paymentMethod: savedTicket.paymentMethod || 'Chuyển khoản QR code',
       status: savedTicket.status || 'CHUA_SU_DUNG',
+      qrUrl: qrUrl,
       createdAt: savedTicket.createdAt || new Date().toISOString()
     };
 
@@ -2218,12 +2265,63 @@ async function handleProcessBooking(event) {
     renderDashboardStats();
     renderShiftReportStats();
 
+    renderMyTickets(ticketRecord);
     switchNav('viewMyTickets');
-    showToast('Đặt vé thành công! Đã lưu thông tin vé vào cơ sở dữ liệu SQLite.', 'success');
+    showToast('Đặt vé thành công! Đã lưu thông tin vé & danh sách khách vào CSDL SQLite.', 'success');
 
   } catch (err) {
     console.error('❌ Lỗi đặt vé online:', err);
     showToast(`Không thể lưu vé: ${err.message}`, 'error');
+  }
+}
+
+/**
+ * Đồng bộ và kết xuất vé điện tử trong tab "Vé của tôi" (#viewMyTickets)
+ */
+function renderMyTickets(ticket = null) {
+  const currentTicket = ticket || (TICKETS_PURCHASED_DATA && TICKETS_PURCHASED_DATA.length > 0 ? TICKETS_PURCHASED_DATA[0] : null);
+
+  const elCode = document.getElementById('ticketCodeText');
+  const elOwner = document.getElementById('ticketOwnerName');
+  const elDate = document.getElementById('ticketUseDate');
+  const elDetail = document.getElementById('ticketDetailText');
+  const elQr = document.getElementById('ticketQrImage');
+
+  if (!currentTicket) {
+    if (elCode) elCode.textContent = 'Chưa có vé';
+    if (elOwner) elOwner.textContent = 'Chưa có dữ liệu';
+    if (elDate) elDate.textContent = 'N/A';
+    if (elDetail) elDetail.textContent = 'Chưa có lượt đặt vé';
+    return;
+  }
+
+  const code = currentTicket.code || currentTicket.ticketCode || '#VE-2026-00000';
+  const nameStr = currentTicket.name || 'Khách Tham Quan';
+  const namesArray = currentTicket.visitorNames || nameStr.split(',').map(s => s.trim()).filter(Boolean);
+  const mainName = namesArray[0] || nameStr;
+  const companionNames = namesArray.slice(1).join(', ');
+
+  const dateStr = (currentTicket.date || 'Hôm nay') + (currentTicket.slot ? ` (${currentTicket.slot})` : '');
+  const totalTickets = currentTicket.totalQty || (currentTicket.adultQty + currentTicket.childQty) || 1;
+
+  let detailDesc = `${totalTickets} vé (${currentTicket.adultQty || 0} Vé Tham quan - 30k`;
+  if (currentTicket.childQty > 0) detailDesc += `, ${currentTicket.childQty} Trẻ dưới 5t - Miễn phí`;
+  detailDesc += ')';
+
+  if (elCode) elCode.textContent = `Mã Vé: ${code}`;
+  if (elOwner) {
+    elOwner.innerHTML = `
+      <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${mainName} <small style="color: var(--primary-gold); font-size: 0.78rem;">(Trưởng đoàn)</small></div>
+      ${companionNames ? `<div style="font-size: 0.83rem; color: var(--text-muted); margin-top: 3px;"><i class="fa-solid fa-user-group"></i> Đồng hành: <strong>${companionNames}</strong></div>` : ''}
+      <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 3px;"><i class="fa-solid fa-phone"></i> ${currentTicket.phone ? currentTicket.phone : 'Số điện thoại: Không bắt buộc'}</div>
+    `;
+  }
+  if (elDate) elDate.textContent = dateStr;
+  if (elDetail) elDetail.textContent = detailDesc;
+
+  if (elQr) {
+    const qrData = currentTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-${code}`;
+    elQr.src = qrData;
   }
 }
 
