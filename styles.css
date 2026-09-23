@@ -75,10 +75,10 @@ body {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-color: #f7f3ea;
+  background-color: #f8f4ec;
   background-image:
-    linear-gradient(135deg, rgba(253, 250, 243, 0.62) 0%, rgba(245, 238, 224, 0.70) 100%),
-    url('picture1_5.jpg');
+    radial-gradient(circle at 50% 20%, rgba(254, 250, 243, 0.92) 0%, rgba(246, 239, 226, 0.96) 100%),
+    linear-gradient(135deg, #fdfaf3 0%, #f4ede0 100%);
   background-size: cover;
   background-position: center;
 }
