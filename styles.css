@@ -69,19 +69,18 @@ body {
 }
 
 /* ============================================================
-   BACKGROUND — DỒNG SƠN BRONZE DRUM PATTERN
+   BACKGROUND — DỒNG SƠN ROTATING BRONZE DRUM PATTERN
    ============================================================ */
 .bg-overlay {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-color: #faf7f0;
+  background-color: #f7f3ea;
   background-image:
-    linear-gradient(135deg, rgba(254, 252, 246, 0.78) 0%, rgba(246, 239, 226, 0.82) 100%),
-    url('hoa-van-trong-dong-dong-son-vector-03.jpg');
+    linear-gradient(135deg, rgba(253, 250, 243, 0.62) 0%, rgba(245, 238, 224, 0.70) 100%),
+    url('picture1_5.jpg');
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
 }
 
 .bg-pattern {
@@ -89,30 +88,36 @@ body {
   inset: 0;
   z-index: 1;
   background-image:
-    url('hoa-van-trong-dong-dong-son-vector-03.jpg'),
-    radial-gradient(circle at 50% 18%, rgba(217, 119, 6, 0.22) 0%, transparent 65%),
-    radial-gradient(circle at 85% 75%, rgba(180, 83, 9, 0.15) 0%, transparent 55%);
-  background-position: center center, center center, center center;
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-size: min(95vw, 1100px) auto, cover, cover;
-  opacity: 0.65;
-  mix-blend-mode: multiply;
+    radial-gradient(circle at 50% 20%, rgba(217, 119, 6, 0.20) 0%, transparent 65%),
+    radial-gradient(circle at 85% 75%, rgba(180, 83, 9, 0.12) 0%, transparent 55%);
   pointer-events: none;
-  animation: bgDrumPulse 18s ease-in-out infinite alternate;
 }
 
-@keyframes bgDrumPulse {
+/* Biểu tượng Trống Đồng Đông Sơn Xoay Liên Tục Nằm Chìm Ở Nền Trang Web */
+.bg-rotating-drum {
+  position: fixed;
+  top: 50vh;
+  left: 50vw;
+  width: min(92vw, 950px);
+  height: min(92vw, 950px);
+  z-index: 2;
+  background-image: url('hoa-van-trong-dong-dong-son-vector-03.jpg');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.45;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  animation: rotateDongSonDrum 40s linear infinite;
+  will-change: transform;
+}
+
+@keyframes rotateDongSonDrum {
   0% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0.55;
-  }
-  50% {
-    transform: scale(1.03) rotate(3deg);
-    opacity: 0.70;
+    transform: translate(-50%, -50%) rotate(0deg);
   }
   100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0.55;
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
@@ -802,35 +807,11 @@ body {
   text-align: center;
   padding: 1.5rem 1rem 2.2rem;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, rgba(255, 253, 247, 0.75) 0%, rgba(254, 243, 199, 0.45) 100%);
+  background: linear-gradient(135deg, rgba(255, 253, 247, 0.65) 0%, rgba(254, 243, 199, 0.35) 100%);
   border: 1px solid rgba(217, 119, 6, 0.2);
   box-shadow: inset 0 0 40px rgba(217, 119, 6, 0.05);
   overflow: hidden;
   margin-bottom: 1.75rem;
-}
-
-.hero-banner::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 620px;
-  height: 620px;
-  background-image: url('hoa-van-trong-dong-dong-son-vector-03.jpg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.28;
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  z-index: 0;
-  animation: heroDrumSpin 90s linear infinite;
-}
-
-@keyframes heroDrumSpin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 .hero-badge,
