@@ -1159,6 +1159,7 @@ function openArtifactModal(id = null) {
       document.getElementById('modalArtRegion').value = art.region || 'Vùng núi cao phía Bắc';
       document.getElementById('modalArtMaterial').value = art.material || '';
       document.getElementById('modalArtLocation').value = art.location || 'Kho Bảo Quản 1';
+      document.getElementById('modalArtMeaning').value = art.meaning || art.y_nghia_van_hoa || '';
       document.getElementById('modalArtImgUrl').value = '';
 
       if (art.images && art.images.length > 0) {
@@ -1183,6 +1184,7 @@ function openArtifactModal(id = null) {
     document.getElementById('modalArtRegion').value = 'Vùng núi cao phía Bắc';
     document.getElementById('modalArtMaterial').value = '';
     document.getElementById('modalArtLocation').value = 'Kho Bảo Quản 1';
+    document.getElementById('modalArtMeaning').value = '';
     document.getElementById('modalArtImgUrl').value = '';
     editingArtifactImages = [];
   }
@@ -1217,6 +1219,7 @@ async function handleSaveArtifact(event) {
   const regionInput = document.getElementById('modalArtRegion').value;
   const materialInput = document.getElementById('modalArtMaterial').value.trim();
   const locationInput = document.getElementById('modalArtLocation').value;
+  const meaningInput = document.getElementById('modalArtMeaning')?.value.trim() || '';
 
   const code = codeInput || `HV-${String(ARTIFACTS_DATA.length + 1).padStart(3, '0')}`;
   const title = titleInput || 'Hiện vật mới';
@@ -1224,6 +1227,7 @@ async function handleSaveArtifact(event) {
   const region = regionInput || 'Vùng núi cao phía Bắc';
   const material = materialInput || 'Chưa xác định';
   const location = locationInput || 'Kho Bảo Quản 1';
+  const meaning = meaningInput || 'Hồ sơ di sản mới được bổ sung vào hệ thống kiểm kê kho.';
 
   // Auto-check typed/pasted URL in modalArtImgUrl input field
   const typedUrl = document.getElementById('modalArtImgUrl')?.value.trim();
@@ -1256,6 +1260,8 @@ async function handleSaveArtifact(event) {
     targetArt.region = region;
     targetArt.material = material;
     targetArt.location = location;
+    targetArt.meaning = meaning;
+    targetArt.y_nghia_van_hoa = meaning;
     targetArt.img = primaryImg;
     targetArt.images = allImages;
     targetArt.audioText = `Hiện vật ${title} của Dân tộc ${ethnic}.`;
@@ -1273,7 +1279,8 @@ async function handleSaveArtifact(event) {
       status: 'Nguyên vẹn',
       img: primaryImg,
       images: allImages,
-      meaning: 'Hồ sơ di sản mới được bổ sung vào hệ thống kiểm kê kho.',
+      meaning: meaning,
+      y_nghia_van_hoa: meaning,
       audioText: `Hiện vật ${title} của Dân tộc ${ethnic}.`
     };
     targetArt = newArt;
@@ -1880,7 +1887,7 @@ function playScanBeepSound(isSuccess = true) {
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (isSuccess ? 0.2 : 0.4));
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + (isSuccess ? 0.2 : 0.4));
-  } catch (e) {}
+  } catch (e) { }
 }
 
 async function startGateQrCamera() {
@@ -1901,7 +1908,7 @@ async function startGateQrCamera() {
     if (qrReaderDiv) qrReaderDiv.style.display = 'block';
 
     if (gateQrCodeScanner) {
-      try { await gateQrCodeScanner.stop(); } catch(e) {}
+      try { await gateQrCodeScanner.stop(); } catch (e) { }
     }
 
     const html5QrCode = new Html5Qrcode("html5QrCodeReader");
@@ -1925,7 +1932,7 @@ async function startGateQrCamera() {
           isGateScanningPaused = false;
         }, 3000);
       },
-      () => {}
+      () => { }
     ).then(() => {
       if (statusText) statusText.innerHTML = '<span style="color: #10b981; font-weight: 600;">🟢 Camera đang bật. Vui lòng đưa mã QR vào khung quét!</span>';
     }).catch(err => {
@@ -1975,7 +1982,7 @@ async function startNativeCameraFallback() {
             verifyGateTicketCode(codeVal);
             setTimeout(() => { isGateScanningPaused = false; }, 3000);
           }
-        } catch (e) {}
+        } catch (e) { }
         if (gateStreamTracks) requestAnimationFrame(detectLoop);
       };
       detectLoop();
@@ -2001,7 +2008,7 @@ function stopGateQrCamera() {
 
   if (gateQrCodeScanner) {
     gateQrCodeScanner.stop().then(() => {
-      try { gateQrCodeScanner.clear(); } catch(e) {}
+      try { gateQrCodeScanner.clear(); } catch (e) { }
       gateQrCodeScanner = null;
     }).catch(() => { gateQrCodeScanner = null; });
   }
@@ -2137,7 +2144,7 @@ function updateVisitorInputs(totalQty) {
 
   for (let i = 0; i < count; i++) {
     const isFirst = i === 0;
-    const labelText = isFirst ? 'Họ và tên Người 1 (Trưởng đoàn)' : `Họ và tên Người ${i + 1}`;
+    const labelText = isFirst ? 'Họ và tên Người 1' : `Họ và tên Người ${i + 1}`;
     const placeholderText = isFirst ? 'Nguyễn Văn A' : `Họ và tên khách ${i + 1}`;
     const val = currentValues[i] || '';
 
