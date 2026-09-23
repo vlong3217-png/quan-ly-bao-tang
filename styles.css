@@ -69,14 +69,15 @@ body {
 }
 
 /* ============================================================
-   BACKGROUND
+   BACKGROUND — DỒNG SƠN BRONZE DRUM PATTERN
    ============================================================ */
 .bg-overlay {
   position: fixed;
   inset: 0;
   z-index: 0;
+  background-color: #faf7f2;
   background-image:
-    linear-gradient(135deg, rgba(254, 252, 248, 0.94) 0%, rgba(248, 250, 252, 0.96) 100%),
+    linear-gradient(135deg, rgba(254, 252, 248, 0.90) 0%, rgba(246, 243, 235, 0.93) 100%),
     url('picture1_5.jpg');
   background-size: cover;
   background-position: center;
@@ -87,9 +88,31 @@ body {
   inset: 0;
   z-index: 1;
   background-image:
-    radial-gradient(circle at 50% 12%, rgba(217, 119, 6, 0.08) 0%, transparent 55%),
-    radial-gradient(circle at 85% 75%, rgba(180, 83, 9, 0.05) 0%, transparent 45%);
+    url('hoa-van-trong-dong-dong-son-vector-03.jpg'),
+    radial-gradient(circle at 50% 18%, rgba(217, 119, 6, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 85% 75%, rgba(180, 83, 9, 0.08) 0%, transparent 50%);
+  background-position: center center, center center, center center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: min(88vw, 920px) auto, cover, cover;
+  opacity: 0.24;
+  mix-blend-mode: multiply;
   pointer-events: none;
+  animation: bgDrumPulse 16s ease-in-out infinite alternate;
+}
+
+@keyframes bgDrumPulse {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.20;
+  }
+  50% {
+    transform: scale(1.025) rotate(2deg);
+    opacity: 0.26;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.20;
+  }
 }
 
 /* ============================================================
