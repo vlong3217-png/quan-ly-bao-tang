@@ -98,17 +98,17 @@ body {
   position: fixed;
   top: 50vh;
   left: 50vw;
-  width: min(150vw, 1550px);
-  height: min(150vw, 1550px);
+  width: min(220vw, 2300px);
+  height: min(220vw, 2300px);
   z-index: 2;
   background-image: url('hoa-van-trong-dong-dong-son-vector-03.jpg');
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.42;
+  opacity: 0.45;
   mix-blend-mode: multiply;
   pointer-events: none;
-  animation: rotateDongSonDrum 45s linear infinite;
+  animation: rotateDongSonDrum 50s linear infinite;
   will-change: transform;
 }
 
