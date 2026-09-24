@@ -593,13 +593,16 @@ function renderDashboardStats() {
     childCount += (t.childQty || 0);
   });
 
-  // Calculate visitors from group tour bookings
+  // Calculate visitors and revenue from group tour bookings
   let totalTourGuests = 0;
+  let tourRevenue = 0;
   (TOURS_DATA || []).forEach(t => {
     const qty = parseInt(t.size) || parseInt((t.size || '').replace(/\D/g, '')) || 0;
     totalTourGuests += qty;
+    tourRevenue += qty * 30000;
   });
   totalVisitors += totalTourGuests;
+  totalRevenue += tourRevenue;
 
   if (elVisitors) elVisitors.textContent = totalVisitors.toLocaleString('vi-VN');
   if (elRevenue) elRevenue.textContent = totalRevenue.toLocaleString('vi-VN') + ' VNĐ';
