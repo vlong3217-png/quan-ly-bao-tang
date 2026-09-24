@@ -558,7 +558,6 @@ function switchNav(viewId) {
   }
 
   if (viewId === 'viewCategoryManagement') {
-    renderCategoryTicketPricesTable();
     renderCategoryEthnicitiesTable();
   }
 
@@ -2617,37 +2616,13 @@ async function deleteUser(id) {
 }
 
 // Category Management Initial Datasets (UI-11)
-let TICKET_PRICES_DATA = JSON.parse(localStorage.getItem('TICKET_PRICES_DATA')) || [
-  { id: 1, code: 'LV-01', name: 'Vé Tham Quan Bảo Tàng', price: 30000, note: 'Vé vào cổng phổ thông' },
-  { id: 2, code: 'LV-02', name: 'Vé Trẻ Em (Dưới 5 Tuổi)', price: 0, note: 'Trẻ em dưới 5 tuổi được miễn phí 100% vé vào cổng' }
-];
-
 let ETHNICITIES_DATA = JSON.parse(localStorage.getItem('ETHNICITIES_DATA')) || [
   { id: 1, name: 'Dân tộc Tày', languageGroup: 'Tày - Thái', region: 'Vùng Việt Bắc' },
   { id: 2, name: 'Dân tộc Gia Rai', languageGroup: 'Môn - Khmer', region: 'Vùng Tây Nguyên' }
 ];
 
 function saveCategoryDataToStorage() {
-  localStorage.setItem('TICKET_PRICES_DATA', JSON.stringify(TICKET_PRICES_DATA));
   localStorage.setItem('ETHNICITIES_DATA', JSON.stringify(ETHNICITIES_DATA));
-}
-
-function renderCategoryTicketPricesTable() {
-  const tbody = document.getElementById('catTicketPriceTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = TICKET_PRICES_DATA.map(t => `
-    <tr>
-      <td><strong>${t.code}</strong></td>
-      <td>${t.name}</td>
-      <td><strong style="color: ${t.price > 0 ? 'var(--primary-gold)' : '#059669'};">${t.price > 0 ? t.price.toLocaleString('vi-VN') + ' VNĐ' : 'MIỄN PHÍ (0 VNĐ)'}</strong></td>
-      <td>${t.note || '-'}</td>
-      <td style="text-align: center;">
-        <button type="button" class="btn-danger btn-sm" onclick="deleteTicketPrice('${t.id}')">
-          <i class="fa-solid fa-trash"></i> Xóa
-        </button>
-      </td>
-    </tr>
-  `).join('');
 }
 
 function renderCategoryEthnicitiesTable() {
@@ -2666,54 +2641,6 @@ function renderCategoryEthnicitiesTable() {
       </td>
     </tr>
   `).join('');
-}
-
-function openAddTicketPriceModal() {
-  document.getElementById('modalTicketCode').value = `LV-0${TICKET_PRICES_DATA.length + 1}`;
-  document.getElementById('modalTicketName').value = '';
-  document.getElementById('modalTicketPrice').value = '';
-  document.getElementById('modalTicketNote').value = '';
-  document.getElementById('addTicketPriceModal').classList.add('active');
-}
-
-function closeAddTicketPriceModal() {
-  document.getElementById('addTicketPriceModal').classList.remove('active');
-}
-
-function handleAddTicketPrice(event) {
-  event.preventDefault();
-  const code = document.getElementById('modalTicketCode').value.trim();
-  const name = document.getElementById('modalTicketName').value.trim();
-  const price = parseInt(document.getElementById('modalTicketPrice').value, 10) || 0;
-  const note = document.getElementById('modalTicketNote').value.trim();
-
-  if (!code || !name) {
-    showToast('Vui lòng điền đầy đủ Mã và Tên loại vé', 'warning');
-    return;
-  }
-
-  const newTicket = {
-    id: Date.now(),
-    code: code,
-    name: name,
-    price: price,
-    note: note || 'Vé áp dụng theo quy định bảo tàng'
-  };
-
-  TICKET_PRICES_DATA.push(newTicket);
-  saveCategoryDataToStorage();
-  renderCategoryTicketPricesTable();
-  closeAddTicketPriceModal();
-  showToast(`Đã thêm loại vé "${name}" thành công!`, 'success');
-}
-
-function deleteTicketPrice(id) {
-  if (confirm('Bạn có chắc chắn muốn xóa loại vé này khỏi danh mục không?')) {
-    TICKET_PRICES_DATA = TICKET_PRICES_DATA.filter(t => String(t.id) !== String(id));
-    saveCategoryDataToStorage();
-    renderCategoryTicketPricesTable();
-    showToast('Đã xóa loại vé khỏi danh mục', 'info');
-  }
 }
 
 function openAddEthnicityModal() {
@@ -2760,21 +2687,6 @@ function deleteEthnicity(id) {
     renderCategoryEthnicitiesTable();
     showToast('Đã xóa dân tộc khỏi danh mục', 'info');
   }
-}
-
-function switchCategoryTab(tabId, btnElement) {
-  const tabs = document.querySelectorAll('#viewCategoryManagement .tab-pane');
-  tabs.forEach(tab => tab.classList.remove('active'));
-
-  const btns = document.querySelectorAll('.admin-tabs .tab-btn');
-  btns.forEach(b => b.classList.remove('active'));
-
-  const targetTab = document.getElementById(tabId);
-  if (targetTab) targetTab.classList.add('active');
-  if (btnElement) btnElement.classList.add('active');
-
-  renderCategoryTicketPricesTable();
-  renderCategoryEthnicitiesTable();
 }
 
 function setNlQueryPrompt(promptText) {
