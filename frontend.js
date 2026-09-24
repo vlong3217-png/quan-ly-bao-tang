@@ -6,10 +6,7 @@
 // Heritage Artifacts Database (54 Ethnic Groups Collection)
 let ARTIFACTS_DATA = [];
 
-// Sample Borrow Tickets Database (UI-16)
-let BORROW_DATA = [];
 let TOURS_DATA = [];
-let RESTORATION_DATA = [];
 let TICKETS_PURCHASED_DATA = [];
 
 // Sample Staff User Accounts Table Database
@@ -144,10 +141,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (savedTours) {
     try { TOURS_DATA = JSON.parse(savedTours); } catch (e) { }
   }
-  const savedBorrows = localStorage.getItem('baotang_borrow_data');
-  if (savedBorrows) {
-    try { BORROW_DATA = JSON.parse(savedBorrows); } catch (e) { }
-  }
   const savedTickets = localStorage.getItem('baotang_purchased_tickets_data');
   if (savedTickets) {
     try { TICKETS_PURCHASED_DATA = JSON.parse(savedTickets); } catch (e) { }
@@ -155,9 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderCatalog(ARTIFACTS_DATA);
   renderInventoryTable(ARTIFACTS_DATA);
-  renderBorrowTable(BORROW_DATA);
   renderTourTable(TOURS_DATA);
-  renderRestorationTable(RESTORATION_DATA);
   renderUserTable(USERS_DATA);
   renderDashboardStats();
 
@@ -183,10 +174,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Sync with live Node.js REST API Backend for real-time multi-device synchronization
   try {
-    const [resArt, resTour, resBorrow, resTicket, resUser] = await Promise.all([
+    const [resArt, resTour, resTicket, resUser] = await Promise.all([
       fetch(`${API_BASE}/artifacts`),
       fetch(`${API_BASE}/tickets/tours`),
-      fetch(`${API_BASE}/tickets/borrows`),
       fetch(`${API_BASE}/tickets`),
       fetch(`${API_BASE}/users`)
     ]);
@@ -211,14 +201,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (tourResult.success && Array.isArray(tourResult.data)) {
         TOURS_DATA = tourResult.data;
         localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
-      }
-    }
-
-    if (resBorrow && resBorrow.ok) {
-      const borrowResult = await resBorrow.json();
-      if (borrowResult.success && Array.isArray(borrowResult.data)) {
-        BORROW_DATA = borrowResult.data;
-        localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
       }
     }
 
@@ -279,11 +261,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderCatalog(ARTIFACTS_DATA);
   renderInventoryTable(ARTIFACTS_DATA);
-  renderBorrowTable(BORROW_DATA);
   renderTourTable(TOURS_DATA);
   renderUserTable(USERS_DATA);
   renderDashboardStats();
-  renderShiftReportStats();
   renderMyTickets();
   initCustomSelects();
 });
@@ -555,12 +535,9 @@ function switchNav(viewId) {
     viewMyTickets: 'navMyTickets',
     viewArtifactInventory: 'navInventory',
     viewStorageTransfer: 'navTransfer',
-    viewBorrowReturn: 'navBorrow',
-    viewRestorationLogs: 'navRestoration',
     viewPosTicket: 'navPos',
     viewGateScanner: 'navScanner',
     viewTourSchedule: 'navTour',
-    viewShiftReport: 'navShift',
     viewAdminDashboard: 'navAdminDashboard',
     viewUserManagement: 'navUserManagement',
     viewCategoryManagement: 'navCategoryManagement',
@@ -578,14 +555,6 @@ function switchNav(viewId) {
 
   if (viewId === 'viewAdminDashboard') {
     renderDashboardStats();
-  }
-
-  if (viewId === 'viewShiftReport') {
-    const elStaffName = document.getElementById('shiftStaffName');
-    if (elStaffName && typeof currentUser !== 'undefined' && currentUser && currentUser.full_name) {
-      elStaffName.textContent = currentUser.full_name;
-    }
-    renderShiftReportStats();
   }
 
   if (viewId === 'viewCategoryManagement') {
@@ -699,35 +668,7 @@ function renderDashboardToursWidget() {
   `).join('');
 }
 
-/**
- * Render real-time Shift Report stats (UI-21)
- */
-function renderShiftReportStats() {
-  const elTicketCount = document.getElementById('shiftTicketCount');
-  const elCashRev = document.getElementById('shiftCashRevenue');
-  const elQrRev = document.getElementById('shiftQrRevenue');
-  const elTotalRev = document.getElementById('shiftTotalRevenue');
 
-  let totalTickets = 0;
-  let cashRevenue = 0;
-  let qrRevenue = 0;
-
-  (TICKETS_PURCHASED_DATA || []).forEach(t => {
-    totalTickets += (t.totalQty || 1);
-    if (t.type === 'POS' || t.paymentMethod === 'Tiền mặt thu tại quầy') {
-      cashRevenue += (t.amount || 0);
-    } else {
-      qrRevenue += (t.amount || 0);
-    }
-  });
-
-  const totalRevenue = cashRevenue + qrRevenue;
-
-  if (elTicketCount) elTicketCount.textContent = `${totalTickets} Vé`;
-  if (elCashRev) elCashRev.textContent = `${cashRevenue.toLocaleString('vi-VN')} VNĐ`;
-  if (elQrRev) elQrRev.textContent = `${qrRevenue.toLocaleString('vi-VN')} VNĐ`;
-  if (elTotalRev) elTotalRev.textContent = `${totalRevenue.toLocaleString('vi-VN')} VNĐ`;
-}
 
 /**
  * UI-05: Render & Filter Catalog Cards
@@ -1463,69 +1404,7 @@ window.addEventListener('paste', function (e) {
   }
 });
 
-/**
- * UI-15: Storage Location Transfer Management
- */
-function openBorrowModal() {
-  const modal = document.getElementById('borrowModal');
-  if (modal) modal.classList.add('active');
-}
 
-function closeBorrowModal() {
-  const modal = document.getElementById('borrowModal');
-  if (modal) modal.classList.remove('active');
-}
-
-async function handleSaveBorrow(event) {
-  event.preventDefault();
-  const artName = document.getElementById('modalBorrowArtifact').value.trim();
-  const borrower = document.getElementById('modalBorrower').value.trim();
-  const returnDate = document.getElementById('modalBorrowReturnDate').value;
-  const purpose = document.getElementById('modalBorrowPurpose').value.trim();
-
-  const payload = {
-    artifact: artName,
-    borrower: borrower,
-    purpose: purpose,
-    returnDate: returnDate,
-    status: 'DANG_MUON'
-  };
-
-  try {
-    const response = await fetch(`${API_BASE}/tickets/borrows`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success || !result.data) {
-      throw new Error(result.message || result.error || `HTTP ${response.status}`);
-    }
-
-    const saved = result.data;
-    const borrowRecord = {
-      id: saved.id || saved.muontra_id,
-      code: `PM-2026-${String(saved.id || saved.muontra_id).padStart(3, '0')}`,
-      artifact: saved.artifactName || saved.artifactCode || artName,
-      borrower: saved.don_vi_muon || borrower,
-      purpose: saved.muc_dich || purpose,
-      returnDate: saved.ngay_tra_du_kien || returnDate,
-      status: saved.trang_thai || 'DANG_MUON'
-    };
-
-    BORROW_DATA.unshift(borrowRecord);
-    localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
-
-    renderBorrowTable(BORROW_DATA);
-    closeBorrowModal();
-    showToast(`Đã lập thành công phiếu mượn di sản ${borrowRecord.code}!`, 'success');
-
-  } catch (err) {
-    console.error('❌ Lỗi lập phiếu mượn:', err);
-    showToast(`Không thể lập phiếu mượn: ${err.message}`, 'error');
-  }
-}
 
 let editingTourId = null;
 
@@ -1758,107 +1637,7 @@ function renderTourTable(tours) {
   `).join('');
 }
 
-function renderRestorationTable(logs) {
-  const tbody = document.getElementById('restorationTableBody');
-  if (!tbody) return;
 
-  if (!logs || logs.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-          <i class="fa-solid fa-screwdriver-wrench" style="font-size: 2.5rem; margin-bottom: 0.75rem; color: var(--primary-gold); display: block;"></i>
-          <strong>Chưa có nhật ký bảo quản / phục chế hiện vật nào.</strong>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = logs.map(l => `
-    <tr>
-      <td><strong>${l.code}</strong></td>
-      <td>${l.artifact}</td>
-      <td>${l.desc}</td>
-      <td>${l.solution}</td>
-      <td>${l.staff}</td>
-      <td>${l.date}</td>
-    </tr>
-  `).join('');
-}
-
-/**
- * UI-16: Borrow & Return Management
- */
-function renderBorrowTable(borrows) {
-  const tbody = document.getElementById('borrowTableBody');
-  if (!tbody) return;
-
-  if (!borrows || borrows.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-          <i class="fa-solid fa-handshake" style="font-size: 2.5rem; margin-bottom: 0.75rem; color: var(--primary-gold); display: block;"></i>
-          <strong>Chưa có phiếu mượn di sản triển lãm nào được lập.</strong>
-          <p style="font-size: 0.85rem; margin-top: 0.25rem;">Nhấn nút "Lập Phiếu Mượn Mới" phía trên để tạo mới.</p>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = borrows.map(b => `
-    <tr>
-      <td><strong>${b.code}</strong></td>
-      <td>${b.artifact}</td>
-      <td><strong>${b.borrower}</strong></td>
-      <td>${b.purpose}</td>
-      <td>${b.returnDate}</td>
-      <td>
-        <span class="badge-status ${b.status === 'DA_TRA' ? 'badge-success' : 'badge-warning'}">
-          ${b.status === 'DA_TRA' ? 'Đã Trả' : 'Đang Mượn'}
-        </span>
-      </td>
-      <td>
-        ${b.status === 'DANG_MUON'
-      ? `<button type="button" class="btn-secondary btn-sm" onclick="handleReturnArtifact(${b.id})"><i class="fa-solid fa-rotate-left"></i> Ghi Nhận Trả</button>`
-      : '<span style="color: var(--text-dim); font-size:0.8rem;">Hoàn tất</span>'}
-      </td>
-    </tr>
-  `).join('');
-}
-
-async function handleReturnArtifact(id) {
-  const b = BORROW_DATA.find(item => item.id === id);
-  const code = b ? b.code : `phiếu #${id}`;
-
-  try {
-    const response = await fetch(`${API_BASE}/tickets/borrows`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: id,
-        status: 'DA_TRA',
-        actualReturnDate: new Date().toISOString().slice(0, 10)
-      })
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || result.error || `HTTP ${response.status}`);
-    }
-
-    if (b) {
-      b.status = 'DA_TRA';
-    }
-    localStorage.setItem('baotang_borrow_data', JSON.stringify(BORROW_DATA));
-    renderBorrowTable(BORROW_DATA);
-    showToast(`Đã ghi nhận trả hiện vật thành công cho ${code}!`, 'success');
-
-  } catch (err) {
-    console.error('❌ Lỗi trả hiện vật:', err);
-    showToast(`Không thể ghi nhận trả hiện vật: ${err.message}`, 'error');
-  }
-}
 
 
 
@@ -2270,7 +2049,6 @@ async function handleProcessBooking(event) {
     } catch (e) { }
 
     renderDashboardStats();
-    renderShiftReportStats();
 
     renderMyTickets(ticketRecord);
     switchNav('viewMyTickets');
@@ -2526,7 +2304,6 @@ async function handlePosCheckout() {
     } catch (e) { }
 
     renderDashboardStats();
-    renderShiftReportStats();
 
     showToast(`Đã thanh toán thành công ${totalAmount.toLocaleString('vi-VN')} VNĐ! Đã lưu vé POS vào SQLite (${posCode}).`, 'success');
 
