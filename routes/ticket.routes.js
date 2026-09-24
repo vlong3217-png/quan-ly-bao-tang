@@ -142,8 +142,6 @@ router.post('/book', async (req, res) => {
  */
 router.post(
   '/scan',
-  verifyToken,
-  authorizeRoles('BANVE', 'ADMIN'),
   async (req, res) => {
     try {
       const { qrCode } = req.body;

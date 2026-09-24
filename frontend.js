@@ -1824,11 +1824,12 @@ async function verifyGateTicketCode(qrCode) {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/tickets/verify`, {
+    const token = currentUser ? (currentUser.token || authToken) : authToken;
+    const response = await fetch(`${API_BASE}/tickets/scan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       },
       body: JSON.stringify({ qrCode })
     });
@@ -1838,6 +1839,15 @@ async function verifyGateTicketCode(qrCode) {
     if (response.ok && result.success) {
       playScanBeepSound(true);
       const ticket = result.data || {};
+
+      // Cập nhật trạng thái vé trong bộ nhớ frontend
+      const localTicket = (TICKETS_PURCHASED_DATA || []).find(t =>
+        t.code === qrCode || (t.code && qrCode && t.code.includes(qrCode))
+      );
+      if (localTicket) {
+        localTicket.status = 'DA_SOAT_VE';
+      }
+
       badge.style.background = 'rgba(16, 185, 129, 0.15)';
       badge.style.color = '#10b981';
       badge.style.border = '1px solid #10b981';
@@ -1847,21 +1857,21 @@ async function verifyGateTicketCode(qrCode) {
             <i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ - MỜI VÀO CỬA!
           </h4>
           <p style="margin: 2px 0; font-size: 0.9rem;"><strong>Mã vé:</strong> ${ticket.ma_qr || qrCode}</p>
-          <p style="margin: 2px 0; font-size: 0.88rem;"><strong>Khách hàng:</strong> ${ticket.ho_ten || 'Khách tham quan'}</p>
+          <p style="margin: 2px 0; font-size: 0.88rem;"><strong>Khách hàng:</strong> ${ticket.ten_khach || ticket.ho_ten || 'Khách tham quan'}</p>
           <p style="margin: 2px 0; font-size: 0.85rem; opacity: 0.85;"><strong>Giờ ghi nhận:</strong> ${new Date().toLocaleTimeString('vi-VN')}</p>
         </div>
       `;
       showToast(`Xác thực thành công vé ${qrCode}! Mời du khách vào cửa.`, 'success');
     } else {
       playScanBeepSound(false);
-      const msg = result.message || 'Mã QR vé không hợp lệ!';
+      const msg = result.message || 'Mã QR vé không tồn tại hoặc không hợp lệ!';
       badge.style.background = 'rgba(239, 68, 68, 0.15)';
       badge.style.color = '#ef4444';
       badge.style.border = '1px solid #ef4444';
       badge.innerHTML = `
         <div style="text-align: center;">
           <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
-            <i class="fa-solid fa-circle-xmark"></i> KHÔNG THỂ SOÁT VÉ
+            <i class="fa-solid fa-circle-xmark"></i> VÉ KHÔNG HỢP LỆ
           </h4>
           <p style="margin: 2px 0; font-size: 0.9rem;">${msg}</p>
         </div>
@@ -1870,12 +1880,59 @@ async function verifyGateTicketCode(qrCode) {
     }
   } catch (err) {
     console.error('Verify error:', err);
-    playScanBeepSound(true);
-    badge.style.background = 'rgba(16, 185, 129, 0.15)';
-    badge.style.color = '#10b981';
-    badge.style.border = '1px solid #10b981';
-    badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ (${qrCode}) - MỜI VÀO CỬA`;
-    showToast(`Xác thực mã QR (${qrCode}) thành công!`, 'success');
+
+    // Kiểm tra vé trong bộ nhớ cục bộ (nếu offline / chưa đăng nhập token)
+    const localTicket = (TICKETS_PURCHASED_DATA || []).find(t =>
+      t.code === qrCode || (t.code && qrCode && (t.code.includes(qrCode) || qrCode.includes(t.code)))
+    );
+
+    if (localTicket) {
+      if (localTicket.status === 'DA_SOAT_VE') {
+        playScanBeepSound(false);
+        badge.style.background = 'rgba(239, 68, 68, 0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.border = '1px solid #ef4444';
+        badge.innerHTML = `
+          <div style="text-align: center;">
+            <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
+              <i class="fa-solid fa-circle-xmark"></i> VÉ ĐÃ SỬ DỤNG
+            </h4>
+            <p style="margin: 2px 0; font-size: 0.9rem;">Mã vé ${qrCode} đã được soát trước đó!</p>
+          </div>
+        `;
+        showToast(`Vé ${qrCode} đã được sử dụng trước đó!`, 'error');
+      } else {
+        localTicket.status = 'DA_SOAT_VE';
+        playScanBeepSound(true);
+        badge.style.background = 'rgba(16, 185, 129, 0.15)';
+        badge.style.color = '#10b981';
+        badge.style.border = '1px solid #10b981';
+        badge.innerHTML = `
+          <div style="text-align: center;">
+            <h4 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #10b981;">
+              <i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ - MỜI VÀO CỬA!
+            </h4>
+            <p style="margin: 2px 0; font-size: 0.9rem;"><strong>Mã vé:</strong> ${localTicket.code}</p>
+            <p style="margin: 2px 0; font-size: 0.88rem;"><strong>Khách hàng:</strong> ${localTicket.name || 'Khách tham quan'}</p>
+          </div>
+        `;
+        showToast(`Xác thực thành công vé ${qrCode}!`, 'success');
+      }
+    } else {
+      playScanBeepSound(false);
+      badge.style.background = 'rgba(239, 68, 68, 0.15)';
+      badge.style.color = '#ef4444';
+      badge.style.border = '1px solid #ef4444';
+      badge.innerHTML = `
+        <div style="text-align: center;">
+          <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
+            <i class="fa-solid fa-circle-xmark"></i> KHÔNG TÌM THẤY VÉ
+          </h4>
+          <p style="margin: 2px 0; font-size: 0.9rem;">Mã vé <strong>${qrCode}</strong> không tồn tại trong hệ thống CSDL!</p>
+        </div>
+      `;
+      showToast(`Không tìm thấy mã vé ${qrCode} trong CSDL!`, 'error');
+    }
   }
 }
 
