@@ -2026,7 +2026,7 @@ async function handleProcessBooking(event) {
   const visitorNames = visitorInputs.map(input => input.value.trim()).filter(Boolean);
 
   if (visitorNames.length === 0) {
-    showToast('Vui lòng nhập họ và tên cho ít nhất người 1 (Trưởng đoàn)!', 'error');
+    showToast('Vui lòng nhập họ và tên cho ít nhất Người 1!', 'error');
     return;
   }
 
@@ -2152,7 +2152,7 @@ function renderMyTickets(ticket = null) {
   if (elCode) elCode.textContent = `Mã Vé: ${code}`;
   if (elOwner) {
     elOwner.innerHTML = `
-      <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${mainName} <small style="color: var(--primary-gold); font-size: 0.78rem;">(Trưởng đoàn)</small></div>
+      <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${mainName}</div>
       ${companionNames ? `<div style="font-size: 0.83rem; color: var(--text-muted); margin-top: 3px;"><i class="fa-solid fa-user-group"></i> Đồng hành: <strong>${companionNames}</strong></div>` : ''}
       <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 3px;"><i class="fa-solid fa-phone"></i> ${currentTicket.phone ? currentTicket.phone : 'Số điện thoại: Không bắt buộc'}</div>
     `;
