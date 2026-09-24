@@ -155,14 +155,6 @@
           onclick="switchNav('viewArtifactInventory')">
           <i class="fa-solid fa-boxes-stacked"></i> Kho Di Sản
         </a>
-        <a href="#viewBorrowReturn" class="nav-link nav-staff-thukho" id="navBorrow"
-          onclick="switchNav('viewBorrowReturn')">
-          <i class="fa-solid fa-handshake"></i> Mượn/Trả
-        </a>
-        <a href="#viewRestorationLogs" class="nav-link nav-staff-thukho" id="navRestoration"
-          onclick="switchNav('viewRestorationLogs')">
-          <i class="fa-solid fa-screwdriver-wrench"></i> Bảo Quản
-        </a>
 
         <a href="#viewPosTicket" class="nav-link nav-staff-banve" id="navPos" onclick="switchNav('viewPosTicket')">
           <i class="fa-solid fa-cash-register"></i> Quầy POS
@@ -174,10 +166,6 @@
         <a href="#viewTourSchedule" class="nav-link nav-staff-banve" id="navTour"
           onclick="switchNav('viewTourSchedule')">
           <i class="fa-solid fa-calendar-days"></i> Lịch Đoàn
-        </a>
-        <a href="#viewShiftReport" class="nav-link nav-staff-banve" id="navShift"
-          onclick="switchNav('viewShiftReport')">
-          <i class="fa-solid fa-file-invoice-dollar"></i> Chốt Ca
         </a>
 
         <a href="#viewAdminDashboard" class="nav-link nav-staff-admin" id="navAdminDashboard"
@@ -765,95 +753,6 @@
 
 
     <!-- ============================================================
-         UI-16: QUẢN LÝ MƯỢN / TRẢ DI SẢN (BORROW & RETURN)
-         ============================================================ -->
-    <div id="viewBorrowReturn" class="screen-view">
-      <div class="auth-card wide">
-
-        <div class="card-header">
-          <h2 class="card-title">Quản Lý Mượn / Trả Di Sản Triển Lãm</h2>
-          <p class="card-subtitle">Theo dõi hồ sơ mượn di sản tham gia các đợt triển lãm lưu động bên ngoài bảo tàng</p>
-        </div>
-
-        <div class="table-toolbar">
-          <h3 class="pane-title" style="font-size: 1.1rem; margin: 0;">Danh Sách Phiếu Mượn Di Sản</h3>
-          <button type="button" class="btn-primary" style="width: auto;" onclick="openBorrowModal()">
-            <i class="fa-solid fa-file-signature"></i> Lập Phiếu Mượn Mới
-          </button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Mã Phiếu</th>
-                <th>Hiện Vật Mượn</th>
-                <th>Đơn Vị Mượn</th>
-                <th>Mục Đích Triển Lãm</th>
-                <th>Hạn Trả Dự Kiến</th>
-                <th>Trạng Thái</th>
-                <th>Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody id="borrowTableBody">
-              <!-- Populated dynamically by app.js -->
-            </tbody>
-          </table>
-        </div>
-
-      </div>
-    </div>
-
-
-    <!-- ============================================================
-         UI-17: KIỂM KÊ & BẢO QUẢN / PHỤC CHẾ (RESTORATION LOGS)
-         ============================================================ -->
-    <div id="viewRestorationLogs" class="screen-view">
-      <div class="auth-card wide">
-
-        <div class="card-header">
-          <h2 class="card-title">Theo Dõi Kiểm Kê & Bảo Quản / Phục Chế</h2>
-          <p class="card-subtitle">Ghi nhận tiến trình phục chế hư hại, xử lý mối mọt và xuất báo cáo tình trạng hiện
-            vật (Excel/PDF)</p>
-        </div>
-
-        <div class="table-toolbar">
-          <h3 class="pane-title" style="font-size: 1.1rem; margin: 0;">Nhật Ký Bảo Quản & Phục Chế</h3>
-          <div style="display: flex; gap: 0.5rem;">
-            <button type="button" class="btn-secondary"
-              onclick="showToast('Đã xuất file báo cáo hiện vật ra định dạng Excel thành công!', 'success')">
-              <i class="fa-solid fa-file-excel" style="color: #059669;"></i> Xuất Excel
-            </button>
-            <button type="button" class="btn-secondary"
-              onclick="showToast('Đã xuất báo cáo hiện vật ra định dạng PDF thành công!', 'success')">
-              <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> Xuất PDF
-            </button>
-          </div>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Mã BQ</th>
-                <th>Hiện Vật Cần Phục Chế</th>
-                <th>Mô Tả Tình Trạng Hư Hại</th>
-                <th>Biện Pháp Xử Lý Bảo Quản</th>
-                <th>Cán Bộ Thực Hiện</th>
-                <th>Ngày Kiểm Tra</th>
-              </tr>
-            </thead>
-            <tbody id="restorationTableBody">
-              <!-- Rendered dynamically by app.js -->
-            </tbody>
-          </table>
-        </div>
-
-      </div>
-    </div>
-
-
-    <!-- ============================================================
          UI-18: MÀN HÌNH BÁN VÉ TẠI QUẦY (POS TICKET COUNTER)
          ============================================================ -->
     <div id="viewPosTicket" class="screen-view">
@@ -1015,54 +914,6 @@
               <!-- Rendered dynamically by app.js -->
             </tbody>
           </table>
-        </div>
-
-      </div>
-    </div>
-
-
-    <!-- ============================================================
-         UI-21: THỐNG KÊ DOANH THU & CHỐT CA NGÀY (SHIFT REPORT)
-         ============================================================ -->
-    <div id="viewShiftReport" class="screen-view">
-      <div class="auth-card" style="max-width: 650px;">
-
-        <div class="card-header">
-          <h2 class="card-title">Báo Cáo Doanh Thu & Chốt Ca Ngày</h2>
-          <p class="card-subtitle">Thống kê tổng hợp số tiền bán vé tại quầy và chốt sổ ca làm việc</p>
-        </div>
-
-        <div class="shift-report-card">
-          <div
-            style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1rem;">
-            <span><strong>Cán bộ chốt ca:</strong> <span id="shiftStaffName">Cán bộ trực</span></span>
-            <span><strong>Ca làm việc:</strong> Ca Sáng (08:00 - 12:00)</span>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.95rem; margin-bottom: 1.25rem;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>Tổng số vé bán ra tại quầy:</span>
-              <strong id="shiftTicketCount">0 Vé</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Tiền mặt thu tại quầy:</span>
-              <strong id="shiftCashRevenue">0 VNĐ</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Chuyển khoản QR code:</span>
-              <strong id="shiftQrRevenue">0 VNĐ</strong>
-            </div>
-            <div
-              style="display: flex; justify-content: space-between; font-size: 1.2rem; color: var(--primary-gold); border-top: 2px dashed var(--border-gold); padding-top: 0.75rem;">
-              <strong>Tổng Doanh Thu Ca:</strong>
-              <strong id="shiftTotalRevenue">0 VNĐ</strong>
-            </div>
-          </div>
-
-          <button type="button" class="btn-primary"
-            onclick="showToast('Đã chốt ca làm việc thành công & gửi báo cáo tổng hợp!', 'success')">
-            <i class="fa-solid fa-lock"></i> Xác Nhận Chốt Ca Làm Việc
-          </button>
         </div>
 
       </div>
@@ -2055,49 +1906,7 @@
 
 
 
-  <!-- Modal Form for Heritage Borrow (UI-16) -->
-  <div class="modal-backdrop" id="borrowModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 class="modal-title">Lập Phiếu Mượn Di Sản Triển Lãm</h3>
-        <button type="button" class="modal-close-btn" onclick="closeBorrowModal()"><i
-            class="fa-solid fa-xmark"></i></button>
-      </div>
 
-      <form onsubmit="handleSaveBorrow(event)">
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Chọn hiện vật cho mượn</label>
-            <input type="text" id="modalBorrowArtifact" class="form-input no-icon"
-              placeholder="HV-001 (Trang phục Cổ truyền Tày)" required>
-          </div>
-
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label">Tên đơn vị mượn</label>
-              <input type="text" id="modalBorrower" class="form-input no-icon" placeholder="Bảo tàng Lịch sử Quốc gia"
-                required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Hạn trả dự kiến</label>
-              <input type="date" id="modalBorrowReturnDate" class="form-input no-icon" required>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Mục đích triển lãm</label>
-            <input type="text" id="modalBorrowPurpose" class="form-input no-icon" placeholder="Triển lãm chuyên đề..."
-              required>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="closeBorrowModal()">Hủy Bỏ</button>
-          <button type="submit" class="btn-primary" style="width: auto;">Lưu Phiếu Mượn</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Modal Form for Tour Registration (UI-20) -->
   <div class="modal-backdrop" id="tourModal">

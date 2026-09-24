@@ -128,19 +128,8 @@ async function getDb() {
         );
       `);
 
-      // Auto-create LichSuMuonTra table if not exists
-      await db.exec(`
-        CREATE TABLE IF NOT EXISTS LichSuMuonTra (
-          muontra_id INTEGER PRIMARY KEY AUTOINCREMENT,
-          hienvat_id INTEGER NOT NULL,
-          ngay_muon TEXT NOT NULL,
-          ngay_tra_du_kien TEXT,
-          ngay_tra_thuc_te TEXT,
-          don_vi_muon TEXT,
-          muc_dich TEXT,
-          trang_thai TEXT DEFAULT 'DANG_MUON'
-        );
-      `);
+      // Drop obsolete LichSuMuonTra table if exists
+      await db.exec(`DROP TABLE IF EXISTS LichSuMuonTra;`);
 
       return db;
     })();
