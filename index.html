@@ -1140,44 +1140,10 @@
 
         <div class="card-header">
           <h2 class="card-title">Quản Lý Danh Mục Nền Tảng</h2>
-          <p class="card-subtitle">Cấu hình danh mục 54 Dân tộc, 6 Vùng văn hóa và Bảng giá loại vé</p>
+          <p class="card-subtitle">Cấu hình danh mục 54 Dân tộc và các Vùng văn hóa di sản</p>
         </div>
 
-        <div class="admin-tabs">
-          <button type="button" class="tab-btn active" onclick="switchCategoryTab('tabCatTicketPrice', this)">
-            <i class="fa-solid fa-ticket"></i> Loaị Vé & Bảng Giá
-          </button>
-          <button type="button" class="tab-btn" onclick="switchCategoryTab('tabCatEthnicity', this)">
-            <i class="fa-solid fa-people-group"></i> Danh Mục 54 Dân Tộc
-          </button>
-        </div>
-
-        <div id="tabCatTicketPrice" class="tab-pane active">
-          <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-            <button type="button" class="btn-primary" style="width: auto; padding: 0.6rem 1.2rem; font-size: 0.9rem;"
-              onclick="openAddTicketPriceModal()">
-              <i class="fa-solid fa-plus"></i> Thêm Loại Vé Mới
-            </button>
-          </div>
-          <div class="data-table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Mã Loại Vé</th>
-                  <th>Tên Loại Vé</th>
-                  <th>Giá Vé (VNĐ)</th>
-                  <th>Ghi Chú Áp Dụng</th>
-                  <th style="text-align: center; width: 100px;">Thao Tác</th>
-                </tr>
-              </thead>
-              <tbody id="catTicketPriceTableBody">
-                <!-- Dynamic Content via app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="tabCatEthnicity" class="tab-pane">
+        <div id="tabCatEthnicity" class="tab-pane active" style="display: block;">
           <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
             <button type="button" class="btn-primary" style="width: auto; padding: 0.6rem 1.2rem; font-size: 0.9rem;"
               onclick="openAddEthnicityModal()">
@@ -2002,47 +1968,7 @@
     </div>
   </div>
 
-  <!-- Modal Form for Adding New Ticket Price Category -->
-  <div class="modal-backdrop" id="addTicketPriceModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 class="modal-title">Thêm Loại Vé & Bảng Giá Mới</h3>
-        <button type="button" class="modal-close-btn" onclick="closeAddTicketPriceModal()"><i
-            class="fa-solid fa-xmark"></i></button>
-      </div>
 
-      <form onsubmit="handleAddTicketPrice(event)">
-        <div class="modal-body">
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label">Mã loại vé</label>
-              <input type="text" id="modalTicketCode" class="form-input no-icon" placeholder="LV-03" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Giá vé (VNĐ)</label>
-              <input type="number" id="modalTicketPrice" class="form-input no-icon" placeholder="15000" min="0"
-                required>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tên loại vé</label>
-            <input type="text" id="modalTicketName" class="form-input no-icon" placeholder="Vé Sinh Viên / Học Sinh"
-              required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Ghi chú áp dụng</label>
-            <input type="text" id="modalTicketNote" class="form-input no-icon"
-              placeholder="Áp dụng cho học sinh, sinh viên có thẻ">
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="closeAddTicketPriceModal()">Hủy Bỏ</button>
-          <button type="submit" class="btn-primary" style="width: auto;">Lưu Loại Vé</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Modal Form for Adding New Ethnicity Category -->
   <div class="modal-backdrop" id="addEthnicityModal">
