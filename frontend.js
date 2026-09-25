@@ -156,21 +156,49 @@ document.addEventListener('DOMContentLoaded', async () => {
   const dateInput = document.getElementById('bookingDate');
   if (dateInput) dateInput.value = todayStr;
 
+  const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút không thao tác
   const savedUser = localStorage.getItem('baotang_staff_user');
-  if (savedUser) {
+  const lastActivity = localStorage.getItem('baotang_last_activity');
+  const now = Date.now();
+
+  let isExpired = false;
+  if (lastActivity && (now - parseInt(lastActivity, 10) > SESSION_TIMEOUT_MS)) {
+    isExpired = true;
+  }
+
+  if (savedUser && !isExpired) {
     try {
       currentUser = JSON.parse(savedUser);
-    } catch (e) { }
+      localStorage.setItem('baotang_last_activity', String(now));
+    } catch (e) { currentUser = null; }
+  } else {
+    currentUser = null;
+    localStorage.removeItem('baotang_staff_user');
+    localStorage.removeItem('baotang_last_activity');
   }
-  if (!currentUser) {
-    currentUser = { ...DEMO_ACCOUNTS.ADMIN };
-  }
-  renderProfileView(currentUser);
-  if (savedUser) {
+
+  if (currentUser) {
+    renderProfileView(currentUser);
     document.getElementById('headerProfileBtn').style.display = 'inline-flex';
     document.getElementById('navLoginBtn').style.display = 'none';
+    updateNavigationVisibility(currentUser);
+  } else {
+    updateNavigationVisibility(null);
+    document.getElementById('headerProfileBtn').style.display = 'none';
+    document.getElementById('navLoginBtn').style.display = 'inline-flex';
+    if (isExpired) {
+      showToast('Phiên làm việc đã hết hạn sau 15 phút không thao tác. Vui lòng đăng nhập lại!', 'warning');
+    }
   }
-  updateNavigationVisibility(currentUser);
+
+  // Tự động cập nhật thời gian thao tác gần nhất khi người dùng di chuột, phím bấm
+  ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evtType => {
+    window.addEventListener(evtType, () => {
+      if (currentUser) {
+        localStorage.setItem('baotang_last_activity', String(Date.now()));
+      }
+    }, { passive: true });
+  });
 
   // Sync with live Node.js REST API Backend for real-time multi-device synchronization
   try {
@@ -3094,6 +3122,7 @@ async function handleLogin(event) {
       }
 
       localStorage.setItem('baotang_staff_user', JSON.stringify(currentUser));
+      localStorage.setItem('baotang_last_activity', String(Date.now()));
       renderProfileView(currentUser);
       updateNavigationVisibility(currentUser);
       document.getElementById('headerProfileBtn').style.display = 'inline-flex';
@@ -3141,6 +3170,7 @@ async function handleLogin(event) {
   if (foundAcc && (foundAcc.password === passwordInput || !foundAcc.password || passwordInput === 'admin123' || passwordInput === 'password123')) {
     currentUser = { ...foundAcc };
     localStorage.setItem('baotang_staff_user', JSON.stringify(currentUser));
+    localStorage.setItem('baotang_last_activity', String(Date.now()));
 
     renderProfileView(currentUser);
     updateNavigationVisibility(currentUser);
@@ -3479,6 +3509,7 @@ async function handleChangePassword(event) {
 function handleLogout() {
   currentUser = null;
   localStorage.removeItem('baotang_staff_user');
+  localStorage.removeItem('baotang_last_activity');
 
   updateNavigationVisibility(null);
   document.getElementById('headerProfileBtn').style.display = 'none';
