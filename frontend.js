@@ -906,9 +906,11 @@ async function handleSendAiChat(event) {
 
   const aiBubble = document.createElement('div');
   aiBubble.className = 'msg-bubble msg-ai';
-  aiBubble.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Trợ lý AI đang suy nghĩ...';
+  aiBubble.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Trợ lý AI đang trả lời...';
   chatMessages.appendChild(aiBubble);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  let accumulatedText = '';
 
   try {
     const res = await fetch('/api/ai/chat', {
@@ -916,17 +918,51 @@ async function handleSendAiChat(event) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         question: userMsg,
-        artifactId: currentArtifact ? currentArtifact.id : null
+        artifactId: currentArtifact ? currentArtifact.id : null,
+        stream: true
       })
     });
-    const data = await res.json();
-    if (data.success) {
-      aiBubble.innerHTML = formatAiText(data.answer);
-    } else {
-      aiBubble.innerHTML = data.message || 'Có lỗi xảy ra khi kết nối Trợ lý AI.';
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data: ')) {
+          const dataStr = trimmed.slice(6);
+          if (dataStr === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.chunk) {
+              accumulatedText += parsed.chunk;
+              aiBubble.innerHTML = formatAiText(accumulatedText);
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+          } catch (e) {
+            console.warn('Err parsing stream chunk:', e);
+          }
+        }
+      }
+    }
+
+    if (!accumulatedText) {
+      aiBubble.innerHTML = 'Hệ thống chưa nhận được phản hồi từ AI.';
     }
   } catch (err) {
-    console.error('Lỗi AI Chat:', err);
+    console.error('Lỗi AI Streaming Chat:', err);
     aiBubble.innerHTML = 'Không thể kết nối với Server AI.';
   }
   chatMessages.scrollTop = chatMessages.scrollHeight;

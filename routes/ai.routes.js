@@ -52,6 +52,57 @@ async function generateGeminiWithFallback(contents, systemInstruction) {
   throw lastErr || new Error('Không thể kết nối đến Gemini AI.');
 }
 
+// Helper function streaming Gemini AI response with fallback model list
+async function generateGeminiStreamWithFallback(contents, systemInstruction, onChunk) {
+  const models = [
+    'gemini-3.5-flash-lite',
+    'gemini-2.5-flash-lite',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-latest'
+  ];
+
+  let lastErr = null;
+  const currentKey = (process.env.GEMINI_API_KEY || '').trim();
+
+  if (!currentKey) {
+    throw new Error('GEMINI_API_KEY chưa được cấu hình!');
+  }
+
+  const client = new GoogleGenAI({ apiKey: currentKey });
+
+  for (const model of models) {
+    try {
+      console.log(`🤖 Đang stream Gemini model: ${model}`);
+
+      const responseStream = await client.models.generateContentStream({
+        model: model,
+        contents: contents,
+        config: { systemInstruction }
+      });
+
+      let hasChunk = false;
+      for await (const chunk of responseStream) {
+        if (chunk && chunk.text) {
+          hasChunk = true;
+          onChunk(chunk.text);
+        }
+      }
+
+      if (hasChunk) {
+        console.log(`✅ Gemini stream model ${model} thành công`);
+        return true;
+      }
+    } catch (err) {
+      console.warn(`⚠️ Gemini stream ${model} lỗi: ${err.message}`);
+      lastErr = err;
+    }
+  }
+
+  throw lastErr || new Error('Không thể kết nối đến Gemini AI Stream.');
+}
+
 // Xây dựng ngữ cảnh dữ liệu thực tế sống từ SQLite database
 async function buildLiveMuseumContext() {
   try {
@@ -162,15 +213,14 @@ function getDynamicOfflineResponse(question, liveContext) {
  * Trợ lý AI Bảo tàng trả lời câu hỏi tự nhiên bằng Gemini AI + Dữ liệu SQLite sống
  */
 router.post('/chat', async (req, res) => {
-  const { question } = req.body;
+  const { question, stream } = req.body;
 
   if (!question || !question.trim()) {
     return res.status(400).json({ success: false, message: 'Vui lòng nhập câu hỏi!' });
   }
 
-  try {
-    const liveContext = await buildLiveMuseumContext();
-    const systemInstruction = `Bạn là Trợ lý AI chuyên gia thông minh của Bảo tàng Văn hóa các Dân tộc Việt Nam (Thái Nguyên).
+  const liveContext = await buildLiveMuseumContext();
+  const systemInstruction = `Bạn là Trợ lý AI chuyên gia thông minh của Bảo tàng Văn hóa các Dân tộc Việt Nam (Thái Nguyên).
 
 QUY TẮC PHẢN HỒI:
 1. Trả lời NGẮN GỌN, SÚC TÍCH, THÔNG MINH, CHÍNH XÁC dựa trên DỮ LIỆU THỰC TẾ DƯỚI ĐÂY.
@@ -180,8 +230,30 @@ QUY TẮC PHẢN HỒI:
 
 ${liveContext}`;
 
-    const answerText = await generateGeminiWithFallback(question.trim(), systemInstruction);
+  // Stream mode Server-Sent Events (SSE)
+  if (stream) {
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
+    try {
+      await generateGeminiStreamWithFallback(question.trim(), systemInstruction, (chunkText) => {
+        res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
+      });
+      res.write(`data: [DONE]\n\n`);
+      return res.end();
+    } catch (error) {
+      console.error('Lỗi Gemini Streaming Chat:', error.message);
+      const fallbackAnswer = getDynamicOfflineResponse(question, liveContext);
+      res.write(`data: ${JSON.stringify({ chunk: fallbackAnswer, isFallback: true })}\n\n`);
+      res.write(`data: [DONE]\n\n`);
+      return res.end();
+    }
+  }
+
+  // Non-stream JSON mode
+  try {
+    const answerText = await generateGeminiWithFallback(question.trim(), systemInstruction);
     return res.json({
       success: true,
       question: question,
@@ -190,7 +262,6 @@ ${liveContext}`;
     });
   } catch (error) {
     console.error('Lỗi Gemini AI Chat, dùng dữ liệu SQLite sống:', error.message);
-    const liveContext = await buildLiveMuseumContext();
     const fallbackAnswer = getDynamicOfflineResponse(question, liveContext);
     return res.json({
       success: true,
