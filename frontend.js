@@ -107,7 +107,6 @@ function normalizeArtifact(art) {
   const material = art.material || art.chat_lieu || art.ChatLieu || 'Chưa xác định';
   const location = art.location || art.vi_tri_kho || art.ViTriKho || 'Kho Bảo Quản 1';
   const status = art.status || art.tinh_trang || art.TinhTrang || 'Nguyên vẹn';
-  const era = art.era || art.nien_dai || art.NienDai || 'Thế kỷ XX';
   const img = art.img || art.hinh_anh || art.HinhAnh || (art.images && art.images[0]) || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80';
   const images = (art.images && art.images.length > 0) ? art.images : [img];
 
@@ -125,7 +124,6 @@ function normalizeArtifact(art) {
     material: (material && material !== 'undefined') ? material : 'Chưa xác định',
     location: (location && location !== 'undefined') ? location : 'Kho Bảo Quản 1',
     status: (status && status !== 'undefined') ? status : 'Nguyên vẹn',
-    era: (era && era !== 'undefined') ? era : 'Thế kỷ XX',
     img: img,
     images: images,
     meaning: art.meaning || 'Hồ sơ di sản được bổ sung vào hệ thống kiểm kê kho.',
@@ -800,8 +798,6 @@ function openArtifactDetail(id) {
   document.getElementById('detailCode').textContent = art.code;
   document.getElementById('detailEthno').textContent = art.ethnic;
   document.getElementById('detailRegion').textContent = art.region;
-  const elEra = document.getElementById('detailEra');
-  if (elEra) elEra.textContent = art.era || '';
   document.getElementById('detailMaterial').textContent = art.material;
   document.getElementById('detailLocation').textContent = art.location;
   document.getElementById('detailTitle').textContent = art.title;
@@ -1335,7 +1331,6 @@ async function handleSaveArtifact(event) {
       ethnic: ethnic,
       region: region,
       material: material,
-      era: 'Thế kỷ XX',
       location: location,
       status: 'Nguyên vẹn',
       img: primaryImg,
