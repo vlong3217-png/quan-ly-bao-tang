@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const { GoogleGenAI } = require('@google/genai');
 const pool = require('../config/db');
 
@@ -217,7 +219,7 @@ function getDynamicOfflineResponse(question, liveContext, currentArtifactContext
  * Trợ lý AI Bảo tàng trả lời câu hỏi tự nhiên bằng Gemini AI + Dữ liệu SQLite sống
  */
 router.post('/chat', async (req, res) => {
-  const { question, artifactId, stream } = req.body;
+  const { question, artifactId, imageSrc, isImageAnalysis, stream } = req.body;
 
   if (!question || !question.trim()) {
     return res.status(400).json({ success: false, message: 'Vui lòng nhập câu hỏi!' });
@@ -253,6 +255,60 @@ router.post('/chat', async (req, res) => {
     }
   }
 
+  // Xử lý nạp hình ảnh multimodal nếu có yêu cầu hỏi về hình ảnh
+  let geminiContents = question.trim();
+  if (isImageAnalysis && imageSrc) {
+    try {
+      let base64Data = null;
+      let mimeType = 'image/jpeg';
+
+      if (imageSrc.startsWith('data:')) {
+        const matches = imageSrc.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          mimeType = matches[1];
+          base64Data = matches[2];
+        }
+      } else if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
+        try {
+          const imgRes = await fetch(imageSrc, { signal: AbortSignal.timeout(5000) });
+          if (imgRes.ok) {
+            const contentType = imgRes.headers.get('content-type');
+            if (contentType) mimeType = contentType.split(';')[0];
+            const arrayBuffer = await imgRes.arrayBuffer();
+            base64Data = Buffer.from(arrayBuffer).toString('base64');
+          }
+        } catch (fetchErr) {
+          console.warn('Không thể fetch ảnh từ web URL:', fetchErr.message);
+        }
+      } else {
+        const cleanPath = imageSrc.replace(/^[/\\]+/, '').split('?')[0];
+        const localPath = path.join(__dirname, '..', cleanPath);
+        if (fs.existsSync(localPath)) {
+          const ext = path.extname(localPath).toLowerCase();
+          if (ext === '.png') mimeType = 'image/png';
+          else if (ext === '.webp') mimeType = 'image/webp';
+          else mimeType = 'image/jpeg';
+          base64Data = fs.readFileSync(localPath).toString('base64');
+        }
+      }
+
+      if (base64Data) {
+        geminiContents = [
+          { text: question.trim() },
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64Data
+            }
+          }
+        ];
+        console.log(`🖼️ Đã nạp thành công hình ảnh multimodal (${mimeType}) cho câu hỏi AI`);
+      }
+    } catch (imgErr) {
+      console.warn('⚠️ Lỗi nạp hình ảnh multimodal Gemini:', imgErr.message);
+    }
+  }
+
   const systemInstruction = `Bạn là Trợ lý AI chuyên gia thông minh của Bảo tàng Văn hóa các Dân tộc Việt Nam (Thái Nguyên).
 
 QUY TẮC PHẢN HỒI BẮT BUỘC:
@@ -260,7 +316,7 @@ QUY TẮC PHẢN HỒI BẮT BUỘC:
 2. KHÔNG sử dụng ký tự Markdown dạng dấu sao (*) hay (**). Viết chữ tự nhiên.
 3. Nếu cần liệt kê, dùng dấu gạch ngang "-" ở đầu dòng.
 4. TUYỆT ĐỐI KHÔNG ĐƯỢC ĐỀ CẬP, KHÔNG ĐƯỢC LIỆT KÊ MỤC "Niên đại" (hoặc thời kỳ, kỷ nguyên) của hiện vật trong bất kỳ câu trả lời nào (bảo tàng đã bỏ trường này).
-5. Trả lời trực tiếp vào nội dung câu hỏi người dùng, phân tích thông tin thực tế từ database nếu người dùng hỏi về hiện vật, doanh thu, vé, lịch đoàn hay cán bộ.${currentArtifactContext ? '\n' + currentArtifactContext : ''}
+5. Trả lời trực tiếp vào nội dung câu hỏi người dùng, phân tích thông tin thực tế từ database nếu người dùng hỏi về hiện vật, doanh thu, vé, lịch đoàn hay cán bộ.${isImageAnalysis ? '\n6. KHI THUYẾT MINH / PHÂN TÍCH HÌNH ẢNH: Hãy quan sát kỹ hình ảnh, mô tả chi tiết đặc điểm thị giác, màu sắc, hoa văn, bố cục và không gian bài trí trưng bày của hiện vật trong bức ảnh, kết hợp với ý nghĩa văn hóa của đồng bào dân tộc.' : ''}${currentArtifactContext ? '\n' + currentArtifactContext : ''}
 
 ${liveContext}`;
 
@@ -271,13 +327,25 @@ ${liveContext}`;
     res.setHeader('Connection', 'keep-alive');
 
     try {
-      await generateGeminiStreamWithFallback(question.trim(), systemInstruction, (chunkText) => {
+      await generateGeminiStreamWithFallback(geminiContents, systemInstruction, (chunkText) => {
         res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
       });
       res.write(`data: [DONE]\n\n`);
       return res.end();
     } catch (error) {
       console.error('Lỗi Gemini Streaming Chat:', error.message);
+      // Thử lại dạng text thuần nếu multimodal gặp sự cố
+      if (Array.isArray(geminiContents)) {
+        try {
+          await generateGeminiStreamWithFallback(question.trim(), systemInstruction, (chunkText) => {
+            res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
+          });
+          res.write(`data: [DONE]\n\n`);
+          return res.end();
+        } catch (textErr) {
+          console.error('Lỗi Gemini Stream Text Fallback:', textErr.message);
+        }
+      }
       const fallbackAnswer = getDynamicOfflineResponse(question, liveContext, currentArtifactContext);
       res.write(`data: ${JSON.stringify({ chunk: fallbackAnswer, isFallback: true })}\n\n`);
       res.write(`data: [DONE]\n\n`);
@@ -287,7 +355,16 @@ ${liveContext}`;
 
   // Non-stream JSON mode
   try {
-    const answerText = await generateGeminiWithFallback(question.trim(), systemInstruction);
+    let answerText;
+    try {
+      answerText = await generateGeminiWithFallback(geminiContents, systemInstruction);
+    } catch (mErr) {
+      if (Array.isArray(geminiContents)) {
+        answerText = await generateGeminiWithFallback(question.trim(), systemInstruction);
+      } else {
+        throw mErr;
+      }
+    }
     return res.json({
       success: true,
       question: question,

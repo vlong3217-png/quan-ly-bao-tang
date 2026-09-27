@@ -1413,6 +1413,46 @@ body {
   transform: translateY(-1px);
 }
 
+.btn-ask-image {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(245, 158, 11, 0.18) 100%);
+  color: var(--primary-gold);
+  border: 1.5px solid var(--primary-gold);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin: 0.85rem 0 1.15rem 0;
+  font-size: 0.925rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.12);
+}
+
+.btn-ask-image:hover {
+  background: linear-gradient(135deg, var(--primary-gold), #b45309);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.35);
+}
+
+.btn-ask-image:active {
+  transform: translateY(0);
+}
+
+.btn-ask-image i {
+  font-size: 1.05rem;
+  animation: pulse-sparkle 2s infinite ease-in-out;
+}
+
+@keyframes pulse-sparkle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.85; }
+}
+
 .ai-chat-box.expanded {
   position: fixed;
   top: 50%;
