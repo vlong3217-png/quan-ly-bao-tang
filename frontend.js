@@ -599,6 +599,13 @@ function switchNav(viewId) {
     stopGateQrCamera();
   }
 
+  if (viewId !== 'viewArtifactDetail') {
+    const box = document.getElementById('aiChatBox');
+    if (box && box.classList.contains('expanded')) {
+      toggleExpandAiChat();
+    }
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -967,6 +974,50 @@ async function handleSendAiChat(event) {
   }
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+/**
+ * Toggle Expand / Collapse AI Chatbox
+ */
+function toggleExpandAiChat() {
+  const box = document.getElementById('aiChatBox');
+  const backdrop = document.getElementById('aiChatBackdrop');
+  const icon = document.getElementById('iconExpandAiChat');
+  const text = document.getElementById('textExpandAiChat');
+  if (!box) return;
+
+  const isExpanded = box.classList.toggle('expanded');
+
+  if (backdrop) {
+    backdrop.classList.toggle('active', isExpanded);
+  }
+
+  if (icon) {
+    icon.className = isExpanded
+      ? 'fa-solid fa-down-left-and-up-right-to-center'
+      : 'fa-solid fa-up-right-and-down-left-from-center';
+  }
+
+  if (text) {
+    text.textContent = isExpanded ? 'Thu nhỏ' : 'Mở rộng';
+  }
+
+  const msgs = document.getElementById('chatMessages');
+  if (msgs) {
+    setTimeout(() => {
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 120);
+  }
+}
+
+// Support Escape key to collapse expanded chat
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const box = document.getElementById('aiChatBox');
+    if (box && box.classList.contains('expanded')) {
+      toggleExpandAiChat();
+    }
+  }
+});
 
 /**
  * UI-13 & UI-14: Inventory & Artifact Modal Handlers
