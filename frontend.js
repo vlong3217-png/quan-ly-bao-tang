@@ -1019,6 +1019,9 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Explicit window binding
+window.toggleExpandAiChat = toggleExpandAiChat;
+
 /**
  * UI-13 & UI-14: Inventory & Artifact Modal Handlers
  */
