@@ -95,7 +95,7 @@
 
   <!-- FontAwesome Icons & Custom Stylesheet -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 
 <body>
@@ -397,6 +397,11 @@
               <img id="detailImg" src="" alt="Artifact Detail" class="detail-img">
             </div>
             <div id="detailGalleryStrip" class="detail-gallery-strip"></div>
+
+            <!-- Nút Hỏi AI về hình ảnh hiện vật -->
+            <button type="button" class="btn-ask-image" id="btnAskImageAi" onclick="askAiAboutImage()">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Hỏi AI về hình ảnh hiện vật
+            </button>
 
             <div class="meta-grid-2">
               <div><strong>Mã Hiện Vật:</strong> <span id="detailCode"></span></div>
@@ -2069,7 +2074,7 @@
   <!-- HTML5 QR Code Reader Library -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <!-- JavaScript Controller -->
-  <script src="frontend.js?v=4"></script>
+  <script src="frontend.js?v=5"></script>
 </body>
 
 </html>

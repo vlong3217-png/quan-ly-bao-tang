@@ -1019,6 +1019,118 @@ document.addEventListener('keydown', (e) => {
 window.toggleExpandAiChat = toggleExpandAiChat;
 
 /**
+ * Ask AI about the current artifact image (phóng to cửa sổ và AI tự động trả lời luôn)
+ */
+async function askAiAboutImage() {
+  const art = currentArtifact;
+  if (!art) {
+    showToast('Chưa có thông tin hiện vật để phân tích hình ảnh.', 'warning');
+    return;
+  }
+
+  // 1. Phóng to cửa sổ chat AI nếu chưa mở
+  const box = document.getElementById('aiChatBox');
+  const backdrop = document.getElementById('aiChatBackdrop');
+  const icon = document.getElementById('iconExpandAiChat');
+  const text = document.getElementById('textExpandAiChat');
+
+  if (box && !box.classList.contains('expanded')) {
+    box.classList.add('expanded');
+    if (backdrop) backdrop.classList.add('active');
+    if (icon) icon.className = 'fa-solid fa-down-left-and-up-right-to-center';
+    if (text) text.textContent = 'Thu nhỏ';
+  }
+
+  const chatMessages = document.getElementById('chatMessages');
+  if (chatMessages) {
+    setTimeout(() => {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 120);
+  }
+
+  // 2. Tạo tin nhắn người dùng và tin nhắn AI đang phân tích
+  const userMsgText = `Phân tích và thuyết minh chi tiết hình ảnh hiện vật "${art.title}"`;
+
+  if (chatMessages) {
+    const userBubble = document.createElement('div');
+    userBubble.className = 'msg-bubble msg-user';
+    userBubble.innerHTML = `<i class="fa-solid fa-camera-retro" style="margin-right: 0.35rem;"></i> ${userMsgText}`;
+    chatMessages.appendChild(userBubble);
+
+    const aiBubble = document.createElement('div');
+    aiBubble.className = 'msg-bubble msg-ai';
+    aiBubble.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Trợ lý AI đang quan sát và phân tích hình ảnh hiện vật...';
+    chatMessages.appendChild(aiBubble);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    const detailImg = document.getElementById('detailImg');
+    const imageSrc = (detailImg && detailImg.src) ? detailImg.src : (art.img || '');
+
+    let accumulatedText = '';
+
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: `Hãy quan sát và phân tích chi tiết hình ảnh hiện vật "${art.title}" (Dân tộc: ${art.ethnic}, Chất liệu: ${art.material}): mô tả các chi tiết thị giác nổi bật trong bức ảnh, màu sắc, hoa văn, cách thức bài trí trưng bày và giá trị di sản văn hóa đặc trưng.`,
+          artifactId: art.id,
+          imageSrc: imageSrc,
+          isImageAnalysis: true,
+          stream: true
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.slice(6);
+            if (dataStr === '[DONE]') break;
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.chunk) {
+                accumulatedText += parsed.chunk;
+                aiBubble.innerHTML = formatAiText(accumulatedText);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+              }
+            } catch (e) {
+              console.warn('Err parsing stream chunk:', e);
+            }
+          }
+        }
+      }
+
+      if (!accumulatedText) {
+        aiBubble.innerHTML = 'Hệ thống chưa nhận được phản hồi từ AI.';
+      }
+    } catch (err) {
+      console.error('Lỗi AI Streaming Image Analysis:', err);
+      aiBubble.innerHTML = 'Không thể kết nối với Server AI.';
+    }
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+}
+
+// Explicit window binding
+window.askAiAboutImage = askAiAboutImage;
+
+/**
  * UI-13 & UI-14: Inventory & Artifact Modal Handlers
  */
 function renderInventoryTable(artifacts) {
