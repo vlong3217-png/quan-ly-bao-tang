@@ -440,10 +440,15 @@
             </div>
 
             <!-- AI Cultural Assistant Chatbot Box -->
-            <div class="ai-chat-box">
-              <div
-                style="font-size: 0.85rem; font-weight: 700; color: var(--primary-gold); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
-                <i class="fa-solid fa-robot"></i> Trợ lý AI Hỏi Đáp Di Sản Văn Hóa
+            <div class="ai-chat-box" id="aiChatBox">
+              <div class="ai-chat-header">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-gold); display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fa-solid fa-robot"></i> Trợ lý AI Hỏi Đáp Di Sản Văn Hóa
+                </div>
+                <button type="button" class="btn-expand-chat" id="btnExpandAiChat" onclick="toggleExpandAiChat()" title="Mở rộng / Thu nhỏ khung chat">
+                  <i class="fa-solid fa-up-right-and-down-left-from-center" id="iconExpandAiChat"></i>
+                  <span id="textExpandAiChat">Mở rộng</span>
+                </button>
               </div>
 
               <div class="chat-messages" id="chatMessages">
@@ -462,6 +467,7 @@
                 </button>
               </form>
             </div>
+            <div id="aiChatBackdrop" class="ai-chat-backdrop" onclick="toggleExpandAiChat()"></div>
 
           </div>
 
