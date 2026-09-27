@@ -111,7 +111,7 @@ async function buildLiveMuseumContext() {
     const totalArtifacts = hvTotal[0]?.count || 0;
 
     const [hvList] = await pool.query(`
-      SELECT ma_hienvat, ten_hienvat, dan_toc, chat_lieu, nien_dai, tinh_trang, vi_tri_kho
+      SELECT ma_hienvat, ten_hienvat, dan_toc, chat_lieu, tinh_trang, vi_tri_kho
       FROM HienVat ORDER BY hienvat_id DESC LIMIT 30
     `);
 
@@ -148,7 +148,7 @@ async function buildLiveMuseumContext() {
 
     // Định dạng danh sách dạng chuỗi
     const hvText = hvList.length > 0
-      ? hvList.map((a, i) => `${i + 1}. [Mã: ${a.ma_hienvat || 'N/A'}] ${a.ten_hienvat} - Dân tộc: ${a.dan_toc || 'N/A'}, Chất liệu: ${a.chat_lieu || 'N/A'}, Niên đại: ${a.nien_dai || 'N/A'}, Tình trạng: ${a.tinh_trang || 'N/A'}, Kho: ${a.vi_tri_kho || 'N/A'}`).join('\n')
+      ? hvList.map((a, i) => `${i + 1}. [Mã: ${a.ma_hienvat || 'N/A'}] ${a.ten_hienvat} - Dân tộc: ${a.dan_toc || 'N/A'}, Chất liệu: ${a.chat_lieu || 'N/A'}, Tình trạng: ${a.tinh_trang || 'N/A'}, Kho: ${a.vi_tri_kho || 'N/A'}`).join('\n')
       : '- Chưa có hiện vật di sản nào lưu trong cơ sở dữ liệu SQLite.';
 
     const ticketText = ticketList.length > 0
@@ -198,11 +198,15 @@ ${userText}
 }
 
 // Phản hồi dự phòng thông minh dựa trên dữ liệu SQLite thực tế khi Gemini API không khả dụng
-function getDynamicOfflineResponse(question, liveContext) {
+function getDynamicOfflineResponse(question, liveContext, currentArtifactContext) {
   const q = (question || '').trim().toLowerCase();
 
   if (q.includes('xin chào') || q.includes('chào') || q.includes('hello') || q.includes('hi')) {
     return 'Xin chào quý khách! Tôi là Trợ lý AI Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi luôn sẵn sàng hỗ trợ bạn tra cứu thông tin vận hành, di sản hiện vật, lịch đoàn và vé tham quan dựa trên dữ liệu thực tế.';
+  }
+
+  if (currentArtifactContext) {
+    return `Thông tin thực tế hiện vật trích xuất từ cơ sở dữ liệu:\n` + currentArtifactContext;
   }
 
   return `Báo cáo thông tin thực tế trích xuất từ cơ sở dữ liệu SQLite Bảo tàng:\n\n` + liveContext;
@@ -213,20 +217,50 @@ function getDynamicOfflineResponse(question, liveContext) {
  * Trợ lý AI Bảo tàng trả lời câu hỏi tự nhiên bằng Gemini AI + Dữ liệu SQLite sống
  */
 router.post('/chat', async (req, res) => {
-  const { question, stream } = req.body;
+  const { question, artifactId, stream } = req.body;
 
   if (!question || !question.trim()) {
     return res.status(400).json({ success: false, message: 'Vui lòng nhập câu hỏi!' });
   }
 
   const liveContext = await buildLiveMuseumContext();
+
+  // Lấy ngữ cảnh hiện vật cụ thể nếu người dùng đang đứng ở màn hình chi tiết hiện vật
+  let currentArtifactContext = '';
+  if (artifactId) {
+    try {
+      const [artRows] = await pool.query(
+        `SELECT ma_hienvat, ten_hienvat, dan_toc, chat_lieu, tinh_trang, vi_tri_kho, y_nghia_van_hoa, vung_van_hoa
+         FROM HienVat
+         WHERE hienvat_id = ? OR ma_hienvat = ?
+         LIMIT 1`,
+        [String(artifactId), String(artifactId)]
+      );
+      if (artRows && artRows.length > 0) {
+        const a = artRows[0];
+        currentArtifactContext = `\nHIỆN VẬT NGƯỜI DÙNG ĐANG XEM TRỰC TIẾP TRÊN MÀN HÌNH:
+- Tên hiện vật: ${a.ten_hienvat}
+- Mã hiện vật: ${a.ma_hienvat || 'N/A'}
+- Dân tộc: ${a.dan_toc || 'N/A'}
+- Vùng văn hóa: ${a.vung_van_hoa || 'N/A'}
+- Chất liệu: ${a.chat_lieu || 'N/A'}
+- Tình trạng: ${a.tinh_trang || 'N/A'}
+- Vị trí lưu trữ: ${a.vi_tri_kho || 'N/A'}
+- Ý nghĩa văn hóa: ${a.y_nghia_van_hoa || 'Hồ sơ di sản.'}`;
+      }
+    } catch (e) {
+      console.warn('Lỗi lấy artifactId cho AI:', e);
+    }
+  }
+
   const systemInstruction = `Bạn là Trợ lý AI chuyên gia thông minh của Bảo tàng Văn hóa các Dân tộc Việt Nam (Thái Nguyên).
 
-QUY TẮC PHẢN HỒI:
+QUY TẮC PHẢN HỒI BẮT BUỘC:
 1. Trả lời NGẮN GỌN, SÚC TÍCH, THÔNG MINH, CHÍNH XÁC dựa trên DỮ LIỆU THỰC TẾ DƯỚI ĐÂY.
 2. KHÔNG sử dụng ký tự Markdown dạng dấu sao (*) hay (**). Viết chữ tự nhiên.
 3. Nếu cần liệt kê, dùng dấu gạch ngang "-" ở đầu dòng.
-4. Trả lời trực tiếp vào nội dung câu hỏi người dùng, phân tích thông tin thực tế từ database nếu người dùng hỏi về hiện vật, doanh thu, vé, lịch đoàn hay cán bộ.
+4. TUYỆT ĐỐI KHÔNG ĐƯỢC ĐỀ CẬP, KHÔNG ĐƯỢC LIỆT KÊ MỤC "Niên đại" (hoặc thời kỳ, kỷ nguyên) của hiện vật trong bất kỳ câu trả lời nào (bảo tàng đã bỏ trường này).
+5. Trả lời trực tiếp vào nội dung câu hỏi người dùng, phân tích thông tin thực tế từ database nếu người dùng hỏi về hiện vật, doanh thu, vé, lịch đoàn hay cán bộ.${currentArtifactContext ? '\n' + currentArtifactContext : ''}
 
 ${liveContext}`;
 
@@ -244,7 +278,7 @@ ${liveContext}`;
       return res.end();
     } catch (error) {
       console.error('Lỗi Gemini Streaming Chat:', error.message);
-      const fallbackAnswer = getDynamicOfflineResponse(question, liveContext);
+      const fallbackAnswer = getDynamicOfflineResponse(question, liveContext, currentArtifactContext);
       res.write(`data: ${JSON.stringify({ chunk: fallbackAnswer, isFallback: true })}\n\n`);
       res.write(`data: [DONE]\n\n`);
       return res.end();
@@ -262,7 +296,7 @@ ${liveContext}`;
     });
   } catch (error) {
     console.error('Lỗi Gemini AI Chat, dùng dữ liệu SQLite sống:', error.message);
-    const fallbackAnswer = getDynamicOfflineResponse(question, liveContext);
+    const fallbackAnswer = getDynamicOfflineResponse(question, liveContext, currentArtifactContext);
     return res.json({
       success: true,
       question: question,
@@ -301,6 +335,7 @@ NHIỆM VỤ:
 - KHÔNG tự bịa số liệu không có trong cơ sở dữ liệu.
 - KHÔNG sử dụng ký tự Markdown dạng dấu sao (*) hay (**).
 - Khi liệt kê, dùng dấu gạch ngang "-".
+- TUYỆT ĐỐI KHÔNG đề cập, KHÔNG liệt kê mục "Niên đại" (thời kỳ, kỷ nguyên) của hiện vật.
 
 ${liveContext}`;
 
