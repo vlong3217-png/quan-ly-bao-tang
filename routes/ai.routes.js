@@ -421,7 +421,7 @@ ${liveContext}`;
     return res.json({
       success: true,
       data: {
-        summary: `Kết quả phân tích trí tuệ dữ liệu quản trị (Dữ liệu SQLite + Gemini AI)`,
+        summary: `Kết quả phân tích dữ liệu quản trị`,
         details: detailsText,
         source: 'Gemini AI + SQLite'
       }
