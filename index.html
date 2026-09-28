@@ -447,10 +447,12 @@
             <!-- AI Cultural Assistant Chatbot Box -->
             <div class="ai-chat-box" id="aiChatBox">
               <div class="ai-chat-header">
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-gold); display: flex; align-items: center; gap: 0.4rem;">
+                <div
+                  style="font-size: 0.85rem; font-weight: 700; color: var(--primary-gold); display: flex; align-items: center; gap: 0.4rem;">
                   <i class="fa-solid fa-robot"></i> Trợ lý AI Hỏi Đáp Di Sản Văn Hóa
                 </div>
-                <button type="button" class="btn-expand-chat" id="btnExpandAiChat" onclick="toggleExpandAiChat()" title="Mở rộng / Thu nhỏ khung chat">
+                <button type="button" class="btn-expand-chat" id="btnExpandAiChat" onclick="toggleExpandAiChat()"
+                  title="Mở rộng / Thu nhỏ khung chat">
                   <i class="fa-solid fa-up-right-and-down-left-from-center" id="iconExpandAiChat"></i>
                   <span id="textExpandAiChat">Mở rộng</span>
                 </button>
@@ -543,10 +545,19 @@
             </div>
           </div>
 
+          <!-- Thông báo chế độ vé thông minh (Option 3 Hybrid) -->
+          <div id="bookingModeNotice" class="booking-mode-notice mode-individual">
+            <i class="fa-solid fa-qrcode" id="bookingModeIcon"></i>
+            <span id="bookingModeText"><strong>Chế độ Khách lẻ:</strong> Mỗi người tham quan sẽ được cấp 01 mã QR riêng
+              biệt để tự do quét qua cổng độc lập.</span>
+          </div>
+
           <!-- Danh sách nhập Họ và tên cho từng người tham quan -->
           <div class="form-group" style="margin-bottom: 1.1rem;">
-            <div class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <span><i class="fa-solid fa-users"></i> Họ và tên người tham quan <small style="color: var(--text-muted); font-weight: normal;">(Nhập tên cho từng vé)</small></span>
+            <div class="form-label"
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span id="visitorListHeading"><i class="fa-solid fa-users"></i> Họ và tên người tham quan <small
+                  style="color: var(--text-muted); font-weight: normal;">(Nhập tên cho từng vé)</small></span>
               <span id="visitorCountBadge" class="badge-status badge-info" style="font-size: 0.75rem;">1 Khách</span>
             </div>
             <div id="visitorInputsList" style="display: flex; flex-direction: column; gap: 0.65rem;">
@@ -555,7 +566,8 @@
                   <i class="fa-regular fa-id-badge"></i> Họ và tên Người 1 <span style="color: #dc2626;">*</span>
                 </div>
                 <div class="input-container">
-                  <input type="text" id="bookingName" class="form-input visitor-name-input" placeholder="Nguyễn Văn A" required>
+                  <input type="text" id="bookingName" class="form-input visitor-name-input" placeholder="Nguyễn Văn A"
+                    required>
                   <i class="fa-regular fa-user input-icon"></i>
                 </div>
               </div>
@@ -564,7 +576,8 @@
 
           <!-- Ô Nhập Số Điện Thoại - KHÔNG BẮT BUỘC -->
           <div class="form-group" style="margin-bottom: 1.25rem;">
-            <label class="form-label" for="bookingPhone">Số điện thoại nhận QR <small style="color: var(--text-muted); font-weight: normal;">(Không bắt buộc)</small></label>
+            <label class="form-label" for="bookingPhone">Số điện thoại nhận QR <small
+                style="color: var(--text-muted); font-weight: normal;">(Không bắt buộc)</small></label>
             <div class="input-container">
               <input type="tel" id="bookingPhone" class="form-input" placeholder="0987654321 (Có thể bỏ trống)">
               <i class="fa-solid fa-phone input-icon"></i>
@@ -588,34 +601,75 @@
 
 
     <!-- ============================================================
-         UI-08: MÀN HÌNH VÉ ĐIỆN TỬ QR CODE & ĐÁNH GIÁ
+         UI-08: MÀN HÌNH VÉ ĐIỆN TỬ QR CODE (OPTION 3 HYBRID)
          ============================================================ -->
     <div id="viewMyTickets" class="screen-view">
       <div class="auth-card" style="max-width: 580px; padding: 1.5rem 1.25rem;">
 
-        <div class="card-header" style="margin-bottom: 1.25rem;">
+        <div class="card-header" style="margin-bottom: 1.1rem;">
           <h2 class="card-title" style="font-size: 1.65rem;">Vé Tham Quan Điện Tử</h2>
           <p class="card-subtitle">Thẻ vào cửa chính thức tích hợp QR Code • Quét mã tại cổng soát vé tự động</p>
         </div>
 
+        <!-- 1. Thanh Tóm Tắt Đơn Đặt Vé (Order Summary Bar) -->
+        <div id="ticketOrderSummaryBar" class="ticket-order-summary">
+          <div class="order-summary-row">
+            <div>
+              <span class="order-label">MÃ ĐƠN HÀNG:</span>
+              <strong id="orderSummaryCode" class="order-code">#VE-2026-98124</strong>
+            </div>
+            <div id="orderModeBadgeWrapper">
+              <span id="orderModeBadge" class="badge-mode-individual"><i class="fa-solid fa-qrcode"></i> Khách Lẻ (Mỗi
+                người 1 QR)</span>
+            </div>
+          </div>
+          <div class="order-meta-info">
+            <span><i class="fa-regular fa-calendar"></i> <span id="orderSummaryDate">Hôm nay</span></span>
+            <span><i class="fa-solid fa-users"></i> <span id="orderSummaryQty">1 Vé</span></span>
+            <span><i class="fa-solid fa-money-bill-wave"></i> <span id="orderSummaryAmount">30.000 VNĐ</span></span>
+          </div>
+        </div>
+
+        <!-- 2. Thanh Chuyển Đổi Vé Từng Người (Hiển thị khi < 10 người) -->
+        <div id="ticketTabsNavWrapper" class="ticket-tabs-nav-wrapper">
+          <div class="ticket-tabs-header">
+            <span><i class="fa-solid fa-id-card-clip"></i> Chọn vé người tham quan để lấy mã QR:</span>
+            <span id="ticketTabsCountInfo" style="font-size: 0.78rem; color: var(--text-muted);">Vé 1 / 1</span>
+          </div>
+          <div id="ticketTabsList" class="ticket-tabs-list">
+            <!-- Render tabs dynamically -->
+          </div>
+        </div>
+
+        <!-- 3. Khung Banner Vé Đoàn Ưu Tiên (Hiển thị khi >= 10 người) -->
+        <div id="ticketGroupBanner" class="ticket-group-banner" style="display: none;">
+          <div class="group-banner-icon"><i class="fa-solid fa-crown"></i></div>
+          <div class="group-banner-text">
+            <h4>VÉ ĐOÀN ƯU TIÊN (MASTER QR CODE)</h4>
+            <p>Trưởng đoàn/Hướng dẫn viên chỉ cần xuất trình mã Master QR duy nhất này tại <strong>Cổng soát vé ưu tiên
+                (Làn đoàn)</strong>. Nhân viên bảo tàng sẽ xác nhận và mở lối đi riêng cho toàn bộ các thành viên vào
+              tham quan cùng lúc.</p>
+          </div>
+        </div>
+
         <div class="eticket-wrapper">
           <!-- Digital Museum Pass Card -->
-          <div class="eticket-card">
+          <div class="eticket-card" id="mainEticketCard">
 
             <!-- Card Header: Museum Branding -->
-            <div class="eticket-header">
+            <div class="eticket-header" id="eticketHeaderBg">
               <div class="eticket-header-logo">
                 <img src="logo.png" alt="Bảo Tàng Logo">
               </div>
               <div class="eticket-header-text">
-                <h4>BẢO TÀNG VĂN HÓA CÁC DÂN TỘC VIỆT NAM</h4>
-                <span>THẺ VÀO CỬA ĐIỆN TỬ CHÍNH THỨC</span>
+                <h4 id="eticketHeaderTitle">BẢO TÀNG VĂN HÓA CÁC DÂN TỘC VIỆT NAM</h4>
+                <span id="eticketHeaderSubtitle">THẺ VÀO CỬA ĐIỆN TỬ CHÍNH THỨC</span>
               </div>
             </div>
 
             <!-- Card Top: QR Code & Status -->
             <div class="eticket-top">
-              <div class="eticket-status-badge">
+              <div class="eticket-status-badge" id="ticketStatusBadge">
                 <i class="fa-solid fa-circle-check"></i> CHƯA SỬ DỤNG - HỢP LỆ
               </div>
 
@@ -634,7 +688,7 @@
                 </div>
               </div>
 
-              <div class="qr-instruction-text">
+              <div class="qr-instruction-text" id="qrInstructionText">
                 <i class="fa-solid fa-qrcode"></i> Đưa mã này vào máy quét tại cổng soát vé
               </div>
             </div>
@@ -650,7 +704,7 @@
             <div class="eticket-bottom">
               <div class="eticket-code-pill">
                 <div class="code-meta">
-                  <span class="code-label">MÃ ĐẶT VÉ (BOOKING CODE)</span>
+                  <span class="code-label" id="ticketCodeLabel">MÃ VÉ (TICKET CODE)</span>
                   <strong id="ticketCodeText">#VE-2026-98124</strong>
                 </div>
                 <button type="button" class="btn-copy-code" onclick="copyTicketCode()" title="Sao chép mã vé">
@@ -673,14 +727,26 @@
                 </div>
                 <div class="eticket-detail-item">
                   <span class="detail-lbl"><i class="fa-solid fa-door-open"></i> Vị trí vào cửa</span>
-                  <span class="detail-val" style="color: #059669;">Cổng chính - Khu A</span>
+                  <span class="detail-val" id="ticketGateLocation" style="color: #059669;">Cổng chính - Khu A</span>
                 </div>
               </div>
 
-              <div class="eticket-notice">
+              <!-- Tiện ích vé con: Gửi riêng vé cho người này hoặc sao chép -->
+              <div id="subTicketShareBox" class="subticket-share-box">
+                <button type="button" class="btn-subticket-action" onclick="shareCurrentSubTicket()"
+                  title="Gửi mã vé này cho người đi cùng">
+                  <i class="fa-solid fa-share-nodes"></i> Gửi vé này cho bạn
+                </button>
+                <button type="button" class="btn-subticket-action" onclick="copyCurrentSubTicketCode()"
+                  title="Sao chép mã QR này">
+                  <i class="fa-regular fa-copy"></i> Sao chép mã
+                </button>
+              </div>
+
+              <div class="eticket-notice" style="margin-top: 0.85rem;">
                 <i class="fa-solid fa-shield-halved"></i>
-                <div>Vé điện tử có giá trị 01 lượt vào cửa trong ngày. Vui lòng bảo mật mã QR trước khi soát vé tại
-                  cổng.</div>
+                <div id="ticketNoticeText">Vé điện tử có giá trị 01 lượt vào cửa trong ngày. Vui lòng bảo mật mã QR
+                  trước khi soát vé tại cổng.</div>
               </div>
             </div>
 
@@ -1820,7 +1886,8 @@
               <i class="fa-solid fa-align-left" style="color: var(--primary-gold);"></i> Mô tả / Ý nghĩa văn hóa di sản
             </label>
             <div class="input-container">
-              <textarea id="modalArtMeaning" class="form-textarea no-icon" rows="3" placeholder="Nhập đoạn văn mô tả chi tiết, nguồn gốc lịch sử và giá trị văn hóa của hiện vật..."></textarea>
+              <textarea id="modalArtMeaning" class="form-textarea no-icon" rows="3"
+                placeholder="Nhập đoạn văn mô tả chi tiết, nguồn gốc lịch sử và giá trị văn hóa của hiện vật..."></textarea>
             </div>
           </div>
 
@@ -2074,7 +2141,7 @@
   <!-- HTML5 QR Code Reader Library -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <!-- JavaScript Controller -->
-  <script src="frontend.js?v=5"></script>
+  <script src="frontend.js?v=6"></script>
 </body>
 
 </html>

@@ -2050,6 +2050,145 @@ async function verifyGateTicketCode(qrCode) {
     badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực mã QR: <strong>${qrCode}</strong>...`;
   }
 
+  // Chuẩn hóa mã QR quét được
+  const cleanQr = qrCode.trim().replace(/^BAOTANG-/, '').replace(/^#/, '');
+
+  // 1. Kiểm tra trong danh sách đơn hàng đã mua (bao gồm cả vé con và vé đoàn)
+  let matchedOrder = null;
+  let matchedSubTicket = null;
+
+  for (const t of (TICKETS_PURCHASED_DATA || [])) {
+    const parentCodeClean = (t.code || '').replace(/^#/, '');
+
+    // Kiểm tra vé con nếu có
+    if (t.subTickets && t.subTickets.length > 0) {
+      const foundSub = t.subTickets.find(st => {
+        const subClean = (st.code || '').replace(/^#/, '');
+        return subClean && cleanQr && (cleanQr.includes(subClean) || subClean.includes(cleanQr));
+      });
+      if (foundSub) {
+        matchedOrder = t;
+        matchedSubTicket = foundSub;
+        break;
+      }
+    }
+
+    // Kiểm tra mã đơn hoặc mã Master QR
+    if (parentCodeClean && cleanQr && (cleanQr.includes(parentCodeClean) || parentCodeClean.includes(cleanQr))) {
+      matchedOrder = t;
+      break;
+    }
+  }
+
+  // 2. Xử lý phản hồi theo Phương án 3 (Khách lẻ / Gia đình vs Đoàn đông)
+  if (matchedSubTicket && matchedOrder) {
+    // === SOÁT VÉ CÁ NHÂN CON (Mỗi người 1 QR) ===
+    if (matchedSubTicket.status === 'DA_SOAT_VE') {
+      playScanBeepSound(false);
+      badge.style.background = 'rgba(239, 68, 68, 0.15)';
+      badge.style.color = '#ef4444';
+      badge.style.border = '1px solid #ef4444';
+      badge.innerHTML = `
+        <div style="text-align: center;">
+          <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
+            <i class="fa-solid fa-circle-xmark"></i> VÉ CÁ NHÂN ĐÃ SỬ DỤNG
+          </h4>
+          <p style="margin: 2px 0; font-size: 0.9rem;">Mã vé: <strong>${matchedSubTicket.code}</strong></p>
+          <p style="margin: 2px 0; font-size: 0.88rem;">Khách: <strong>${matchedSubTicket.holderName}</strong> đã vào cửa trước đó!</p>
+        </div>
+      `;
+      showToast(`Vé ${matchedSubTicket.code} đã được soát trước đó!`, 'error');
+    } else {
+      matchedSubTicket.status = 'DA_SOAT_VE';
+      matchedSubTicket.usedAt = new Date().toLocaleTimeString('vi-VN');
+
+      const usedCount = matchedOrder.subTickets.filter(s => s.status === 'DA_SOAT_VE').length;
+      if (usedCount === matchedOrder.subTickets.length) {
+        matchedOrder.status = 'DA_SOAT_VE';
+      }
+      try {
+        localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+      } catch (e) { }
+
+      playScanBeepSound(true);
+      badge.style.background = 'rgba(16, 185, 129, 0.15)';
+      badge.style.color = '#10b981';
+      badge.style.border = '1px solid #10b981';
+      badge.innerHTML = `
+        <div style="text-align: center;">
+          <h4 style="margin: 0 0 6px 0; font-size: 1.15rem; color: #10b981;">
+            <i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ (1 NGƯỜI) - MỜI VÀO CỬA!
+          </h4>
+          <div style="background: #ffffff; padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid #a7f3d0; margin: 0.4rem 0;">
+            <p style="margin: 2px 0; font-size: 0.95rem; color: #065f46;"><strong>Khách:</strong> ${matchedSubTicket.holderName} (${matchedSubTicket.ticketType})</p>
+            <p style="margin: 2px 0; font-size: 0.85rem; color: #64748b;">Mã vé con: <strong>${matchedSubTicket.code}</strong> • Đơn: ${matchedOrder.code}</p>
+          </div>
+          <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #059669;">
+            <i class="fa-solid fa-users"></i> Tiến độ đoàn: <strong>Đã vào ${usedCount} / ${matchedOrder.subTickets.length} người</strong>
+          </p>
+        </div>
+      `;
+      showToast(`Xác thực thành công vé của ${matchedSubTicket.holderName}! Mời vào cửa.`, 'success');
+      renderDashboardStats();
+    }
+    return;
+  }
+
+  if (matchedOrder) {
+    const isGroup = matchedOrder.isGroup || (matchedOrder.totalQty && matchedOrder.totalQty >= 10);
+
+    if (isGroup) {
+      // === SOÁT VÉ ĐOÀN ƯU TIÊN (MASTER QR) ===
+      if (matchedOrder.status === 'DA_SOAT_VE') {
+        playScanBeepSound(false);
+        badge.style.background = 'rgba(239, 68, 68, 0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.border = '1px solid #ef4444';
+        badge.innerHTML = `
+          <div style="text-align: center;">
+            <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
+              <i class="fa-solid fa-circle-xmark"></i> VÉ ĐOÀN ĐÃ SỬ DỤNG
+            </h4>
+            <p style="margin: 2px 0; font-size: 0.9rem;">Vé đoàn <strong>${matchedOrder.code}</strong> (${matchedOrder.name}) đã được soát vào cửa trước đó!</p>
+          </div>
+        `;
+        showToast(`Vé đoàn ${matchedOrder.code} đã sử dụng trước đó!`, 'error');
+      } else {
+        matchedOrder.status = 'DA_SOAT_VE';
+        matchedOrder.usedAt = new Date().toLocaleTimeString('vi-VN');
+        try {
+          localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+        } catch (e) { }
+
+        playScanBeepSound(true);
+        badge.style.background = 'linear-gradient(135deg, rgba(217, 119, 6, 0.15), rgba(245, 158, 11, 0.25))';
+        badge.style.color = '#78350f';
+        badge.style.border = '2px solid var(--primary-gold)';
+        badge.innerHTML = `
+          <div style="text-align: center;">
+            <h4 style="margin: 0 0 6px 0; font-size: 1.15rem; color: #b45309;">
+              <i class="fa-solid fa-crown"></i> VÉ ĐOÀN ƯU TIÊN HỢP LỆ!
+            </h4>
+            <div style="background: #ffffff; padding: 0.65rem 0.9rem; border-radius: 10px; border: 1.5px solid var(--border-gold); margin: 0.4rem 0;">
+              <p style="margin: 2px 0; font-size: 1rem; font-weight: 700; color: #78350f;">${matchedOrder.name}</p>
+              <p style="margin: 2px 0; font-size: 0.9rem; color: #d97706; font-weight: 600;">
+                <i class="fa-solid fa-users"></i> Quy mô: ${matchedOrder.totalQty} Khách (${matchedOrder.adultQty || 0} Lớn, ${matchedOrder.childQty || 0} Trẻ em)
+              </p>
+              <p style="margin: 2px 0; font-size: 0.82rem; color: #64748b;">Mã Master QR: <strong>${matchedOrder.code}</strong></p>
+            </div>
+            <div style="display: inline-block; background: #059669; color: #ffffff; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; margin-top: 4px;">
+              <i class="fa-solid fa-door-open"></i> MỞ LÀN ƯU TIÊN CHO TOÀN BỘ ${matchedOrder.totalQty} THÀNH VIÊN VÀO CÙNG LÚC
+            </div>
+          </div>
+        `;
+        showToast(`Xác thực thành công Vé Đoàn ${matchedOrder.name} (${matchedOrder.totalQty} người)! Mở cửa làn ưu tiên.`, 'success');
+        renderDashboardStats();
+      }
+      return;
+    }
+  }
+
+  // 3. Fallback gửi tới API nếu không tìm thấy trong local cache
   try {
     const token = currentUser ? (currentUser.token || authToken) : authToken;
     const response = await fetch(`${API_BASE}/tickets/scan`, {
@@ -2060,21 +2199,11 @@ async function verifyGateTicketCode(qrCode) {
       },
       body: JSON.stringify({ qrCode })
     });
-
     const result = await response.json();
 
     if (response.ok && result.success) {
       playScanBeepSound(true);
       const ticket = result.data || {};
-
-      // Cập nhật trạng thái vé trong bộ nhớ frontend
-      const localTicket = (TICKETS_PURCHASED_DATA || []).find(t =>
-        t.code === qrCode || (t.code && qrCode && t.code.includes(qrCode))
-      );
-      if (localTicket) {
-        localTicket.status = 'DA_SOAT_VE';
-      }
-
       badge.style.background = 'rgba(16, 185, 129, 0.15)';
       badge.style.color = '#10b981';
       badge.style.border = '1px solid #10b981';
@@ -2085,7 +2214,6 @@ async function verifyGateTicketCode(qrCode) {
           </h4>
           <p style="margin: 2px 0; font-size: 0.9rem;"><strong>Mã vé:</strong> ${ticket.ma_qr || qrCode}</p>
           <p style="margin: 2px 0; font-size: 0.88rem;"><strong>Khách hàng:</strong> ${ticket.ten_khach || ticket.ho_ten || 'Khách tham quan'}</p>
-          <p style="margin: 2px 0; font-size: 0.85rem; opacity: 0.85;"><strong>Giờ ghi nhận:</strong> ${new Date().toLocaleTimeString('vi-VN')}</p>
         </div>
       `;
       showToast(`Xác thực thành công vé ${qrCode}! Mời du khách vào cửa.`, 'success');
@@ -2105,61 +2233,20 @@ async function verifyGateTicketCode(qrCode) {
       `;
       showToast(`Soát vé thất bại: ${msg}`, 'error');
     }
-  } catch (err) {
-    console.error('Verify error:', err);
-
-    // Kiểm tra vé trong bộ nhớ cục bộ (nếu offline / chưa đăng nhập token)
-    const localTicket = (TICKETS_PURCHASED_DATA || []).find(t =>
-      t.code === qrCode || (t.code && qrCode && (t.code.includes(qrCode) || qrCode.includes(t.code)))
-    );
-
-    if (localTicket) {
-      if (localTicket.status === 'DA_SOAT_VE') {
-        playScanBeepSound(false);
-        badge.style.background = 'rgba(239, 68, 68, 0.15)';
-        badge.style.color = '#ef4444';
-        badge.style.border = '1px solid #ef4444';
-        badge.innerHTML = `
-          <div style="text-align: center;">
-            <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
-              <i class="fa-solid fa-circle-xmark"></i> VÉ ĐÃ SỬ DỤNG
-            </h4>
-            <p style="margin: 2px 0; font-size: 0.9rem;">Mã vé ${qrCode} đã được soát trước đó!</p>
-          </div>
-        `;
-        showToast(`Vé ${qrCode} đã được sử dụng trước đó!`, 'error');
-      } else {
-        localTicket.status = 'DA_SOAT_VE';
-        playScanBeepSound(true);
-        badge.style.background = 'rgba(16, 185, 129, 0.15)';
-        badge.style.color = '#10b981';
-        badge.style.border = '1px solid #10b981';
-        badge.innerHTML = `
-          <div style="text-align: center;">
-            <h4 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #10b981;">
-              <i class="fa-solid fa-circle-check"></i> VÉ HỢP LỆ - MỜI VÀO CỬA!
-            </h4>
-            <p style="margin: 2px 0; font-size: 0.9rem;"><strong>Mã vé:</strong> ${localTicket.code}</p>
-            <p style="margin: 2px 0; font-size: 0.88rem;"><strong>Khách hàng:</strong> ${localTicket.name || 'Khách tham quan'}</p>
-          </div>
-        `;
-        showToast(`Xác thực thành công vé ${qrCode}!`, 'success');
-      }
-    } else {
-      playScanBeepSound(false);
-      badge.style.background = 'rgba(239, 68, 68, 0.15)';
-      badge.style.color = '#ef4444';
-      badge.style.border = '1px solid #ef4444';
-      badge.innerHTML = `
-        <div style="text-align: center;">
-          <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
-            <i class="fa-solid fa-circle-xmark"></i> KHÔNG TÌM THẤY VÉ
-          </h4>
-          <p style="margin: 2px 0; font-size: 0.9rem;">Mã vé <strong>${qrCode}</strong> không tồn tại trong hệ thống CSDL!</p>
-        </div>
-      `;
-      showToast(`Không tìm thấy mã vé ${qrCode} trong CSDL!`, 'error');
-    }
+  } catch (apiErr) {
+    playScanBeepSound(false);
+    badge.style.background = 'rgba(239, 68, 68, 0.15)';
+    badge.style.color = '#ef4444';
+    badge.style.border = '1px solid #ef4444';
+    badge.innerHTML = `
+      <div style="text-align: center;">
+        <h4 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #ef4444;">
+          <i class="fa-solid fa-circle-xmark"></i> KHÔNG TÌM THẤY VÉ
+        </h4>
+        <p style="margin: 2px 0; font-size: 0.9rem;">Mã vé <strong>${qrCode}</strong> không hợp lệ trong hệ thống CSDL!</p>
+      </div>
+    `;
+    showToast(`Không tìm thấy mã vé ${qrCode} trong CSDL!`, 'error');
   }
 }
 
@@ -2194,6 +2281,10 @@ function copyTicketCode() {
 function updateVisitorInputs(totalQty) {
   const listEl = document.getElementById('visitorInputsList');
   const badgeEl = document.getElementById('visitorCountBadge');
+  const noticeEl = document.getElementById('bookingModeNotice');
+  const noticeIcon = document.getElementById('bookingModeIcon');
+  const noticeText = document.getElementById('bookingModeText');
+  const headingEl = document.getElementById('visitorListHeading');
   if (!listEl) return;
 
   const count = Math.max(1, totalQty || 1);
@@ -2205,24 +2296,70 @@ function updateVisitorInputs(totalQty) {
 
   listEl.innerHTML = '';
 
-  for (let i = 0; i < count; i++) {
-    const isFirst = i === 0;
-    const labelText = isFirst ? 'Họ và tên Người 1' : `Họ và tên Người ${i + 1}`;
-    const placeholderText = isFirst ? 'Nguyễn Văn A' : `Họ và tên khách ${i + 1}`;
-    const val = currentValues[i] || '';
+  if (count >= 10) {
+    // === CHẾ ĐỘ VÉ ĐOÀN ƯU TIÊN (>= 10 NGƯỜI) ===
+    if (noticeEl) {
+      noticeEl.className = 'booking-mode-notice mode-group';
+      if (noticeIcon) noticeIcon.className = 'fa-solid fa-crown';
+      if (noticeText) noticeText.innerHTML = `<strong>Chế độ Vé Đoàn Ưu Tiên (${count} người):</strong> Hệ thống sẽ cấp <strong>01 Mã Vé Đoàn (Master QR)</strong> cho Trưởng đoàn để dẫn cả đoàn vào cửa làn riêng cùng lúc mà không cần soát từng người!`;
+    }
+    if (headingEl) {
+      headingEl.innerHTML = `<i class="fa-solid fa-crown" style="color: #d97706;"></i> Thông tin Trưởng đoàn & Đơn vị <small style="color: var(--text-muted); font-weight: normal;">(Đại diện nhận Master QR)</small>`;
+    }
 
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'visitor-input-item';
-    itemDiv.innerHTML = `
-      <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 600;">
-        <i class="fa-regular fa-id-badge"></i> ${labelText} ${isFirst ? '<span style="color: #dc2626;">*</span>' : ''}
+    const leaderVal = currentValues[0] || '';
+    const orgVal = currentValues[1] || '';
+
+    listEl.innerHTML = `
+      <div class="visitor-input-item">
+        <div style="font-size: 0.78rem; color: #78350f; margin-bottom: 0.25rem; font-weight: 700;">
+          <i class="fa-solid fa-user-tie"></i> Họ và tên Trưởng đoàn / Hướng dẫn viên <span style="color: #dc2626;">*</span>
+        </div>
+        <div class="input-container">
+          <input type="text" class="form-input visitor-name-input" placeholder="VD: Nguyễn Văn A (Trưởng đoàn)" value="${leaderVal.replace(/"/g, '&quot;')}" required id="bookingName">
+          <i class="fa-solid fa-user-tie input-icon"></i>
+        </div>
       </div>
-      <div class="input-container">
-        <input type="text" class="form-input visitor-name-input" placeholder="${placeholderText}" value="${val.replace(/"/g, '&quot;')}" ${isFirst ? 'required id="bookingName"' : ''}>
-        <i class="fa-regular fa-user input-icon"></i>
+      <div class="visitor-input-item">
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 600;">
+          <i class="fa-solid fa-building-columns"></i> Tên Cơ quan / Trường học / Công ty du lịch <small style="color: var(--text-muted);">(Tùy chọn)</small>
+        </div>
+        <div class="input-container">
+          <input type="text" class="form-input visitor-name-input" placeholder="VD: Trường THPT Chuyên / Công ty Du Lịch Á Châu" value="${orgVal.replace(/"/g, '&quot;')}">
+          <i class="fa-solid fa-landmark input-icon"></i>
+        </div>
       </div>
     `;
-    listEl.appendChild(itemDiv);
+  } else {
+    // === CHẾ ĐỘ KHÁCH LẺ & GIA ĐÌNH (< 10 NGƯỜI) ===
+    if (noticeEl) {
+      noticeEl.className = 'booking-mode-notice mode-individual';
+      if (noticeIcon) noticeIcon.className = 'fa-solid fa-qrcode';
+      if (noticeText) noticeText.innerHTML = `<strong>Chế độ Khách lẻ & Gia đình (${count} người):</strong> Mỗi người tham quan sẽ được cấp <strong>01 mã QR riêng biệt</strong> để tự do quét qua cổng soát vé độc lập.`;
+    }
+    if (headingEl) {
+      headingEl.innerHTML = `<i class="fa-solid fa-users"></i> Họ và tên người tham quan <small style="color: var(--text-muted); font-weight: normal;">(Nhập tên cho từng vé)</small>`;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const isFirst = i === 0;
+      const labelText = isFirst ? 'Họ và tên Người 1 (Người đại diện)' : `Họ và tên Người ${i + 1}`;
+      const placeholderText = isFirst ? 'Nguyễn Văn A' : `Họ và tên khách ${i + 1}`;
+      const val = currentValues[i] || '';
+
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'visitor-input-item';
+      itemDiv.innerHTML = `
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 600;">
+          <i class="fa-regular fa-id-badge"></i> ${labelText} ${isFirst ? '<span style="color: #dc2626;">*</span>' : ''}
+        </div>
+        <div class="input-container">
+          <input type="text" class="form-input visitor-name-input" placeholder="${placeholderText}" value="${val.replace(/"/g, '&quot;')}" ${isFirst ? 'required id="bookingName"' : ''}>
+          <i class="fa-regular fa-user input-icon"></i>
+        </div>
+      `;
+      listEl.appendChild(itemDiv);
+    }
   }
 }
 
@@ -2254,12 +2391,12 @@ async function handleProcessBooking(event) {
   const visitorNames = visitorInputs.map(input => input.value.trim()).filter(Boolean);
 
   if (visitorNames.length === 0) {
-    showToast('Vui lòng nhập họ và tên cho ít nhất Người 1!', 'error');
+    showToast('Vui lòng nhập họ và tên cho Người 1 hoặc Trưởng đoàn!', 'error');
     return;
   }
 
   const phoneInput = document.getElementById('bookingPhone');
-  const phone = phoneInput ? phoneInput.value.trim() : ''; // Số điện thoại KHÔNG BẮT BUỘC
+  const phone = phoneInput ? phoneInput.value.trim() : '';
   const date = document.getElementById('bookingDate') ? document.getElementById('bookingDate').value : '';
   const slot = document.getElementById('bookingSlot') ? document.getElementById('bookingSlot').value : 'Sáng (08:00 - 11:30)';
 
@@ -2272,6 +2409,7 @@ async function handleProcessBooking(event) {
     return;
   }
 
+  const isGroup = totalQty >= 10;
   const allNamesStr = visitorNames.join(', ');
 
   const payload = {
@@ -2304,14 +2442,37 @@ async function handleProcessBooking(event) {
     }
 
     const savedTicket = result.data;
-    const ticketCode = savedTicket.ticketCode || savedTicket.code || `#VE-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    const qrUrl = savedTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BAOTANG-${ticketCode}${phone ? '-' + phone : ''}`;
+    const ticketCode = isGroup
+      ? `#DOAN-2026-${Math.floor(10000 + Math.random() * 90000)}`
+      : (savedTicket.ticketCode || savedTicket.code || `#VE-2026-${Math.floor(10000 + Math.random() * 90000)}`);
 
-    // Tạo bản ghi lưu trữ bộ nhớ và cache
+    const qrUrl = savedTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-${ticketCode}${phone ? '-' + phone : ''}`;
+
+    // Sinh danh sách vé con (subTickets) nếu là khách lẻ < 10 người theo Phương án 3
+    const subTickets = [];
+    if (!isGroup) {
+      for (let i = 0; i < totalQty; i++) {
+        const isAdult = i < adult;
+        const subCode = `${ticketCode.replace('#', '')}-${String(i + 1).padStart(2, '0')}`;
+        const holderName = visitorNames[i] || (isAdult ? `Người lớn ${i + 1}` : `Trẻ em ${i + 1 - adult}`);
+        subTickets.push({
+          index: i + 1,
+          code: `#${subCode}`,
+          holderName: holderName,
+          ticketType: isAdult ? 'Vé Người Lớn (30.000 VNĐ)' : 'Vé Trẻ Em (Miễn phí)',
+          isAdult: isAdult,
+          status: 'CHUA_SU_DUNG',
+          qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-#${subCode}`
+        });
+      }
+    }
+
+    // Tạo bản ghi vé hoàn chỉnh theo kiến trúc Hybrid
     const ticketRecord = {
       id: savedTicket.id,
       code: ticketCode,
-      name: savedTicket.name || allNamesStr,
+      name: isGroup ? (visitorNames[1] ? `${visitorNames[1]} (Đại diện: ${visitorNames[0]})` : `Đoàn ${visitorNames[0]}`) : allNamesStr,
+      leaderName: visitorNames[0] || 'Trưởng đoàn',
       visitorNames: visitorNames,
       phone: savedTicket.phone || phone,
       date: savedTicket.date || date,
@@ -2323,6 +2484,8 @@ async function handleProcessBooking(event) {
       type: 'ONLINE',
       paymentMethod: savedTicket.paymentMethod || 'Chuyển khoản QR code',
       status: savedTicket.status || 'CHUA_SU_DUNG',
+      isGroup: isGroup,
+      subTickets: subTickets,
       qrUrl: qrUrl,
       createdAt: savedTicket.createdAt || new Date().toISOString()
     };
@@ -2334,9 +2497,15 @@ async function handleProcessBooking(event) {
 
     renderDashboardStats();
 
+    currentActiveSubTicketIdx = 0;
     renderMyTickets(ticketRecord);
     switchNav('viewMyTickets');
-    showToast('Đặt vé thành công! Đã lưu thông tin vé & danh sách khách vào CSDL SQLite.', 'success');
+
+    if (isGroup) {
+      showToast(`Đặt thành công Vé Đoàn (${totalQty} người)! Đã tạo 01 mã Master QR cho đoàn.`, 'success');
+    } else {
+      showToast(`Đặt vé thành công! Đã tạo ${totalQty} mã QR riêng biệt cho từng người.`, 'success');
+    }
 
   } catch (err) {
     console.error('❌ Lỗi đặt vé online:', err);
@@ -2345,54 +2514,250 @@ async function handleProcessBooking(event) {
 }
 
 /**
- * Đồng bộ và kết xuất vé điện tử trong tab "Vé của tôi" (#viewMyTickets)
+ * Quản lý trạng thái vé con & đơn hàng hiển thị
+ */
+let currentActiveSubTicketIdx = 0;
+let currentViewedOrder = null;
+
+/**
+ * Đồng bộ và kết xuất vé điện tử trong tab "Vé của tôi" (#viewMyTickets) theo Phương án 3
  */
 function renderMyTickets(ticket = null) {
   const currentTicket = ticket || (TICKETS_PURCHASED_DATA && TICKETS_PURCHASED_DATA.length > 0 ? TICKETS_PURCHASED_DATA[0] : null);
+  currentViewedOrder = currentTicket;
 
+  const elOrderCode = document.getElementById('orderSummaryCode');
+  const elOrderBadge = document.getElementById('orderModeBadge');
+  const elOrderDate = document.getElementById('orderSummaryDate');
+  const elOrderQty = document.getElementById('orderSummaryQty');
+  const elOrderAmount = document.getElementById('orderSummaryAmount');
+  const tabsWrapper = document.getElementById('ticketTabsNavWrapper');
+  const tabsList = document.getElementById('ticketTabsList');
+  const tabsCountInfo = document.getElementById('ticketTabsCountInfo');
+  const groupBanner = document.getElementById('ticketGroupBanner');
+
+  const elCode = document.getElementById('ticketCodeText');
+  const elCodeLabel = document.getElementById('ticketCodeLabel');
+  const elOwner = document.getElementById('ticketOwnerName');
+  const elDate = document.getElementById('ticketUseDate');
+  const elDetail = document.getElementById('ticketDetailText');
+  const elQr = document.getElementById('ticketQrImage');
+  const elGateLoc = document.getElementById('ticketGateLocation');
+  const elStatusBadge = document.getElementById('ticketStatusBadge');
+  const shareBox = document.getElementById('subTicketShareBox');
+  const eticketHeaderSubtitle = document.getElementById('eticketHeaderSubtitle');
+
+  if (!currentTicket) {
+    if (elOrderCode) elOrderCode.textContent = 'Chưa có đơn hàng';
+    if (elCode) elCode.textContent = 'Chưa có vé';
+    if (elOwner) elOwner.textContent = 'Chưa có dữ liệu';
+    if (elDate) elDate.textContent = 'N/A';
+    if (elDetail) elDetail.textContent = 'Chưa có lượt đặt vé';
+    if (tabsWrapper) tabsWrapper.style.display = 'none';
+    if (groupBanner) groupBanner.style.display = 'none';
+    return;
+  }
+
+  const totalQty = currentTicket.totalQty || (currentTicket.adultQty + currentTicket.childQty) || 1;
+  const isGroup = currentTicket.isGroup || totalQty >= 10;
+  const code = currentTicket.code || currentTicket.ticketCode || '#VE-2026-00000';
+  const amount = (currentTicket.amount !== undefined ? currentTicket.amount : (currentTicket.adultQty * 30000)) || 0;
+  const dateStr = (currentTicket.date || 'Hôm nay') + (currentTicket.slot ? ` (${currentTicket.slot})` : '');
+
+  // 1. Cập nhật thanh tóm tắt đơn hàng
+  if (elOrderCode) elOrderCode.textContent = code;
+  if (elOrderDate) elOrderDate.textContent = dateStr;
+  if (elOrderQty) elOrderQty.textContent = `${totalQty} Vé (${currentTicket.adultQty || 0} Lớn, ${currentTicket.childQty || 0} Trẻ em)`;
+  if (elOrderAmount) elOrderAmount.textContent = amount.toLocaleString('vi-VN') + ' VNĐ';
+
+  // 2. Phân loại theo Phương án 3 (Khách lẻ < 10 người vs Đoàn >= 10 người)
+  if (isGroup) {
+    // === CHẾ ĐỘ VÉ ĐOÀN ƯU TIÊN (MASTER QR) ===
+    if (elOrderBadge) {
+      elOrderBadge.className = 'badge-mode-group';
+      elOrderBadge.innerHTML = '<i class="fa-solid fa-crown"></i> Vé Đoàn Ưu Tiên (Master QR)';
+    }
+    if (tabsWrapper) tabsWrapper.style.display = 'none';
+    if (groupBanner) groupBanner.style.display = 'flex';
+    if (shareBox) shareBox.style.display = 'none';
+
+    if (eticketHeaderSubtitle) eticketHeaderSubtitle.textContent = `THẺ VÉ ĐOÀN ƯU TIÊN • QUY MÔ ${totalQty} NGƯỜI`;
+    if (elCodeLabel) elCodeLabel.textContent = 'MÃ VÉ ĐOÀN (MASTER QR)';
+    if (elCode) elCode.textContent = code;
+
+    const leaderName = currentTicket.leaderName || currentTicket.name || 'Trưởng đoàn';
+    if (elOwner) {
+      elOwner.innerHTML = `
+        <div style="font-weight: 700; color: #78350f; font-size: 1rem;"><i class="fa-solid fa-crown" style="color: #d97706;"></i> ${currentTicket.name || leaderName}</div>
+        <div style="font-size: 0.83rem; color: var(--text-muted); margin-top: 3px;">Trưởng đoàn: <strong>${leaderName}</strong></div>
+        <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 3px;"><i class="fa-solid fa-phone"></i> ${currentTicket.phone || 'SĐT: Không bắt buộc'}</div>
+      `;
+    }
+
+    if (elDate) elDate.textContent = dateStr;
+    if (elDetail) elDetail.textContent = `Vé Đoàn ${totalQty} người (${currentTicket.adultQty || 0} Lớn, ${currentTicket.childQty || 0} Trẻ em)`;
+    if (elGateLoc) {
+      elGateLoc.innerHTML = '<strong style="color: #d97706;"><i class="fa-solid fa-door-open"></i> Cổng soát vé Ưu tiên (Làn đoàn)</strong>';
+    }
+
+    const isUsed = currentTicket.status === 'DA_SOAT_VE';
+    if (elStatusBadge) {
+      elStatusBadge.className = isUsed ? 'eticket-status-badge badge-used' : 'eticket-status-badge';
+      elStatusBadge.innerHTML = isUsed
+        ? '<i class="fa-solid fa-circle-check"></i> ĐÃ SOÁT VÉ VÀO CỔNG'
+        : '<i class="fa-solid fa-circle-check"></i> HỢP LỆ - VÉ ĐOÀN (CẢ ĐOÀN QUA CÙNG LÚC)';
+    }
+
+    if (elQr) {
+      const qrData = currentTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-${code}`;
+      elQr.src = qrData;
+    }
+
+  } else {
+    // === CHẾ ĐỘ KHÁCH LẺ / GIA ĐÌNH (< 10 NGƯỜI: MỖI NGƯỜI 1 QR RIÊNG) ===
+    if (elOrderBadge) {
+      elOrderBadge.className = 'badge-mode-individual';
+      elOrderBadge.innerHTML = '<i class="fa-solid fa-qrcode"></i> Khách Lẻ (Mỗi người 1 QR)';
+    }
+    if (groupBanner) groupBanner.style.display = 'none';
+    if (shareBox) shareBox.style.display = 'flex';
+    if (eticketHeaderSubtitle) eticketHeaderSubtitle.textContent = 'THẺ VÀO CỬA ĐIỆN TỬ CÁ NHÂN';
+
+    // Đảm bảo có danh sách vé con (subTickets)
+    if (!currentTicket.subTickets || currentTicket.subTickets.length !== totalQty) {
+      const namesArray = currentTicket.visitorNames && currentTicket.visitorNames.length > 0
+        ? currentTicket.visitorNames
+        : (currentTicket.name ? currentTicket.name.split(',').map(s => s.trim()) : []);
+
+      const subList = [];
+      for (let i = 0; i < totalQty; i++) {
+        const isAdult = i < (currentTicket.adultQty || 0);
+        const subCode = `${code.replace('#', '')}-${String(i + 1).padStart(2, '0')}`;
+        const holderName = namesArray[i] || (isAdult ? `Người lớn ${i + 1}` : `Trẻ em ${i + 1 - (currentTicket.adultQty || 0)}`);
+        subList.push({
+          index: i + 1,
+          code: `#${subCode}`,
+          holderName: holderName,
+          ticketType: isAdult ? 'Vé Người Lớn (30.000 VNĐ)' : 'Vé Trẻ Em (Miễn phí)',
+          isAdult: isAdult,
+          status: currentTicket.status === 'DA_SOAT_VE' ? 'DA_SOAT_VE' : 'CHUA_SU_DUNG',
+          qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-#${subCode}`
+        });
+      }
+      currentTicket.subTickets = subList;
+    }
+
+    if (currentActiveSubTicketIdx >= currentTicket.subTickets.length) {
+      currentActiveSubTicketIdx = 0;
+    }
+
+    // Hiển thị thanh tabs chọn vé từng người
+    if (tabsWrapper) tabsWrapper.style.display = 'block';
+    if (tabsCountInfo) tabsCountInfo.textContent = `Vé ${currentActiveSubTicketIdx + 1} / ${currentTicket.subTickets.length}`;
+
+    if (tabsList) {
+      tabsList.innerHTML = currentTicket.subTickets.map((st, idx) => `
+        <button type="button" class="ticket-tab-item ${idx === currentActiveSubTicketIdx ? 'active' : ''} ${st.status === 'DA_SOAT_VE' ? 'used' : ''}" onclick="selectSubTicket(${idx})">
+          <i class="${st.status === 'DA_SOAT_VE' ? 'fa-solid fa-check' : (st.isAdult ? 'fa-regular fa-user' : 'fa-solid fa-child')}"></i>
+          <span>${st.holderName}</span>
+          <small style="opacity: 0.8; font-size: 0.72rem;">#${idx + 1}</small>
+        </button>
+      `).join('');
+    }
+
+    // Render thông tin vé con đang được chọn
+    renderActiveSubTicketCard();
+  }
+}
+
+function selectSubTicket(idx) {
+  if (!currentViewedOrder || !currentViewedOrder.subTickets) return;
+  currentActiveSubTicketIdx = idx;
+  renderMyTickets(currentViewedOrder);
+}
+
+function renderActiveSubTicketCard() {
+  if (!currentViewedOrder || !currentViewedOrder.subTickets) return;
+  const st = currentViewedOrder.subTickets[currentActiveSubTicketIdx];
+  if (!st) return;
+
+  const elCodeLabel = document.getElementById('ticketCodeLabel');
   const elCode = document.getElementById('ticketCodeText');
   const elOwner = document.getElementById('ticketOwnerName');
   const elDate = document.getElementById('ticketUseDate');
   const elDetail = document.getElementById('ticketDetailText');
   const elQr = document.getElementById('ticketQrImage');
+  const elGateLoc = document.getElementById('ticketGateLocation');
+  const elStatusBadge = document.getElementById('ticketStatusBadge');
 
-  if (!currentTicket) {
-    if (elCode) elCode.textContent = 'Chưa có vé';
-    if (elOwner) elOwner.textContent = 'Chưa có dữ liệu';
-    if (elDate) elDate.textContent = 'N/A';
-    if (elDetail) elDetail.textContent = 'Chưa có lượt đặt vé';
-    return;
-  }
+  if (elCodeLabel) elCodeLabel.textContent = `MÃ VÉ CÁ NHÂN (${st.index}/${currentViewedOrder.subTickets.length})`;
+  if (elCode) elCode.textContent = st.code;
 
-  const code = currentTicket.code || currentTicket.ticketCode || '#VE-2026-00000';
-  const nameStr = currentTicket.name || 'Khách Tham Quan';
-  const namesArray = currentTicket.visitorNames || nameStr.split(',').map(s => s.trim()).filter(Boolean);
-  const mainName = namesArray[0] || nameStr;
-  const companionNames = namesArray.slice(1).join(', ');
-
-  const dateStr = (currentTicket.date || 'Hôm nay') + (currentTicket.slot ? ` (${currentTicket.slot})` : '');
-  const totalTickets = currentTicket.totalQty || (currentTicket.adultQty + currentTicket.childQty) || 1;
-
-  let detailDesc = `${totalTickets} vé (${currentTicket.adultQty || 0} Vé Tham quan - 30k`;
-  if (currentTicket.childQty > 0) detailDesc += `, ${currentTicket.childQty} Trẻ dưới 5t - Miễn phí`;
-  detailDesc += ')';
-
-  if (elCode) elCode.textContent = `Mã Vé: ${code}`;
   if (elOwner) {
     elOwner.innerHTML = `
-      <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${mainName}</div>
-      ${companionNames ? `<div style="font-size: 0.83rem; color: var(--text-muted); margin-top: 3px;"><i class="fa-solid fa-user-group"></i> Đồng hành: <strong>${companionNames}</strong></div>` : ''}
-      <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 3px;"><i class="fa-solid fa-phone"></i> ${currentTicket.phone ? currentTicket.phone : 'Số điện thoại: Không bắt buộc'}</div>
+      <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${st.holderName}</div>
+      <div style="font-size: 0.8rem; color: var(--primary-gold); font-weight: 600; margin-top: 2px;">
+        <i class="${st.isAdult ? 'fa-regular fa-user' : 'fa-solid fa-child'}"></i> ${st.ticketType}
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">Đơn hàng: ${currentViewedOrder.code}</div>
     `;
   }
+
+  const dateStr = (currentViewedOrder.date || 'Hôm nay') + (currentViewedOrder.slot ? ` (${currentViewedOrder.slot})` : '');
   if (elDate) elDate.textContent = dateStr;
-  if (elDetail) elDetail.textContent = detailDesc;
+  if (elDetail) elDetail.textContent = st.ticketType;
+  if (elGateLoc) elGateLoc.innerHTML = '<span style="color: #059669;">Cổng tự động - Khu A (1 người/lượt)</span>';
+
+  const isUsed = st.status === 'DA_SOAT_VE';
+  if (elStatusBadge) {
+    elStatusBadge.className = isUsed ? 'eticket-status-badge badge-used' : 'eticket-status-badge';
+    elStatusBadge.innerHTML = isUsed
+      ? '<i class="fa-solid fa-circle-check"></i> ĐÃ SOÁT VÉ VÀO CỬA'
+      : '<i class="fa-solid fa-circle-check"></i> CHƯA SỬ DỤNG - HỢP LỆ';
+  }
 
   if (elQr) {
-    const qrData = currentTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-${code}`;
-    elQr.src = qrData;
+    elQr.src = st.qrUrl;
   }
 }
+
+function shareCurrentSubTicket() {
+  if (!currentViewedOrder || !currentViewedOrder.subTickets) return;
+  const st = currentViewedOrder.subTickets[currentActiveSubTicketIdx];
+  if (!st) return;
+
+  const shareText = `[BẢO TÀNG VĂN HÓA CÁC DÂN TỘC VIỆT NAM]\nVé tham quan điện tử: ${st.holderName}\nMã vé con: ${st.code}\nLoại vé: ${st.ticketType}\nĐơn hàng: ${currentViewedOrder.code}\nLink xem & quét mã QR: ${st.qrUrl}`;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(shareText).then(() => {
+      showToast(`Đã sao chép vé của "${st.holderName}"! Bạn có thể dán gửi Zalo/Tin nhắn.`, 'success');
+    }).catch(() => {
+      showToast(`Mã vé: ${st.code}`, 'info');
+    });
+  } else {
+    showToast(`Mã vé: ${st.code}`, 'info');
+  }
+}
+
+function copyCurrentSubTicketCode() {
+  if (!currentViewedOrder) return;
+  const code = (currentViewedOrder.subTickets && currentViewedOrder.subTickets[currentActiveSubTicketIdx])
+    ? currentViewedOrder.subTickets[currentActiveSubTicketIdx].code
+    : (currentViewedOrder.code || '');
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => {
+      showToast(`Đã sao chép mã vé: ${code}`, 'success');
+    });
+  } else {
+    showToast(`Mã vé: ${code}`, 'info');
+  }
+}
+
+// Window bindings
+window.selectSubTicket = selectSubTicket;
+window.shareCurrentSubTicket = shareCurrentSubTicket;
+window.copyCurrentSubTicketCode = copyCurrentSubTicketCode;
 
 /* ============================================================
    UI-07: QUẦY BÁN VÉ & IN VÉ ĐIỆN TỬ POS (POS CONTROLLER)
@@ -2565,12 +2930,33 @@ async function handlePosCheckout() {
     }
 
     const savedTicket = result.data;
-    const posCode = savedTicket.ticketCode || savedTicket.code || `#POS-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const isGroup = totalQty >= 10;
+    const posCode = isGroup
+      ? `#DOAN-POS-2026-${Math.floor(1000 + Math.random() * 9000)}`
+      : (savedTicket.ticketCode || savedTicket.code || `#POS-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+
+    const subTickets = [];
+    if (!isGroup) {
+      for (let i = 0; i < totalQty; i++) {
+        const isAdult = i < adultQty;
+        const subCode = `${posCode.replace('#', '')}-${String(i + 1).padStart(2, '0')}`;
+        const holderName = isAdult ? `Khách người lớn ${i + 1}` : `Trẻ em ${i + 1 - adultQty}`;
+        subTickets.push({
+          index: i + 1,
+          code: `#${subCode}`,
+          holderName: holderName,
+          ticketType: isAdult ? 'Vé Người Lớn (30.000 VNĐ)' : 'Vé Trẻ Em (Miễn phí)',
+          isAdult: isAdult,
+          status: 'CHUA_SU_DUNG',
+          qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-#${subCode}`
+        });
+      }
+    }
 
     const posRecord = {
       id: savedTicket.id,
       code: posCode,
-      name: 'Khách mua tại quầy POS',
+      name: isGroup ? `Đoàn khách POS (${totalQty} người)` : 'Khách mua tại quầy POS',
       phone: 'Quầy bán vé số 1',
       adultQty: adultQty,
       childQty: childQty,
@@ -2579,6 +2965,9 @@ async function handlePosCheckout() {
       type: 'POS',
       paymentMethod: 'Tiền mặt tại quầy',
       status: savedTicket.status || 'CHUA_SU_DUNG',
+      isGroup: isGroup,
+      subTickets: subTickets,
+      qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-${posCode}`,
       createdAt: savedTicket.createdAt || new Date().toISOString()
     };
 

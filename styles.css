@@ -1995,6 +1995,249 @@ body {
 }
 
 /* ============================================================
+   OPTION 3: HYBRID TICKET SYSTEM STYLES (INDIVIDUAL & GROUP MASTER QR)
+   ============================================================ */
+
+/* 1. Booking Mode Notice */
+.booking-mode-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  margin-bottom: 1rem;
+  line-height: 1.45;
+  transition: all 0.3s ease;
+}
+
+.booking-mode-notice.mode-individual {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.booking-mode-notice.mode-group {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+/* 2. Order Summary Bar on UI-08 */
+.ticket-order-summary {
+  width: 100%;
+  max-width: 520px;
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+  border: 1.5px solid var(--border-gold);
+  border-radius: 16px;
+  padding: 0.95rem 1.15rem;
+  margin-bottom: 1.1rem;
+  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.08);
+}
+
+.order-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.order-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #92400e;
+  letter-spacing: 0.5px;
+  margin-right: 0.4rem;
+}
+
+.order-code {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  color: var(--primary-gold);
+  font-weight: 800;
+}
+
+.badge-mode-individual {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+}
+
+.badge-mode-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, #d97706, #b45309);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+}
+
+.order-meta-info {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.order-meta-info span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* 3. Ticket Tabs Nav for Individual Tickets */
+.ticket-tabs-nav-wrapper {
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: 1rem;
+}
+
+.ticket-tabs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ticket-tabs-list {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0.1rem 0.6rem 0.1rem;
+  scrollbar-width: thin;
+}
+
+.ticket-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 30px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.ticket-tab-item:hover {
+  border-color: var(--primary-gold);
+  color: var(--primary-gold);
+  background: #fffdf5;
+}
+
+.ticket-tab-item.active {
+  background: var(--primary-gold);
+  border-color: var(--primary-gold);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3);
+}
+
+.ticket-tab-item.used {
+  opacity: 0.65;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+/* 4. Group VIP Master Banner */
+.ticket-group-banner {
+  width: 100%;
+  max-width: 520px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px solid var(--primary-gold);
+  border-radius: 16px;
+  padding: 1rem 1.15rem;
+  margin-bottom: 1.1rem;
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.12);
+}
+
+.group-banner-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-gold);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+}
+
+.group-banner-text h4 {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #78350f;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: 0.3px;
+}
+
+.group-banner-text p {
+  font-size: 0.8rem;
+  color: #92400e;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* 5. Subticket Share & Action Buttons */
+.subticket-share-box {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.btn-subticket-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: #ffffff;
+  border: 1px solid var(--border-gold);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #92400e;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-subticket-action:hover {
+  background: #fffbeb;
+  border-color: var(--primary-gold);
+  color: var(--primary-gold);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
    GATE SCANNER
    ============================================================ */
 .qr-scanner-container {
