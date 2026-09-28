@@ -93,13 +93,14 @@ body {
   pointer-events: none;
 }
 
-/* Biểu tượng Trống Đồng Đông Sơn Xoay Liên Tục Nằm Chìm Ở Nền Trang Web */
+/* Biểu tượng Trống Đồng Đông Sơn Cố Định Nằm Chìm Ở Nền Trang Web (Dừng Xoay) */
 .bg-rotating-drum {
   position: fixed;
   top: 50vh;
   left: 50vw;
   width: min(220vw, 2300px);
   height: min(220vw, 2300px);
+  transform: translate(-50%, -50%);
   z-index: 2;
   background-image: url('hoa-van-trong-dong-dong-son-vector-03.jpg');
   background-size: contain;
@@ -108,17 +109,7 @@ body {
   opacity: 0.45;
   mix-blend-mode: multiply;
   pointer-events: none;
-  animation: rotateDongSonDrum 50s linear infinite;
-  will-change: transform;
-}
-
-@keyframes rotateDongSonDrum {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
+  animation: none;
 }
 
 /* ============================================================
