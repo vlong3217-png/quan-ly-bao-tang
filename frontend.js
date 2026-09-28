@@ -2658,7 +2658,7 @@ function renderMyTickets(ticket = null) {
     if (tabsList) {
       tabsList.innerHTML = currentTicket.subTickets.map((st, idx) => `
         <button type="button" class="ticket-tab-item ${idx === currentActiveSubTicketIdx ? 'active' : ''} ${st.status === 'DA_SOAT_VE' ? 'used' : ''}" onclick="selectSubTicket(${idx})">
-          <i class="${st.status === 'DA_SOAT_VE' ? 'fa-solid fa-check' : (st.isAdult ? 'fa-regular fa-user' : 'fa-solid fa-child')}"></i>
+          <i class="${st.status === 'DA_SOAT_VE' ? 'fa-solid fa-check' : (st.isAdult ? 'fa-solid fa-user' : 'fa-solid fa-child')}"></i>
           <span>${st.holderName}</span>
           <small style="opacity: 0.8; font-size: 0.72rem;">#${idx + 1}</small>
         </button>
