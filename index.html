@@ -448,8 +448,13 @@
             <div class="ai-chat-box" id="aiChatBox">
               <div class="ai-chat-header">
                 <div
-                  style="font-size: 0.85rem; font-weight: 700; color: var(--primary-gold); display: flex; align-items: center; gap: 0.4rem;">
-                  <i class="fa-solid fa-robot"></i> Trợ lý AI Hỏi Đáp Di Sản Văn Hóa
+                  style="font-size: 0.85rem; font-weight: 700; color: var(--primary-gold); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                  <i class="fa-solid fa-robot"></i> Trợ lý AI Di Sản Văn Hóa
+                  <span class="rag-badge-indicator"
+                    style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 0.25rem;"
+                    title="Mô hình RAG tích hợp toàn bộ tài liệu nghiên cứu chuyên khảo 54 dân tộc">
+                    <i class="fa-solid fa-book-bookmark" style="color: #059669; font-size: 0.65rem;"></i> RAG AI
+                  </span>
                 </div>
                 <button type="button" class="btn-expand-chat" id="btnExpandAiChat" onclick="toggleExpandAiChat()"
                   title="Mở rộng / Thu nhỏ khung chat">
@@ -460,14 +465,14 @@
 
               <div class="chat-messages" id="chatMessages">
                 <div class="msg-bubble msg-ai">
-                  Xin chào! Tôi là Trợ lý AI của Bảo tàng. Bạn có thắc mắc gì về ý nghĩa hoa văn hay lịch sử của hiện
-                  vật này không?
+                  Xin chào! Tôi là Trợ lý AI Bảo tàng được huấn luyện bằng mô hình <strong>RAG</strong> với toàn bộ tài
+                  liệu chuyên khảo 54 dân tộc Việt Nam. Bạn có thể hỏi tôi về bất kỳ hiện vật, phong tục, lễ hội, làng
+                  nghề hay không gian trưng bày nào!
                 </div>
               </div>
 
               <form onsubmit="handleSendAiChat(event)" class="chat-input-bar">
-                <input type="text" id="chatInput" class="form-input no-icon"
-                  placeholder="Hỏi AI về hiện vật (VD: Hoa văn này có ý nghĩa gì?)..." required
+                <input type="text" id="chatInput" class="form-input no-icon" placeholder="Hỏi AI về hiện vật" required
                   style="padding: 0.6rem 0.8rem; font-size: 0.85rem;">
                 <button type="submit" class="btn-primary" style="width: auto; padding: 0.6rem 1rem;">
                   <i class="fa-solid fa-paper-plane"></i>

@@ -914,6 +914,7 @@ async function handleSendAiChat(event) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   let accumulatedText = '';
+  let ragSources = [];
 
   try {
     const res = await fetch('/api/ai/chat', {
@@ -949,6 +950,9 @@ async function handleSendAiChat(event) {
           if (dataStr === '[DONE]') break;
           try {
             const parsed = JSON.parse(dataStr);
+            if (parsed.ragSources) {
+              ragSources = parsed.ragSources;
+            }
             if (parsed.chunk) {
               accumulatedText += parsed.chunk;
               aiBubble.innerHTML = formatAiText(accumulatedText);
@@ -961,7 +965,18 @@ async function handleSendAiChat(event) {
       }
     }
 
-    if (!accumulatedText) {
+    if (accumulatedText) {
+      let finalHtml = formatAiText(accumulatedText);
+      if (ragSources && ragSources.length > 0) {
+        const topSrc = ragSources[0];
+        finalHtml += `
+          <div style="margin-top: 0.65rem; padding-top: 0.45rem; border-top: 1px dashed rgba(217, 119, 6, 0.25); font-size: 0.73rem; color: #92400e; display: flex; align-items: center; gap: 0.35rem;">
+            <i class="fa-solid fa-book-bookmark" style="color: var(--primary-gold);"></i> 
+            <span>Tài liệu RAG đối chiếu: <strong>${topSrc.title}</strong></span>
+          </div>`;
+      }
+      aiBubble.innerHTML = finalHtml;
+    } else {
       aiBubble.innerHTML = 'Hệ thống chưa nhận được phản hồi từ AI.';
     }
   } catch (err) {
@@ -1067,6 +1082,7 @@ async function askAiAboutImage() {
     const imageSrc = (detailImg && detailImg.src) ? detailImg.src : (art.img || '');
 
     let accumulatedText = '';
+    let ragSources = [];
 
     try {
       const res = await fetch('/api/ai/chat', {
@@ -1104,6 +1120,9 @@ async function askAiAboutImage() {
             if (dataStr === '[DONE]') break;
             try {
               const parsed = JSON.parse(dataStr);
+              if (parsed.ragSources) {
+                ragSources = parsed.ragSources;
+              }
               if (parsed.chunk) {
                 accumulatedText += parsed.chunk;
                 aiBubble.innerHTML = formatAiText(accumulatedText);
@@ -1116,7 +1135,18 @@ async function askAiAboutImage() {
         }
       }
 
-      if (!accumulatedText) {
+      if (accumulatedText) {
+        let finalHtml = formatAiText(accumulatedText);
+        if (ragSources && ragSources.length > 0) {
+          const topSrc = ragSources[0];
+          finalHtml += `
+            <div style="margin-top: 0.65rem; padding-top: 0.45rem; border-top: 1px dashed rgba(217, 119, 6, 0.25); font-size: 0.73rem; color: #92400e; display: flex; align-items: center; gap: 0.35rem;">
+              <i class="fa-solid fa-book-bookmark" style="color: var(--primary-gold);"></i> 
+              <span>Tài liệu RAG đối chiếu: <strong>${topSrc.title}</strong></span>
+            </div>`;
+        }
+        aiBubble.innerHTML = finalHtml;
+      } else {
         aiBubble.innerHTML = 'Hệ thống chưa nhận được phản hồi từ AI.';
       }
     } catch (err) {

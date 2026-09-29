@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { GoogleGenAI } = require('@google/genai');
 const pool = require('../config/db');
+const ragService = require('../services/rag.service');
 
 // Helper function calling Gemini AI with fallback model list
 async function generateGeminiWithFallback(contents, systemInstruction) {
@@ -199,16 +200,22 @@ ${userText}
   }
 }
 
-// Phản hồi dự phòng thông minh dựa trên dữ liệu SQLite thực tế khi Gemini API không khả dụng
+// Phản hồi dự phòng thông minh dựa trên dữ liệu SQLite và tài liệu RAG khi Gemini API không khả dụng
 function getDynamicOfflineResponse(question, liveContext, currentArtifactContext) {
   const q = (question || '').trim().toLowerCase();
 
   if (q.includes('xin chào') || q.includes('chào') || q.includes('hello') || q.includes('hi')) {
-    return 'Xin chào quý khách! Tôi là Trợ lý AI Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi luôn sẵn sàng hỗ trợ bạn tra cứu thông tin vận hành, di sản hiện vật, lịch đoàn và vé tham quan dựa trên dữ liệu thực tế.';
+    return 'Xin chào quý khách! Tôi là Trợ lý AI Bảo tàng Văn hóa các Dân tộc Việt Nam. Tôi luôn sẵn sàng hỗ trợ bạn tra cứu thông tin vận hành, di sản hiện vật, lịch đoàn và vé tham quan dựa trên dữ liệu thực tế và tài liệu nghiên cứu chuyên sâu.';
   }
 
   if (currentArtifactContext) {
     return `Thông tin thực tế hiện vật trích xuất từ cơ sở dữ liệu:\n` + currentArtifactContext;
+  }
+
+  // Tra cứu câu trả lời trích xuất từ kho tri thức RAG bảo tàng
+  const ragAnswer = ragService.generateOfflineRagAnswer(question);
+  if (ragAnswer) {
+    return ragAnswer;
   }
 
   return `Báo cáo thông tin thực tế trích xuất từ cơ sở dữ liệu SQLite Bảo tàng:\n\n` + liveContext;
@@ -226,6 +233,7 @@ router.post('/chat', async (req, res) => {
   }
 
   const liveContext = await buildLiveMuseumContext();
+  const ragData = ragService.buildRagPromptContext(question, 4);
 
   // Lấy ngữ cảnh hiện vật cụ thể nếu người dùng đang đứng ở màn hình chi tiết hiện vật
   let currentArtifactContext = '';
@@ -312,11 +320,13 @@ router.post('/chat', async (req, res) => {
   const systemInstruction = `Bạn là Trợ lý AI chuyên gia thông minh của Bảo tàng Văn hóa các Dân tộc Việt Nam (Thái Nguyên).
 
 QUY TẮC PHẢN HỒI BẮT BUỘC:
-1. Trả lời NGẮN GỌN, SÚC TÍCH, THÔNG MINH, CHÍNH XÁC dựa trên DỮ LIỆU THỰC TẾ DƯỚI ĐÂY.
+1. Trả lời NGẮN GỌN, SÚC TÍCH, THÔNG MINH, CHÍNH XÁC dựa trên DỮ LIỆU THỰC TẾ VÀ TÀI LIỆU RAG DƯỚI ĐÂY.
 2. KHÔNG sử dụng ký tự Markdown dạng dấu sao (*) hay (**). Viết chữ tự nhiên.
 3. Nếu cần liệt kê, dùng dấu gạch ngang "-" ở đầu dòng.
 4. TUYỆT ĐỐI KHÔNG ĐƯỢC ĐỀ CẬP, KHÔNG ĐƯỢC LIỆT KÊ MỤC "Niên đại" (hoặc thời kỳ, kỷ nguyên) của hiện vật trong bất kỳ câu trả lời nào (bảo tàng đã bỏ trường này).
-5. Trả lời trực tiếp vào nội dung câu hỏi người dùng, phân tích thông tin thực tế từ database nếu người dùng hỏi về hiện vật, doanh thu, vé, lịch đoàn hay cán bộ.${isImageAnalysis ? '\n6. KHI THUYẾT MINH / PHÂN TÍCH HÌNH ẢNH: Hãy quan sát kỹ hình ảnh, mô tả chi tiết đặc điểm thị giác, màu sắc, hoa văn, bố cục và không gian bài trí trưng bày của hiện vật trong bức ảnh, kết hợp với ý nghĩa văn hóa của đồng bào dân tộc.' : ''}${currentArtifactContext ? '\n' + currentArtifactContext : ''}
+5. Trả lời trực tiếp vào nội dung câu hỏi người dùng, phân tích thông tin thực tế từ database và tài liệu chuyên sâu bảo tàng.${isImageAnalysis ? '\n6. KHI THUYẾT MINH / PHÂN TÍCH HÌNH ẢNH: Hãy quan sát kỹ hình ảnh, mô tả chi tiết đặc điểm thị giác, màu sắc, hoa văn, bố cục và không gian bài trí trưng bày của hiện vật trong bức ảnh, kết hợp với ý nghĩa văn hóa của đồng bào dân tộc.' : ''}${currentArtifactContext ? '\n' + currentArtifactContext : ''}
+
+${ragData.contextString}
 
 ${liveContext}`;
 
@@ -327,6 +337,9 @@ ${liveContext}`;
     res.setHeader('Connection', 'keep-alive');
 
     try {
+      if (ragData.chunksUsed && ragData.chunksUsed.length > 0) {
+        res.write(`data: ${JSON.stringify({ ragSources: ragData.chunksUsed })}\n\n`);
+      }
       await generateGeminiStreamWithFallback(geminiContents, systemInstruction, (chunkText) => {
         res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
       });
@@ -369,7 +382,8 @@ ${liveContext}`;
       success: true,
       question: question,
       answer: answerText,
-      source: 'Gemini AI + SQLite'
+      ragChunksUsed: ragData.chunksUsed,
+      source: ragData.chunksUsed.length > 0 ? 'Gemini AI + RAG Knowledge Base + SQLite' : 'Gemini AI + SQLite'
     });
   } catch (error) {
     console.error('Lỗi Gemini AI Chat, dùng dữ liệu SQLite sống:', error.message);
@@ -379,14 +393,15 @@ ${liveContext}`;
       question: question,
       answer: fallbackAnswer,
       isFallback: true,
-      source: 'SQLite Live Data'
+      ragChunksUsed: ragData.chunksUsed,
+      source: 'SQLite Live Data + RAG Fallback'
     });
   }
 });
 
 /**
  * POST /api/ai/query
- * Admin Natural Language NLP Query qua Gemini AI với dữ liệu SQLite thực tế
+ * Admin Natural Language NLP Query qua Gemini AI với dữ liệu SQLite thực tế + RAG Knowledge
  */
 router.post('/query', async (req, res) => {
   const { prompt } = req.body;
@@ -402,17 +417,20 @@ router.post('/query', async (req, res) => {
 
   try {
     const liveContext = await buildLiveMuseumContext();
+    const ragData = ragService.buildRagPromptContext(question, 3);
 
     const systemInstruction = `Bạn là AI Trợ lý Quản trị & Trí tuệ Dữ liệu (Admin Data Intelligence AI) của Bảo tàng Văn hóa các Dân tộc Việt Nam (Thái Nguyên).
 
 NHIỆM VỤ:
 - Phân tích câu hỏi truy vấn dữ liệu quản trị tự nhiên của Cán bộ / Lãnh đạo bảo tàng.
-- Sử dụng chính xác dữ liệu thực tế được cung cấp trực tiếp từ cơ sở dữ liệu SQLite dưới đây.
+- Sử dụng chính xác dữ liệu thực tế được cung cấp trực tiếp từ cơ sở dữ liệu SQLite và tài liệu tri thức chuyên sâu dưới đây.
 - Phân tích súc tích, cấu trúc rõ ràng (Tóm tắt số liệu, Phân tích chi tiết, Khuyến nghị quản lý nếu phù hợp).
 - KHÔNG tự bịa số liệu không có trong cơ sở dữ liệu.
 - KHÔNG sử dụng ký tự Markdown dạng dấu sao (*) hay (**).
 - Khi liệt kê, dùng dấu gạch ngang "-".
 - TUYỆT ĐỐI KHÔNG đề cập, KHÔNG liệt kê mục "Niên đại" (thời kỳ, kỷ nguyên) của hiện vật.
+
+${ragData.contextString}
 
 ${liveContext}`;
 
@@ -421,9 +439,10 @@ ${liveContext}`;
     return res.json({
       success: true,
       data: {
-        summary: `Kết quả phân tích dữ liệu quản trị`,
+        summary: `Kết quả phân tích dữ liệu quản trị & hồ sơ di sản`,
         details: detailsText,
-        source: 'Gemini AI + SQLite'
+        ragChunksUsed: ragData.chunksUsed,
+        source: 'Gemini AI + RAG + SQLite'
       }
     });
   } catch (error) {
@@ -534,6 +553,49 @@ router.post('/test', async (req, res) => {
       message: `Không thể kết nối đến server AI: ${err.message}`
     });
   }
+});
+
+/**
+ * GET /api/ai/rag/status
+ * Lấy trạng thái và thống kê cơ sở tri thức RAG
+ */
+router.get('/rag/status', (req, res) => {
+  res.json({
+    success: true,
+    data: ragService.getStats()
+  });
+});
+
+/**
+ * POST /api/ai/rag/search
+ * Tra cứu thử nghiệm các đoạn tri thức RAG tương quan theo câu hỏi
+ */
+router.post('/rag/search', (req, res) => {
+  const { query, topK } = req.body;
+  if (!query || !query.trim()) {
+    return res.status(400).json({ success: false, message: 'Vui lòng cung cấp query!' });
+  }
+
+  const results = ragService.search(query, topK || 4);
+  res.json({
+    success: true,
+    query: query,
+    count: results.length,
+    results: results
+  });
+});
+
+/**
+ * POST /api/ai/rag/reload
+ * Nạp lại toàn bộ tri thức RAG vào bộ nhớ
+ */
+router.post('/rag/reload', (req, res) => {
+  ragService.loadKnowledgeBase();
+  res.json({
+    success: true,
+    message: 'Đã nạp lại cơ sở tri thức RAG từ tài liệu bảo tàng thành công!',
+    data: ragService.getStats()
+  });
 });
 
 module.exports = router;
