@@ -2782,7 +2782,7 @@ function renderMyTickets(ticket = null) {
     // === CHẾ ĐỘ KHÁCH LẺ / GIA ĐÌNH (< 10 NGƯỜI: MỖI NGƯỜI 1 QR RIÊNG) ===
     if (elOrderBadge) {
       elOrderBadge.className = 'badge-mode-individual';
-      elOrderBadge.innerHTML = '<i class="fa-solid fa-qrcode"></i> Khách Lẻ (Mỗi người 1 QR)';
+      elOrderBadge.innerHTML = '<i class="fa-solid fa-qrcode"></i> Khách Lẻ';
     }
     if (groupBanner) groupBanner.style.display = 'none';
     if (shareBox) shareBox.style.display = 'flex';
