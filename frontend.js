@@ -1430,6 +1430,80 @@ function closeArtifactModal() {
   document.getElementById('artifactModal').classList.remove('active');
 }
 
+/**
+ * Tự động tạo Mô tả / Ý nghĩa văn hóa di sản cho hiện vật bằng AI (Gemini + RAG)
+ */
+async function handleAiGenerateMeaning() {
+  const titleInput = document.getElementById('modalArtTitle');
+  const ethnicInput = document.getElementById('modalArtEthnic');
+  const regionInput = document.getElementById('modalArtRegion');
+  const materialInput = document.getElementById('modalArtMaterial');
+  const locationInput = document.getElementById('modalArtLocation');
+  const meaningTextarea = document.getElementById('modalArtMeaning');
+  const btn = document.getElementById('btnAiGenerateMeaning');
+
+  const title = titleInput ? titleInput.value.trim() : '';
+  if (!title) {
+    showToast('Vui lòng nhập Tên hiện vật trước để AI có cơ sở tạo mô tả văn hóa!', 'warning');
+    if (titleInput) titleInput.focus();
+    return;
+  }
+
+  const payload = {
+    title: title,
+    ethnic: ethnicInput ? ethnicInput.value.trim() : '',
+    region: regionInput ? regionInput.value.trim() : '',
+    material: materialInput ? materialInput.value.trim() : '',
+    location: locationInput ? locationInput.value.trim() : ''
+  };
+
+  const originalBtnHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI đang nghiên cứu & viết...';
+    btn.style.opacity = '0.75';
+    btn.style.cursor = 'wait';
+  }
+
+  try {
+    const res = await fetch('/api/ai/generate-meaning', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.success && data.meaning) {
+      if (meaningTextarea) {
+        meaningTextarea.value = data.meaning;
+        meaningTextarea.dispatchEvent(new Event('input'));
+        meaningTextarea.focus();
+      }
+
+      if (data.ragUsed) {
+        showToast('Trí tuệ nhân tạo (kết hợp dữ liệu RAG chuyên khảo) đã tạo mô tả thành công!', 'success');
+      } else {
+        showToast('AI đã hoàn thiện bản mô tả & ý nghĩa văn hóa di sản!', 'success');
+      }
+    } else {
+      showToast(data.message || 'Không thể tạo mô tả hiện vật bằng AI.', 'error');
+    }
+  } catch (err) {
+    console.error('Lỗi khi gọi AI tạo mô tả:', err);
+    showToast('Lỗi kết nối khi gửi yêu cầu đến Trợ lý AI!', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalBtnHtml;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+  }
+}
+
+window.handleAiGenerateMeaning = handleAiGenerateMeaning;
+
 async function handleSaveArtifact(event) {
   event.preventDefault();
   const codeInput = document.getElementById('modalArtCode').value.trim();

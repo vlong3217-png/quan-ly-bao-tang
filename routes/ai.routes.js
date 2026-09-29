@@ -522,6 +522,92 @@ router.post('/config', (req, res) => {
 });
 
 /**
+ * POST /api/ai/generate-meaning
+ * Tạo tự động đoạn văn Mô tả / Ý nghĩa văn hóa di sản cho hiện vật bằng AI (kết hợp RAG hoặc tri thức văn hóa tổng quát)
+ */
+router.post('/generate-meaning', async (req, res) => {
+  const { title, ethnic, region, material, location } = req.body || {};
+
+  if (!title || !title.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng cung cấp tên hiện vật để AI tạo mô tả văn hóa!'
+    });
+  }
+
+  const cleanTitle = title.trim();
+  const cleanEthnic = (ethnic || '').trim();
+  const cleanRegion = (region || '').trim();
+  const cleanMaterial = (material || '').trim();
+  const cleanLocation = (location || '').trim();
+
+  // Truy vấn tri thức RAG bổ trợ
+  const ragQuery = `${cleanTitle} ${cleanEthnic} ${cleanMaterial} ${cleanRegion}`.trim();
+  const ragInfo = ragService.buildRagPromptContext(ragQuery, 3);
+  const ragContext = ragInfo ? ragInfo.contextString : '';
+
+  const systemInstruction = `Bạn là chuyên gia nghiên cứu văn hóa dân tộc học và di sản hàng đầu tại Bảo tàng Văn hóa các Dân tộc Việt Nam.
+Nhiệm vụ của bạn: Soạn thảo một đoạn văn Mô tả và Ý nghĩa văn hóa di sản cho hiện vật trưng bày.
+Đoạn văn cần:
+1. Thể hiện sinh động, trang trọng và sâu sắc về: nguồn gốc, công dụng (sinh hoạt, lễ hội, tín ngưỡng hoặc lao động), kỹ nghệ chế tác, và giá trị văn hóa - tâm linh đặc trưng.
+2. Nội dung có thể đối chiếu tài liệu RAG của bảo tàng hoặc mở rộng tri thức văn hóa dân tộc học bên ngoài để bài viết chân thực, giàu tính nhân văn và sống động.
+3. TUYỆT ĐỐI TUÂN THỦ CÁC QUY TẮC SAU:
+   - KHÔNG nhắc đến "Niên đại" (thời gian niên đại đã được lưu riêng hoặc không đề cập).
+   - KHÔNG sử dụng các ký tự định dạng Markdown như dấu sao (*, **), dấu thăng (#) hay gạch đầu dòng. Viết thành các câu văn xuôi mạch lạc, liền mạch (khoảng 3-5 câu hoặc 1 đoạn văn chuẩn mực 80-160 từ).
+   - Ngôn từ chuẩn tiếng Việt, giàu cảm xúc, trang nhã, phù hợp làm nội dung thuyết minh số tại bảo tàng.`;
+
+  const prompt = `Hãy soạn thảo đoạn "Mô tả / Ý nghĩa văn hóa di sản" cho hiện vật sau:
+- Tên hiện vật: ${cleanTitle}
+${cleanEthnic ? `- Dân tộc sở hữu: ${cleanEthnic}` : ''}
+${cleanRegion ? `- Vùng văn hóa: ${cleanRegion}` : ''}
+${cleanMaterial ? `- Chất liệu: ${cleanMaterial}` : ''}
+${cleanLocation ? `- Vị trí trưng bày / lưu trữ: ${cleanLocation}` : ''}
+
+${ragContext ? `Tài liệu tham khảo chuyên khảo (RAG Bảo tàng):\n${ragContext}\n` : ''}
+
+Yêu cầu: Viết đoạn văn xuôi mô tả và ý nghĩa di sản hoàn chỉnh, không dùng Markdown, không nhắc đến niên đại.`;
+
+  try {
+    let meaningText = await generateGeminiWithFallback(prompt, systemInstruction);
+
+    // Làm sạch Markdown asterisks nếu có sót lại
+    if (meaningText) {
+      meaningText = meaningText
+        .replace(/\*\*/g, '')
+        .replace(/\*/g, '')
+        .replace(/^[#\-\s]+/gm, '')
+        .trim();
+    }
+
+    return res.json({
+      success: true,
+      meaning: meaningText,
+      ragUsed: (ragInfo && ragInfo.chunksUsed && ragInfo.chunksUsed.length > 0)
+    });
+  } catch (aiErr) {
+    console.warn('⚠️ Gemini AI gặp sự cố khi tạo mô tả, kích hoạt bộ sinh thông minh cục bộ/RAG:', aiErr.message);
+
+    // Fallback: Tìm trích dẫn tốt nhất từ RAG hoặc tổng hợp văn bản văn hóa chuẩn
+    let fallbackText = '';
+    const ragResults = ragService.search(ragQuery, 1);
+    if (ragResults && ragResults.length > 0 && ragResults[0].content) {
+      const chunk = ragResults[0];
+      const sentenceMatch = chunk.content.split(/[.\n]/).filter(s => s.trim().length > 30).slice(0, 3).join('. ');
+      fallbackText = `${cleanTitle} là hiện vật tiêu biểu trong đời sống văn hóa của đồng bào ${cleanEthnic || 'các dân tộc Việt Nam'}. ${sentenceMatch}. Hiện vật thể hiện trình độ thủ công khéo léo cùng những giá trị nhân văn sâu sắc được trao truyền qua nhiều thế hệ.`;
+    } else {
+      fallbackText = `${cleanTitle} là hiện vật tiêu biểu phản ánh nét đặc trưng văn hóa của đồng bào ${cleanEthnic || 'các dân tộc Việt Nam'}${cleanRegion ? ` thuộc ${cleanRegion}` : ''}. Được chế tác khéo léo từ chất liệu ${cleanMaterial || 'truyền thống'}, hiện vật không chỉ gắn bó mật thiết với đời sống sinh hoạt, phong tục tập quán mà còn chứa đựng tâm tư, tinh thần đoàn kết và bản sắc văn hóa độc đáo của cộng đồng di sản.`;
+    }
+
+    return res.json({
+      success: true,
+      meaning: fallbackText,
+      isFallback: true,
+      notice: 'Được tổng hợp từ tri thức bảo tàng'
+    });
+  }
+});
+
+/**
  * POST /api/ai/test
  * Kiểm tra kết nối trực tiếp đến Google AI Server với đo độ trễ (latency)
  */

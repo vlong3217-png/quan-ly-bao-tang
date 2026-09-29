@@ -1886,12 +1886,17 @@
           </div>
 
           <div class="form-group" style="margin-top: 1rem;">
-            <label class="form-label">
-              <i class="fa-solid fa-align-left" style="color: var(--primary-gold);"></i> Mô tả / Ý nghĩa văn hóa di sản
-            </label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; gap: 0.5rem; flex-wrap: wrap;">
+              <label class="form-label" style="margin-bottom: 0;">
+                <i class="fa-solid fa-align-left" style="color: var(--primary-gold);"></i> Mô tả / Ý nghĩa văn hóa di sản
+              </label>
+              <button type="button" id="btnAiGenerateMeaning" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-color: rgba(217, 119, 6, 0.4); color: var(--primary-gold); background: #fffbeb;" onclick="handleAiGenerateMeaning()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo tự động bằng AI
+              </button>
+            </div>
             <div class="input-container">
-              <textarea id="modalArtMeaning" class="form-textarea no-icon" rows="3"
-                placeholder="Nhập đoạn văn mô tả chi tiết, nguồn gốc lịch sử và giá trị văn hóa của hiện vật..."></textarea>
+              <textarea id="modalArtMeaning" class="form-textarea no-icon" rows="4"
+                placeholder="Nhập đoạn văn mô tả chi tiết, nguồn gốc lịch sử và giá trị văn hóa của hiện vật (hoặc bấm 'Tạo tự động bằng AI' ở trên)..."></textarea>
             </div>
           </div>
 
@@ -2145,7 +2150,7 @@
   <!-- HTML5 QR Code Reader Library -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <!-- JavaScript Controller -->
-  <script src="frontend.js?v=7"></script>
+  <script src="frontend.js?v=10"></script>
 </body>
 
 </html>
