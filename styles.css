@@ -1355,6 +1355,33 @@ body {
   transition: width 0.2s linear;
 }
 
+.btn-toggle-transcript {
+  background: #fffbeb;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary-gold);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
+  width: auto;
+}
+
+.btn-toggle-transcript:hover {
+  background: #fef3c7;
+  border-color: var(--primary-gold);
+  transform: translateY(-1px);
+}
+
+.btn-toggle-transcript.active {
+  background: #fde68a;
+  border-color: var(--primary-gold);
+}
+
 .audio-transcript-box {
   background: #fdf8f6;
   border: 1px dashed var(--border-gold);
@@ -1364,6 +1391,7 @@ body {
   color: var(--text-main);
   line-height: 1.55;
   font-style: italic;
+  animation: fadeIn 0.25s ease-in-out;
 }
 
 /* AI Chat Box */
