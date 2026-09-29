@@ -813,7 +813,19 @@ function openArtifactDetail(id) {
   art.audioText = meaningContent;
 
   document.getElementById('detailMeaning').textContent = meaningContent;
-  document.getElementById('audioTranscript').textContent = meaningContent;
+  const audioTranscriptEl = document.getElementById('audioTranscript');
+  if (audioTranscriptEl) {
+    audioTranscriptEl.textContent = meaningContent;
+    audioTranscriptEl.style.display = 'none';
+  }
+
+  // Reset nút toggle transcript
+  const btnToggle = document.getElementById('btnToggleTranscript');
+  const btnToggleText = document.getElementById('btnToggleTranscriptText');
+  const iconToggle = document.getElementById('iconToggleTranscript');
+  if (btnToggle) btnToggle.classList.remove('active');
+  if (btnToggleText) btnToggleText.textContent = 'Xem nội dung thuyết trình';
+  if (iconToggle) iconToggle.style.transform = 'rotate(0deg)';
 
   stopAudioSpeech();
 
@@ -825,6 +837,33 @@ function openArtifactDetail(id) {
 
   switchNav('viewArtifactDetail');
 }
+
+/**
+ * Ẩn / Hiện nội dung thuyết trình văn bản
+ */
+function toggleAudioTranscript() {
+  const box = document.getElementById('audioTranscript');
+  const btn = document.getElementById('btnToggleTranscript');
+  const text = document.getElementById('btnToggleTranscriptText');
+  const icon = document.getElementById('iconToggleTranscript');
+
+  if (!box) return;
+
+  const isHidden = (box.style.display === 'none' || !box.style.display);
+  if (isHidden) {
+    box.style.display = 'block';
+    if (btn) btn.classList.add('active');
+    if (text) text.textContent = 'Thu gọn nội dung thuyết trình';
+    if (icon) icon.style.transform = 'rotate(180deg)';
+  } else {
+    box.style.display = 'none';
+    if (btn) btn.classList.remove('active');
+    if (text) text.textContent = 'Xem nội dung thuyết trình';
+    if (icon) icon.style.transform = 'rotate(0deg)';
+  }
+}
+
+window.toggleAudioTranscript = toggleAudioTranscript;
 
 function switchDetailImage(src, thumbElem) {
   const detailImg = document.getElementById('detailImg');
