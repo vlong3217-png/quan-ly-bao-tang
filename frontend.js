@@ -126,8 +126,12 @@ function normalizeArtifact(art) {
     status: (status && status !== 'undefined') ? status : 'Nguyên vẹn',
     img: img,
     images: images,
-    meaning: art.meaning || 'Hồ sơ di sản được bổ sung vào hệ thống kiểm kê kho.',
-    audioText: art.audioText || `Hiện vật ${title || 'di sản'} của Dân tộc ${ethnic}.`
+    meaning: (art.meaning && String(art.meaning).trim())
+      ? String(art.meaning).trim()
+      : ((art.y_nghia_van_hoa && String(art.y_nghia_van_hoa).trim()) ? String(art.y_nghia_van_hoa).trim() : 'Hồ sơ di sản được bổ sung vào hệ thống kiểm kê kho.'),
+    audioText: (art.meaning && String(art.meaning).trim())
+      ? String(art.meaning).trim()
+      : ((art.y_nghia_van_hoa && String(art.y_nghia_van_hoa).trim()) ? String(art.y_nghia_van_hoa).trim() : `Hiện vật ${title || 'di sản'} của Dân tộc ${ethnic}.`)
   };
 }
 
@@ -801,8 +805,15 @@ function openArtifactDetail(id) {
   document.getElementById('detailMaterial').textContent = art.material;
   document.getElementById('detailLocation').textContent = art.location;
   document.getElementById('detailTitle').textContent = art.title;
-  document.getElementById('detailMeaning').textContent = art.meaning;
-  document.getElementById('audioTranscript').textContent = art.audioText;
+  const meaningContent = (art.meaning && String(art.meaning).trim())
+    ? String(art.meaning).trim()
+    : ((art.y_nghia_van_hoa && String(art.y_nghia_van_hoa).trim()) ? String(art.y_nghia_van_hoa).trim() : `Hiện vật ${art.title} của Dân tộc ${art.ethnic}.`);
+
+  art.meaning = meaningContent;
+  art.audioText = meaningContent;
+
+  document.getElementById('detailMeaning').textContent = meaningContent;
+  document.getElementById('audioTranscript').textContent = meaningContent;
 
   stopAudioSpeech();
 
@@ -840,9 +851,15 @@ function togglePlayAudio() {
 function playAudioSpeech() {
   if (!currentArtifact) return;
 
+  const textToSpeak = (currentArtifact.meaning && String(currentArtifact.meaning).trim())
+    ? String(currentArtifact.meaning).trim()
+    : ((currentArtifact.y_nghia_van_hoa && String(currentArtifact.y_nghia_van_hoa).trim()) ? String(currentArtifact.y_nghia_van_hoa).trim() : (currentArtifact.audioText || currentArtifact.title));
+
+  currentArtifact.audioText = textToSpeak;
+
   if (speechSynth && 'SpeechSynthesisUtterance' in window) {
     speechSynth.cancel();
-    const utterance = new SpeechSynthesisUtterance(currentArtifact.audioText);
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = 'vi-VN';
     utterance.rate = 0.95;
 
@@ -854,8 +871,11 @@ function playAudioSpeech() {
 
   isPlayingAudio = true;
   document.getElementById('audioPlayIcon').className = 'fa-solid fa-pause';
+
+  // Điều chỉnh thời gian thanh tiến độ audio tương ứng độ dài đoạn thuyết minh
+  const durationSec = Math.max(6, Math.min(120, Math.ceil(textToSpeak.length / 14)));
   document.getElementById('audioBar').style.width = '100%';
-  document.getElementById('audioBar').style.transition = 'width 12s linear';
+  document.getElementById('audioBar').style.transition = `width ${durationSec}s linear`;
   showToast('Đang phát AI thuyết minh tự động...', 'info');
 }
 
@@ -1452,6 +1472,8 @@ async function handleSaveArtifact(event) {
     );
   }
 
+  const audioContent = (meaning && meaning.trim()) ? meaning.trim() : `Hiện vật ${title} của Dân tộc ${ethnic}.`;
+
   if (targetArt) {
     targetArt.code = code;
     targetArt.title = title;
@@ -1463,7 +1485,7 @@ async function handleSaveArtifact(event) {
     targetArt.y_nghia_van_hoa = meaning;
     targetArt.img = primaryImg;
     targetArt.images = allImages;
-    targetArt.audioText = `Hiện vật ${title} của Dân tộc ${ethnic}.`;
+    targetArt.audioText = audioContent;
     showToast(`Đã cập nhật thành công hồ sơ hiện vật ${code}!`, 'success');
   } else {
     const newArt = {
@@ -1479,7 +1501,7 @@ async function handleSaveArtifact(event) {
       images: allImages,
       meaning: meaning,
       y_nghia_van_hoa: meaning,
-      audioText: `Hiện vật ${title} của Dân tộc ${ethnic}.`
+      audioText: audioContent
     };
     targetArt = newArt;
     ARTIFACTS_DATA.unshift(newArt);
