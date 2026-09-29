@@ -75,7 +75,7 @@ router.get('/', async (req, res) => {
         img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
         images: r.img ? [r.img] : [],
         meaning: r.meaning || 'Hồ sơ di sản.',
-        audioText: `Hiện vật ${r.title} của Dân tộc ${resolvedEthnic}.`
+        audioText: (r.meaning && r.meaning.trim()) ? r.meaning.trim() : `Hiện vật ${r.title} của Dân tộc ${resolvedEthnic}.`
       };
     });
 
@@ -149,7 +149,7 @@ router.get('/:id', async (req, res) => {
       img: r.img || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
       images: r.img ? [r.img] : [],
       meaning: r.meaning || 'Hồ sơ di sản.',
-      audioText: `Hiện vật ${r.title} của Dân tộc ${resolvedEthnic}.`
+      audioText: (r.meaning && r.meaning.trim()) ? r.meaning.trim() : `Hiện vật ${r.title} của Dân tộc ${resolvedEthnic}.`
     };
 
     return res.json({
@@ -284,7 +284,7 @@ ON CONFLICT(ma_hienvat) DO UPDATE SET
         ? images
         : (r.img ? [r.img] : []),
       meaning: r.meaning || 'Hồ sơ di sản mới bổ sung.',
-      audioText: audioText || `Hiện vật ${title} của Dân tộc ${r.ethnic || finalEthnic}.`
+      audioText: (r.meaning && r.meaning.trim()) ? r.meaning.trim() : (meaning && meaning.trim() ? meaning.trim() : `Hiện vật ${title} của Dân tộc ${r.ethnic || finalEthnic}.`)
     };
 
     console.log('✅ Đã lưu hiện vật vào SQLite:', savedArtifact.code);
