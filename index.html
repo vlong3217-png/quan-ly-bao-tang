@@ -1288,21 +1288,12 @@
                 <label class="form-label" for="aiApiKeyInput">
                   Khóa bí mật API Key (Google AI Studio Key) <span style="color: #ef4444;">*</span>
                 </label>
-                <div class="input-container" style="position: relative;">
+                <div class="input-container">
                   <input type="password" id="aiApiKeyInput" class="form-input"
                     placeholder="Nhập API Key bắt đầu bằng AIzaSy... hoặc AQ..." required
-                    style="padding-right: 5.5rem; font-family: monospace; font-size: 0.95rem;">
+                    autocomplete="off"
+                    style="font-family: monospace; font-size: 0.95rem;">
                   <i class="fa-solid fa-key input-icon"></i>
-                  <div
-                    style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); display: flex; gap: 0.35rem;">
-                    <button type="button" class="btn-icon-subtle" title="Hiện/Ẩn Key"
-                      onclick="togglePasswordVisibility('aiApiKeyInput', this)">
-                      <i class="fa-regular fa-eye"></i>
-                    </button>
-                    <button type="button" class="btn-icon-subtle" title="Sao chép Key" onclick="copyAiApiKey()">
-                      <i class="fa-regular fa-copy"></i>
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -2146,7 +2137,7 @@
   <!-- HTML5 QR Code Reader Library -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <!-- JavaScript Controller -->
-  <script src="frontend.js?v=11"></script>
+  <script src="frontend.js?v=12"></script>
 </body>
 
 </html>
