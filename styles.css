@@ -93,7 +93,7 @@ body {
   pointer-events: none;
 }
 
-/* Biểu tượng Trống Đồng Đông Sơn Cố Định Nằm Chìm Ở Nền Trang Web (Dừng Xoay) */
+/* Biểu tượng Trống Đồng Đông Sơn Cố Định Nằm Chìm Ở Nền Trang Web (Dừng Xoay, Giảm Sáng Rõ Nét) */
 .bg-rotating-drum {
   position: fixed;
   top: 50vh;
@@ -106,8 +106,9 @@ body {
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.45;
+  opacity: 0.68;
   mix-blend-mode: multiply;
+  filter: brightness(0.85) contrast(1.22);
   pointer-events: none;
   animation: none;
 }
