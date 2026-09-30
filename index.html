@@ -1397,30 +1397,14 @@
             <p class="card-subtitle">Hệ thống quản trị & dịch vụ dành cho Hội viên và Cán bộ Bảo tàng</p>
           </div>
 
-          <!-- Role Demo Bar for Staff Testing -->
-          <div class="role-demo-bar">
-            <div class="role-demo-title">
-              <i class="fa-solid fa-flask-vial"></i> Đóng vai thử nghiệm (Role Demo):
-            </div>
-            <div class="role-chips">
-              <button type="button" class="role-btn active" onclick="setRoleDemo('BANVE')">
-                <i class="fa-solid fa-ticket"></i> Bán vé & Đón tiếp
-              </button>
-              <button type="button" class="role-btn" onclick="setRoleDemo('THUKHO')">
-                <i class="fa-solid fa-boxes-stacked"></i> Kiểm kê & Thủ kho
-              </button>
-              <button type="button" class="role-btn" onclick="setRoleDemo('ADMIN')">
-                <i class="fa-solid fa-shield-halved"></i> Quản trị viên
-              </button>
-            </div>
-          </div>
 
-          <form id="loginForm" onsubmit="handleLogin(event)">
+
+          <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
             <div class="form-group">
               <label class="form-label" for="loginUsername">Tên đăng nhập hoặc Email</label>
               <div class="input-container">
                 <input type="text" id="loginUsername" class="form-input" placeholder="Nhập tên đăng nhập hoặc email..."
-                  required>
+                  required autocomplete="username">
                 <i class="fa-regular fa-user input-icon"></i>
               </div>
             </div>
@@ -1428,7 +1412,7 @@
             <div class="form-group">
               <label class="form-label" for="loginPassword">Mật khẩu</label>
               <div class="input-container">
-                <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required>
+                <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required autocomplete="current-password">
                 <i class="fa-solid fa-lock input-icon"></i>
                 <button type="button" class="toggle-password" onclick="togglePasswordVisibility('loginPassword', this)">
                   <i class="fa-regular fa-eye"></i>
@@ -2137,7 +2121,7 @@
   <!-- HTML5 QR Code Reader Library -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <!-- JavaScript Controller -->
-  <script src="frontend.js?v=12"></script>
+  <script src="frontend.js?v=13"></script>
 </body>
 
 </html>

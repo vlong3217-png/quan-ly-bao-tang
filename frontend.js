@@ -139,6 +139,16 @@ function normalizeArtifact(art) {
 document.addEventListener('DOMContentLoaded', async () => {
   // Load persistent local storage data if user added items previously
 
+  const savedArtifacts = localStorage.getItem('baotang_artifacts_data');
+  if (savedArtifacts) {
+    try {
+      const parsed = JSON.parse(savedArtifacts);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        ARTIFACTS_DATA = parsed.map(normalizeArtifact).filter(Boolean);
+      }
+    } catch (e) { }
+  }
+
   const savedTours = localStorage.getItem('baotang_tours_data');
   if (savedTours) {
     try { TOURS_DATA = JSON.parse(savedTours); } catch (e) { }
@@ -215,14 +225,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       const result = await resArt.json();
 
       if (result.success && Array.isArray(result.data)) {
-        ARTIFACTS_DATA = result.data
-          .map(normalizeArtifact)
-          .filter(Boolean);
+        if (result.data.length > 0) {
+          ARTIFACTS_DATA = result.data
+            .map(normalizeArtifact)
+            .filter(Boolean);
 
-        localStorage.setItem(
-          'baotang_artifacts_data',
-          JSON.stringify(ARTIFACTS_DATA)
-        );
+          localStorage.setItem(
+            'baotang_artifacts_data',
+            JSON.stringify(ARTIFACTS_DATA)
+          );
+        } else if (ARTIFACTS_DATA.length > 0) {
+          // Tự động đẩy hiện vật từ local lên SQLite nếu backend rỗng
+          ARTIFACTS_DATA.forEach(art => {
+            fetch(`${API_BASE}/artifacts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(art)
+            }).catch(() => { });
+          });
+        }
       }
     }
 
@@ -581,6 +602,13 @@ function switchNav(viewId) {
 
   if (viewId === 'viewMyTickets') {
     renderMyTickets();
+  }
+
+  if (viewId === 'viewLogin') {
+    const userEl = document.getElementById('loginUsername');
+    const pwdEl = document.getElementById('loginPassword');
+    if (userEl) userEl.value = '';
+    if (pwdEl) pwdEl.value = '';
   }
 
   if (viewId === 'viewAdminDashboard') {
@@ -3719,14 +3747,14 @@ function setRoleDemo(roleKey) {
   const buttons = document.querySelectorAll('.role-chips .role-btn');
   buttons.forEach(btn => btn.classList.remove('active'));
 
-  const selectedBtn = Array.from(buttons).find(b => b.getAttribute('onclick').includes(roleKey));
+  const selectedBtn = Array.from(buttons).find(b => b.getAttribute('onclick')?.includes(roleKey));
   if (selectedBtn) selectedBtn.classList.add('active');
 
-  const acc = DEMO_ACCOUNTS[roleKey];
-  if (acc) {
-    document.getElementById('loginUsername').value = acc.username;
-    document.getElementById('loginPassword').value = acc.password;
-  }
+  // Đảm bảo không tự động điền tài khoản & mật khẩu để người dùng tự nhập bảo mật
+  const userEl = document.getElementById('loginUsername');
+  const pwdEl = document.getElementById('loginPassword');
+  if (userEl) userEl.value = '';
+  if (pwdEl) pwdEl.value = '';
 }
 
 /**
