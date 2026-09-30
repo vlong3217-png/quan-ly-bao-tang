@@ -95,7 +95,7 @@
 
   <!-- FontAwesome Icons & Custom Stylesheet -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 
 <body>
@@ -733,18 +733,6 @@
                 </div>
               </div>
 
-              <!-- Tiện ích vé con: Gửi riêng vé cho người này hoặc sao chép -->
-              <div id="subTicketShareBox" class="subticket-share-box">
-                <button type="button" class="btn-subticket-action" onclick="shareCurrentSubTicket()"
-                  title="Gửi mã vé này cho người đi cùng">
-                  <i class="fa-solid fa-share-nodes"></i> Gửi vé này cho bạn
-                </button>
-                <button type="button" class="btn-subticket-action" onclick="copyCurrentSubTicketCode()"
-                  title="Sao chép mã QR này">
-                  <i class="fa-regular fa-copy"></i> Sao chép mã
-                </button>
-              </div>
-
               <div class="eticket-notice" style="margin-top: 0.85rem;">
                 <i class="fa-solid fa-shield-halved"></i>
                 <div id="ticketNoticeText">Vé điện tử có giá trị 01 lượt vào cửa trong ngày. Vui lòng bảo mật mã QR
@@ -755,13 +743,23 @@
           </div>
 
           <!-- Action Buttons below ticket -->
-          <div class="eticket-actions-row">
-            <button type="button" class="btn-primary" onclick="window.print()">
+          <div class="eticket-actions-container">
+            <!-- Hàng 1: Nút In / Lưu Thẻ PDF (nút dài ở hàng trên) -->
+            <button type="button" class="btn-primary btn-print-ticket" onclick="window.print()">
               <i class="fa-solid fa-print"></i> In / Lưu Thẻ PDF
             </button>
-            <button type="button" class="btn-secondary" onclick="switchNav('viewCatalog')">
-              <i class="fa-solid fa-compass"></i> Khám Phá Di Sản
-            </button>
+
+            <!-- Hàng 2: Hai nút Gửi vé này cho bạn & Sao chép mã -->
+            <div id="subTicketShareBox" class="subticket-share-box">
+              <button type="button" class="btn-subticket-action" onclick="shareCurrentSubTicket()"
+                title="Gửi mã vé này cho người đi cùng">
+                <i class="fa-solid fa-share-nodes"></i> Gửi vé này cho bạn
+              </button>
+              <button type="button" class="btn-subticket-action" onclick="copyCurrentSubTicketCode()"
+                title="Sao chép mã QR này">
+                <i class="fa-regular fa-copy"></i> Sao chép mã
+              </button>
+            </div>
           </div>
         </div>
 
