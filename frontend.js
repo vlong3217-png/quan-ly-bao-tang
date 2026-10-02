@@ -4702,3 +4702,101 @@ async function handleDeleteFeedback(id) {
   showToast(`Đã xóa phản hồi #${id} thành công!`, 'success');
 }
 
+/* ============================================================
+   XUẤT BÁO CÁO THỐNG KÊ DASHBOARD (EXCEL CSV & PDF PRINT)
+   ============================================================ */
+
+/**
+ * Xuất dữ liệu thống kê tổng hợp Dashboard ra định dạng file Excel (.csv) hỗ trợ tiếng Việt UTF-8 BOM
+ */
+function handleExportDashboardCsv() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('vi-VN').replace(/\//g, '-');
+  const timeStr = now.toLocaleTimeString('vi-VN');
+
+  // Thu thập các số liệu tổng hợp hiện thời
+  const totalVisitors = document.getElementById('kpiTotalVisitors')?.textContent || '0';
+  const totalRevenue = document.getElementById('kpiTotalRevenue')?.textContent || '0 VNĐ';
+  const totalArtifacts = document.getElementById('kpiTotalArtifacts')?.textContent || '0';
+  const totalUsers = document.getElementById('kpiTotalUsers')?.textContent || '0';
+  const totalTours = document.getElementById('kpiTotalTours')?.textContent || '0';
+
+  let csvContent = '\uFEFF'; // UTF-8 BOM để Excel đọc tiếng Việt không bị lỗi font
+
+  // Phần 1: Tiêu đề báo cáo
+  csvContent += 'BẢO TÀNG VĂN HÓA CÁC DÂN TỘC VIỆT NAM\n';
+  csvContent += 'BÁO CÁO TỔNG QUAN HOẠT ĐỘNG & VẬN HÀNH BẢO TÀNG\n';
+  csvContent += `Thời gian xuất báo cáo: ${timeStr} ngày ${dateStr}\n`;
+  csvContent += '------------------------------------------------------------\n\n';
+
+  // Phần 2: Các chỉ số KPI tổng hợp
+  csvContent += '1. CÁC CHỈ SỐ HOẠT ĐỘNG TỔNG QUAN (KPI)\n';
+  csvContent += 'Chỉ Số,Giá Trị,Đơn Vị Tính\n';
+  csvContent += `"Tổng lượt khách tham quan","${totalVisitors}","Lượt khách"\n`;
+  csvContent += `"Tổng doanh thu bán vé","${totalRevenue}","VNĐ"\n`;
+  csvContent += `"Số lượng hiện vật di sản","${totalArtifacts}","Hiện vật"\n`;
+  csvContent += `"Đoàn khách đã đăng ký","${totalTours}","Đoàn"\n`;
+  csvContent += `"Tài khoản cán bộ vận hành","${totalUsers}","Cán bộ"\n\n`;
+
+  // Phần 3: Danh sách các đơn vé tham quan gần nhất
+  csvContent += '2. DANH SÁCH VÉ THAM QUAN ĐÃ PHÁT HÀNH\n';
+  csvContent += 'Mã Vé,Khách Hàng,Số Điện Thoại,Ngày Tham Quan,Khung Giờ,Tổng Số Vé,Tổng Tiền (VNĐ),Hình Thức,Trạng Thái\n';
+
+  if (TICKETS_PURCHASED_DATA && TICKETS_PURCHASED_DATA.length > 0) {
+    TICKETS_PURCHASED_DATA.forEach(t => {
+      const code = t.code || '';
+      const name = t.name || 'Khách vãng lai';
+      const phone = t.phone || '';
+      const date = t.date || '';
+      const slot = t.slot || '';
+      const qty = t.totalQty || (t.adultQty || 0) + (t.childQty || 0) || 1;
+      const amount = (t.amount || 0).toLocaleString('vi-VN');
+      const type = t.type === 'POS' ? 'Bán tại quầy (POS)' : 'Đặt online';
+      const status = t.status === 'DA_SOAT_VE' ? 'Đã soát vé' : 'Chưa sử dụng';
+
+      csvContent += `"${code}","${name}","${phone}","${date}","${slot}","${qty}","${amount}","${type}","${status}"\n`;
+    });
+  } else {
+    csvContent += 'Chưa có dữ liệu vé phát hành\n';
+  }
+
+  csvContent += '\n3. DANH SÁCH LỊCH ĐOÀN THAM QUAN\n';
+  csvContent += 'Mã Đoàn,Tên Đoàn / Đơn Vị,Đối Tượng,Số Lượng,Thời Gian,Hướng Dẫn Viên,Trạng Thái\n';
+
+  if (TOURS_DATA && TOURS_DATA.length > 0) {
+    TOURS_DATA.forEach(tour => {
+      csvContent += `"${tour.code || ''}","${tour.name || ''}","${tour.target || ''}","${tour.size || ''}","${tour.time || ''}","${tour.guide || ''}","${tour.status || ''}"\n`;
+    });
+  } else {
+    csvContent += 'Chưa có lịch đoàn tham quan nào\n';
+  }
+
+  // Tạo Blob và tự động tải file
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `Bao_Cao_Bao_Tang_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  showToast('Đã xuất báo cáo thống kê Dashboard ra file Excel (CSV) thành công!', 'success');
+}
+
+/**
+ * In / Xuất báo cáo Dashboard dạng PDF chuyên nghiệp qua hộp thoại In hệ thống
+ */
+function handlePrintDashboardReport() {
+  showToast('Đang mở bản xem trước báo cáo Dashboard để in hoặc lưu PDF...', 'info');
+  setTimeout(() => {
+    window.print();
+  }, 300);
+}
+
+// Window bindings
+window.handleExportDashboardCsv = handleExportDashboardCsv;
+window.handlePrintDashboardReport = handlePrintDashboardReport;
+
+

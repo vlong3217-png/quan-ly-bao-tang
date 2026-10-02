@@ -1118,9 +1118,25 @@
       <div class="auth-card wide">
 
         <div class="card-header">
-          <h2 class="card-title">Báo Cáo Thống Kê & Quản Trị AI (Dashboard)</h2>
-          <p class="card-subtitle">Tổng quan hoạt động vận hành, doanh thu bán vé, số lượng di sản và phân tích thông
-            minh từ AI</p>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 class="card-title">
+                <i class="fa-solid fa-chart-pie" style="color: var(--primary-gold);"></i> Báo Cáo Thống Kê & Quản Trị AI (Dashboard)
+              </h2>
+              <p class="card-subtitle">
+                Tổng quan hoạt động vận hành, doanh thu bán vé, số lượng di sản và phân tích thông minh từ AI
+              </p>
+            </div>
+            <!-- Cụm hành động Xuất Báo Cáo -->
+            <div class="dashboard-report-actions">
+              <button type="button" class="btn-secondary" style="width: auto; padding: 0.65rem 1.25rem;" onclick="handleExportDashboardCsv()">
+                <i class="fa-solid fa-file-excel" style="color: #10b981;"></i> Xuất Excel (CSV)
+              </button>
+              <button type="button" class="btn-primary" style="width: auto; padding: 0.65rem 1.4rem;" onclick="handlePrintDashboardReport()">
+                <i class="fa-solid fa-file-pdf"></i> In / Xuất Báo Cáo (PDF)
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Admin KPI Grid Cards -->
