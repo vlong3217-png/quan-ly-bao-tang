@@ -21,6 +21,7 @@ const ticketRoutes = require('./routes/ticket.routes');
 const userRoutes = require('./routes/user.routes');
 const categoryRoutes = require('./routes/category.routes');
 const aiRoutes = require('./routes/ai.routes');
+const feedbackRoutes = require('./routes/feedback.routes');
 
 // Register API Endpoints
 app.use('/api/auth', authRoutes);
@@ -29,6 +30,7 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/feedbacks', feedbackRoutes);
 
 // Healthcheck Route
 app.get('/api/health', (req, res) => {
