@@ -128,6 +128,32 @@ async function getDb() {
         );
       `);
 
+      // Auto-create Feedbacks table if not exists
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS Feedbacks (
+          feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          phone TEXT,
+          email TEXT,
+          rating INTEGER DEFAULT 5,
+          category TEXT DEFAULT 'Chung',
+          content TEXT NOT NULL,
+          status TEXT DEFAULT 'APPROVED',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      const existingFeedback = await db.get('SELECT feedback_id FROM Feedbacks LIMIT 1');
+      if (!existingFeedback) {
+        await db.run(`
+          INSERT INTO Feedbacks (name, phone, email, rating, category, content, status, created_at)
+          VALUES 
+          ('Nguyễn Văn Tuấn', '0912345678', 'tuan.nguyen@gmail.com', 5, 'Trải nghiệm tham quan', 'Không gian trưng bày rất hoành tráng và đậm đà bản sắc 54 dân tộc. Thuyết minh AI nghe rất rõ ràng và truyền cảm!', 'APPROVED', '2026-03-28 09:30:00'),
+          ('Lê Mai Anh', '0987654321', 'maianh.le@gmail.com', 5, 'Dịch vụ & Tiện ích', 'Đặt vé trực tuyến qua mã QR vô cùng tiện lợi, không phải xếp hàng chờ đợi. Các hướng dẫn viên rất nhiệt tình.', 'APPROVED', '2026-03-29 14:15:00'),
+          ('Trần Hữu Hùng', '0933221100', 'hung.tran@gmail.com', 5, 'Không gian trưng bày', 'Khuôn viên ngoài trời 6 vùng văn hóa tái hiện nhà Rông và nhà sàn rất chân thực, các cháu học sinh rất thích thú.', 'APPROVED', '2026-03-30 16:45:00');
+        `);
+      }
+
       // Drop obsolete LichSuMuonTra table if exists
       await db.exec(`DROP TABLE IF EXISTS LichSuMuonTra;`);
 

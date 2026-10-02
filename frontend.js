@@ -8,6 +8,7 @@ let ARTIFACTS_DATA = [];
 
 let TOURS_DATA = [];
 let TICKETS_PURCHASED_DATA = [];
+let FEEDBACKS_DATA = [];
 
 // Sample Staff User Accounts Table Database
 let USERS_DATA = [
@@ -316,6 +317,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderUserTable(USERS_DATA);
   renderDashboardStats();
   renderMyTickets();
+  loadFeedbacksFromApi();
   initCustomSelects();
 });
 
@@ -592,6 +594,8 @@ function switchNav(viewId) {
     viewAdminDashboard: 'navAdminDashboard',
     viewUserManagement: 'navUserManagement',
     viewCategoryManagement: 'navCategoryManagement',
+    viewFeedback: 'navFeedback',
+    viewFeedbackManagement: 'navFeedbackManagement',
     viewAdminAiAssistant: 'navAdminAi'
   };
 
@@ -602,6 +606,18 @@ function switchNav(viewId) {
 
   if (viewId === 'viewMyTickets') {
     renderMyTickets();
+  }
+
+  if (viewId === 'viewHome') {
+    renderHomeFeedbackSpotlight();
+  }
+
+  if (viewId === 'viewFeedback') {
+    renderFeedbackCommunityFeed();
+  }
+
+  if (viewId === 'viewFeedbackManagement') {
+    renderAdminFeedbackTable();
   }
 
   if (viewId === 'viewLogin') {
@@ -4328,3 +4344,361 @@ window.addEventListener('DOMContentLoaded', () => {
     loadAiConfig();
   }
 });
+
+/* ============================================================
+   UI-22 & UI-23: LOGIC PHẢN HỒI KHÁCH HÀNG & QUẢN TRỊ ĐÁNH GIÁ
+   ============================================================ */
+
+/**
+ * Tải danh sách phản hồi từ Backend REST API (hoặc LocalStorage)
+ */
+async function loadFeedbacksFromApi() {
+  try {
+    const res = await fetch(`${API_BASE}/feedbacks`);
+    if (res.ok) {
+      const result = await res.json();
+      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        FEEDBACKS_DATA = result.data;
+        localStorage.setItem('baotang_feedbacks_data', JSON.stringify(FEEDBACKS_DATA));
+      }
+    }
+  } catch (err) {
+    const saved = localStorage.getItem('baotang_feedbacks_data');
+    if (saved) {
+      try { FEEDBACKS_DATA = JSON.parse(saved); } catch (e) { }
+    }
+  }
+
+  // Nếu vẫn rỗng thì nạp dữ liệu mẫu
+  if (!FEEDBACKS_DATA || FEEDBACKS_DATA.length === 0) {
+    FEEDBACKS_DATA = [
+      {
+        feedback_id: 1,
+        name: 'Nguyễn Văn Tuấn',
+        phone: '0912345678',
+        email: 'tuan.nguyen@gmail.com',
+        rating: 5,
+        category: 'Trải nghiệm tham quan',
+        content: 'Không gian trưng bày rất hoành tráng và đậm đà bản sắc 54 dân tộc. Thuyết minh AI nghe rất rõ ràng và truyền cảm!',
+        status: 'APPROVED',
+        created_at: '2026-03-28 09:30:00'
+      },
+      {
+        feedback_id: 2,
+        name: 'Lê Mai Anh',
+        phone: '0987654321',
+        email: 'maianh.le@gmail.com',
+        rating: 5,
+        category: 'Dịch vụ & Tiện ích',
+        content: 'Đặt vé trực tuyến qua mã QR vô cùng tiện lợi, không phải xếp hàng chờ đợi. Các hướng dẫn viên rất nhiệt tình.',
+        status: 'APPROVED',
+        created_at: '2026-03-29 14:15:00'
+      },
+      {
+        feedback_id: 3,
+        name: 'Trần Hữu Hùng',
+        phone: '0933221100',
+        email: 'hung.tran@gmail.com',
+        rating: 5,
+        category: 'Không gian trưng bày',
+        content: 'Khuôn viên ngoài trời 6 vùng văn hóa tái hiện nhà Rông và nhà sàn rất chân thực, các cháu học sinh rất thích thú.',
+        status: 'APPROVED',
+        created_at: '2026-03-30 16:45:00'
+      }
+    ];
+    localStorage.setItem('baotang_feedbacks_data', JSON.stringify(FEEDBACKS_DATA));
+  }
+
+  renderHomeFeedbackSpotlight();
+  renderFeedbackCommunityFeed();
+  renderAdminFeedbackTable();
+}
+
+/**
+ * Hiển thị 3 phản hồi nổi bật trên Trang Chủ (Home Spotlight)
+ */
+function renderHomeFeedbackSpotlight() {
+  const container = document.getElementById('homeFeedbackPreviewList');
+  if (!container) return;
+
+  const approvedList = (FEEDBACKS_DATA || []).filter(f => f.status === 'APPROVED');
+  const displayItems = approvedList.slice(0, 3);
+
+  if (displayItems.length === 0) {
+    container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Chưa có đánh giá nào.</p>`;
+    return;
+  }
+
+  container.innerHTML = displayItems.map(fb => {
+    const stars = '★'.repeat(fb.rating || 5) + '☆'.repeat(5 - (fb.rating || 5));
+    const timeStr = fb.created_at ? fb.created_at.split(' ')[0] : 'Gần đây';
+    return `
+      <div class="home-fb-card">
+        <div class="home-fb-header">
+          <span class="home-fb-author"><i class="fa-solid fa-circle-user"></i> ${fb.name}</span>
+          <span class="home-fb-stars">${stars}</span>
+        </div>
+        <p class="home-fb-content">"${fb.content}"</p>
+        <div class="home-fb-footer">
+          <span><i class="fa-solid fa-tag"></i> ${fb.category || 'Chung'}</span>
+          <span><i class="fa-regular fa-clock"></i> ${timeStr}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Hiển thị danh sách cảm nhận cộng đồng tại màn hình UI-22 (Customer Feedback)
+ */
+function renderFeedbackCommunityFeed() {
+  const feedList = document.getElementById('feedbackFeedList');
+  if (!feedList) return;
+
+  const approvedList = (FEEDBACKS_DATA || []).filter(f => f.status === 'APPROVED');
+
+  if (approvedList.length === 0) {
+    feedList.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 1rem;">Hãy là người đầu tiên gửi cảm nhận!</p>`;
+    return;
+  }
+
+  feedList.innerHTML = approvedList.map(fb => {
+    const stars = '★'.repeat(fb.rating || 5) + '☆'.repeat(5 - (fb.rating || 5));
+    const timeStr = fb.created_at || 'Gần đây';
+    return `
+      <div class="feed-item">
+        <div class="feed-item-header">
+          <span class="feed-item-author">${fb.name}</span>
+          <span class="feed-item-category">${fb.category || 'Chung'}</span>
+        </div>
+        <div class="feed-item-stars">${stars}</div>
+        <p class="feed-item-text">${fb.content}</p>
+        <span class="feed-item-time"><i class="fa-regular fa-clock"></i> ${timeStr}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Chọn số sao đánh giá trong Form (1 đến 5 sao)
+ */
+function setFeedbackRating(stars) {
+  const valInput = document.getElementById('fbRatingVal');
+  const label = document.getElementById('ratingTextLabel');
+  if (valInput) valInput.value = stars;
+
+  const starBtns = document.querySelectorAll('#starRatingSelect .star-btn');
+  starBtns.forEach(btn => {
+    const r = parseInt(btn.getAttribute('data-rating'), 10);
+    if (r <= stars) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  const ratingDesc = {
+    1: 'Chưa hài lòng (1/5 sao)',
+    2: 'Cần cải thiện (2/5 sao)',
+    3: 'Bình thường (3/5 sao)',
+    4: 'Hài lòng (4/5 sao)',
+    5: 'Rất tuyệt vời (5/5 sao)'
+  };
+  if (label) label.textContent = ratingDesc[stars] || `${stars}/5 sao`;
+}
+
+/**
+ * Reset form đánh giá
+ */
+function resetFeedbackForm() {
+  setFeedbackRating(5);
+}
+
+/**
+ * Xử lý khi du khách bấm Gửi Ý Kiến Phản Hồi
+ */
+async function handleCustomerSubmitFeedback(e) {
+  e.preventDefault();
+
+  const name = document.getElementById('fbName').value.trim();
+  const phone = document.getElementById('fbPhone').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const category = document.getElementById('fbCategory').value;
+  const rating = parseInt(document.getElementById('fbRatingVal').value, 10) || 5;
+  const content = document.getElementById('fbContent').value.trim();
+
+  if (!name || !content) {
+    showToast('Vui lòng nhập họ tên và nội dung phản hồi!', 'error');
+    return;
+  }
+
+  const payload = {
+    name,
+    phone,
+    email,
+    category,
+    rating,
+    content
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/feedbacks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const resData = await res.json();
+      if (resData.success && resData.data) {
+        FEEDBACKS_DATA.unshift(resData.data);
+      } else {
+        FEEDBACKS_DATA.unshift({
+          feedback_id: Date.now(),
+          ...payload,
+          status: 'APPROVED',
+          created_at: new Date().toLocaleString('vi-VN')
+        });
+      }
+    } else {
+      FEEDBACKS_DATA.unshift({
+        feedback_id: Date.now(),
+        ...payload,
+        status: 'APPROVED',
+        created_at: new Date().toLocaleString('vi-VN')
+      });
+    }
+  } catch (err) {
+    FEEDBACKS_DATA.unshift({
+      feedback_id: Date.now(),
+      ...payload,
+      status: 'APPROVED',
+      created_at: new Date().toLocaleString('vi-VN')
+    });
+  }
+
+  localStorage.setItem('baotang_feedbacks_data', JSON.stringify(FEEDBACKS_DATA));
+
+  // Reset form và render lại
+  document.getElementById('customerFeedbackForm').reset();
+  setFeedbackRating(5);
+  renderFeedbackCommunityFeed();
+  renderHomeFeedbackSpotlight();
+  renderAdminFeedbackTable();
+
+  showToast('Cảm ơn quý khách! Ý kiến phản hồi đã được ghi nhận và hiển thị.', 'success');
+}
+
+/**
+ * Hiển thị bảng Quản lý phản hồi (UI-23: Admin Feedback Management)
+ */
+function renderAdminFeedbackTable(filteredData = null) {
+  const tbody = document.getElementById('adminFeedbackTableBody');
+  if (!tbody) return;
+
+  const data = filteredData || FEEDBACKS_DATA || [];
+
+  // Tính toán KPI
+  const elTotal = document.getElementById('kpiTotalFeedbacks');
+  const elAvg = document.getElementById('kpiAvgRating');
+  const elSat = document.getElementById('kpiSatisfactionRate');
+
+  if (elTotal) elTotal.textContent = (FEEDBACKS_DATA || []).length;
+  if (FEEDBACKS_DATA && FEEDBACKS_DATA.length > 0) {
+    const sumRating = FEEDBACKS_DATA.reduce((acc, f) => acc + (f.rating || 5), 0);
+    const avg = (sumRating / FEEDBACKS_DATA.length).toFixed(1);
+    if (elAvg) elAvg.textContent = `${avg} / 5 ★`;
+
+    const positive = FEEDBACKS_DATA.filter(f => (f.rating || 5) >= 4).length;
+    const rate = Math.round((positive / FEEDBACKS_DATA.length) * 100);
+    if (elSat) elSat.textContent = `${rate}%`;
+  }
+
+  if (data.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+          <i class="fa-solid fa-comments" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;"></i>
+          Không tìm thấy phản hồi nào phù hợp.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = data.map(fb => {
+    const stars = '★'.repeat(fb.rating || 5) + '☆'.repeat(5 - (fb.rating || 5));
+    const phoneOrEmail = fb.phone || fb.email || '—';
+    return `
+      <tr>
+        <td><strong>#${fb.feedback_id}</strong></td>
+        <td>
+          <div style="font-weight: 700; color: #78350f;">${fb.name}</div>
+          <small style="color: #64748b;">${fb.email || ''}</small>
+        </td>
+        <td><small>${phoneOrEmail}</small></td>
+        <td>
+          <span style="color: #f59e0b; font-weight: 700; font-size: 0.88rem;">${stars}</span>
+          <span style="font-size: 0.75rem; color: #64748b;">(${fb.rating}/5)</span>
+        </td>
+        <td><span class="badge-status badge-info">${fb.category || 'Chung'}</span></td>
+        <td style="max-width: 320px; line-height: 1.5; font-size: 0.85rem;">
+          ${fb.content}
+        </td>
+        <td><small style="color: #64748b;">${fb.created_at || '—'}</small></td>
+        <td style="text-align: center;">
+          <button type="button" class="btn-action btn-delete" title="Xóa phản hồi" onclick="handleDeleteFeedback(${fb.feedback_id})">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/**
+ * Lọc bảng phản hồi theo từ khóa và số sao (Admin)
+ */
+function filterAdminFeedbackTable() {
+  const query = (document.getElementById('feedbackSearchInput')?.value || '').toLowerCase().trim();
+  const ratingFilter = document.getElementById('feedbackFilterRating')?.value || 'ALL';
+
+  let filtered = [...(FEEDBACKS_DATA || [])];
+
+  if (ratingFilter !== 'ALL') {
+    const r = parseInt(ratingFilter, 10);
+    filtered = filtered.filter(f => (f.rating || 5) === r);
+  }
+
+  if (query) {
+    filtered = filtered.filter(f =>
+      (f.name && f.name.toLowerCase().includes(query)) ||
+      (f.phone && f.phone.includes(query)) ||
+      (f.email && f.email.toLowerCase().includes(query)) ||
+      (f.content && f.content.toLowerCase().includes(query)) ||
+      (f.category && f.category.toLowerCase().includes(query))
+    );
+  }
+
+  renderAdminFeedbackTable(filtered);
+}
+
+/**
+ * Xóa một phản hồi (Admin)
+ */
+async function handleDeleteFeedback(id) {
+  if (!confirm(`Bạn có chắc chắn muốn xóa phản hồi #${id} khỏi hệ thống?`)) return;
+
+  try {
+    await fetch(`${API_BASE}/feedbacks/${id}`, { method: 'DELETE' });
+  } catch (e) { }
+
+  FEEDBACKS_DATA = FEEDBACKS_DATA.filter(f => f.feedback_id !== id);
+  localStorage.setItem('baotang_feedbacks_data', JSON.stringify(FEEDBACKS_DATA));
+
+  renderAdminFeedbackTable();
+  renderHomeFeedbackSpotlight();
+  renderFeedbackCommunityFeed();
+  showToast(`Đã xóa phản hồi #${id} thành công!`, 'success');
+}
+

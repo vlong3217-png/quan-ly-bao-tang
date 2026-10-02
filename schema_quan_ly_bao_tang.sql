@@ -259,9 +259,28 @@ CREATE TABLE IF NOT EXISTS LichDoan (
 
 
 -- ============================================================
+-- 11. BANG PHAN HOI CUA KHACH HANG (FEEDBACKS)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS Feedbacks (
+    feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    rating INTEGER DEFAULT 5 CHECK (rating BETWEEN 1 AND 5),
+    category TEXT DEFAULT 'Chung',
+    content TEXT NOT NULL,
+    status TEXT DEFAULT 'APPROVED' CHECK (status IN ('PENDING', 'APPROVED', 'HIDDEN')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- ============================================================
 -- INDEX
 -- ============================================================
 
+CREATE INDEX IF NOT EXISTS idx_feedbacks_rating ON Feedbacks(rating);
+CREATE INDEX IF NOT EXISTS idx_feedbacks_status ON Feedbacks(status);
 CREATE INDEX IF NOT EXISTS idx_hienvat_ma
 ON HienVat(ma_hienvat);
 
