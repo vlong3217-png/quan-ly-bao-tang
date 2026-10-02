@@ -5083,4 +5083,62 @@ textarea {
   .feedback-kpi-bar {
     grid-template-columns: 1fr;
   }
-}
+}
+
+/* ============================================================
+   DASHBOARD REPORT EXPORT & PRINT STYLES
+   ============================================================ */
+.dashboard-report-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+@media print {
+  /* Hide unnecessary interactive elements when printing report */
+  .app-header,
+  .app-footer,
+  .chat-bubble-launcher,
+  .ai-chat-box,
+  .dashboard-report-actions,
+  .modal-backdrop,
+  #toastContainer {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .main-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .auth-card.wide {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .admin-kpi-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  .kpi-card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    padding: 0.75rem !important;
+  }
+
+  .chart-card {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    page-break-inside: avoid;
+  }
+}
+
