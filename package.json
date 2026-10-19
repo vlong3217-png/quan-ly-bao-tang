@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "postinstall": "npm rebuild sqlite3 --build-from-source"
+  },
+  "engines": {
+    "node": ">=18.0.0 <=22.x"
   },
   "keywords": [
     "museum",
@@ -25,6 +29,6 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.9.7",
     "sqlite": "^5.1.1",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "5.1.7"
   }
 }
