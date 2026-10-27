@@ -2620,6 +2620,179 @@ async function handleProcessBooking(event) {
 
   const isGroup = totalQty >= 10;
   const allNamesStr = visitorNames.join(', ');
+  const totalAmount = adult * 30000;
+
+  // Chuẩn bị payload thông tin vé
+  const bookingData = {
+    visitorNames,
+    allNamesStr,
+    phone,
+    date,
+    slot,
+    adult,
+    child,
+    totalQty,
+    totalAmount,
+    isGroup
+  };
+
+  // Nếu tổng tiền = 0 (Ví dụ chỉ có vé trẻ em miễn phí), hoàn tất tạo vé ngay
+  if (totalAmount === 0) {
+    await completeTicketBooking(bookingData, 'MIEN_PHI');
+    return;
+  }
+
+  // Mở Popup Thanh Toán VietQR theo Phương án 1
+  openVietQrPaymentModal(bookingData);
+}
+
+/**
+ * Cấu hình VietQR và biến quản lý phiên thanh toán
+ */
+const VIETQR_CONFIG = {
+  bankId: 'ICB', // VietinBank
+  bankName: 'VietinBank (Ngân hàng TMCP Công Thương VN)',
+  accountNo: '102874639201',
+  accountName: 'BAO TANG VH CAC DAN TOC VN',
+  template: 'compact2'
+};
+
+let currentPendingBooking = null;
+let vietQrTimerInterval = null;
+
+/**
+ * Mở Modal Thanh Toán VietQR
+ */
+function openVietQrPaymentModal(bookingData) {
+  currentPendingBooking = bookingData;
+
+  const modal = document.getElementById('vietQrModal');
+  if (!modal) return;
+
+  // Tạo mã đơn hàng ngẫu nhiên duy nhất cho giao dịch chuyển khoản
+  const transferCode = `BAOTANG VE${Math.floor(100000 + Math.random() * 900000)}`;
+  currentPendingBooking.transferCode = transferCode;
+
+  // Sinh URL ảnh VietQR chuẩn Napas 247
+  // Format: https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-<TEMPLATE>.png?amount=<AMOUNT>&addInfo=<INFO>&accountName=<NAME>
+  const vietQrUrl = `https://img.vietqr.io/image/${VIETQR_CONFIG.bankId}-${VIETQR_CONFIG.accountNo}-${VIETQR_CONFIG.template}.png?amount=${bookingData.totalAmount}&addInfo=${encodeURIComponent(transferCode)}&accountName=${encodeURIComponent(VIETQR_CONFIG.accountName)}`;
+
+  // Điền dữ liệu vào giao diện modal
+  const imgEl = document.getElementById('vietQrImage');
+  const amountEl = document.getElementById('vietQrAmountDisplay');
+  const bankNameEl = document.getElementById('vietQrBankName');
+  const accNameEl = document.getElementById('vietQrAccountName');
+  const accNoEl = document.getElementById('vietQrAccountNo');
+  const contentEl = document.getElementById('vietQrTransferContent');
+
+  if (imgEl) imgEl.src = vietQrUrl;
+  if (amountEl) amountEl.textContent = bookingData.totalAmount.toLocaleString('vi-VN') + ' VNĐ';
+  if (bankNameEl) bankNameEl.textContent = VIETQR_CONFIG.bankName;
+  if (accNameEl) accNameEl.textContent = VIETQR_CONFIG.accountName;
+  if (accNoEl) accNoEl.textContent = VIETQR_CONFIG.accountNo;
+  if (contentEl) contentEl.textContent = transferCode;
+
+  // Bắt đầu đếm ngược 10 phút giữ vé
+  startVietQrTimer(10 * 60);
+
+  // Hiển thị modal
+  modal.classList.add('active');
+}
+
+/**
+ * Đếm ngược thời gian phiên thanh toán VietQR
+ */
+function startVietQrTimer(durationSeconds) {
+  if (vietQrTimerInterval) clearInterval(vietQrTimerInterval);
+
+  let remaining = durationSeconds;
+  const timerEl = document.getElementById('vietQrTimer');
+
+  function updateDisplay() {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    if (timerEl) {
+      timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+  }
+
+  updateDisplay();
+
+  vietQrTimerInterval = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(vietQrTimerInterval);
+      showToast('Phiên giữ vé đã hết hạn (10 phút). Quý khách vui lòng thao tác lại!', 'warning');
+      closeVietQrModal();
+    } else {
+      updateDisplay();
+    }
+  }, 1000);
+}
+
+/**
+ * Đóng Modal Thanh Toán VietQR
+ */
+function closeVietQrModal() {
+  const modal = document.getElementById('vietQrModal');
+  if (modal) modal.classList.remove('active');
+  if (vietQrTimerInterval) clearInterval(vietQrTimerInterval);
+}
+
+/**
+ * Sao chép nhanh trường thông tin trong VietQR modal
+ */
+function copyVietQrField(elementId, fieldLabel) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const text = el.textContent.trim();
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(`Đã sao chép ${fieldLabel}: ${text}`, 'success');
+    }).catch(() => {
+      showToast(`${fieldLabel}: ${text}`, 'info');
+    });
+  } else {
+    showToast(`${fieldLabel}: ${text}`, 'info');
+  }
+}
+
+/**
+ * Xử lý khi du khách bấm "Tôi Đã Thanh Toán Thành Công"
+ */
+async function handleConfirmVietQrPaid() {
+  if (!currentPendingBooking) {
+    closeVietQrModal();
+    return;
+  }
+
+  const btnConfirm = document.getElementById('btnConfirmVietQrPaid');
+  if (btnConfirm) {
+    btnConfirm.disabled = true;
+    btnConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác nhận chuyển khoản...';
+  }
+
+  try {
+    await completeTicketBooking(currentPendingBooking, 'VIETQR');
+    closeVietQrModal();
+    showToast('Xác nhận thanh toán VietQR thành công! Vé điện tử của bạn đã sẵn sàng.', 'success');
+  } catch (err) {
+    console.error('Lỗi khi hoàn tất thanh toán VietQR:', err);
+    showToast(`Lỗi xác nhận: ${err.message}`, 'error');
+  } finally {
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.innerHTML = '<i class="fa-solid fa-circle-check"></i> Tôi Đã Thanh Toán Thành Công';
+    }
+  }
+}
+
+/**
+ * Hoàn tất lưu vé vào Backend SQLite & hiển thị vé điện tử
+ */
+async function completeTicketBooking(bookingData, paymentMethod) {
+  const { visitorNames, allNamesStr, phone, date, slot, adult, child, totalQty, totalAmount, isGroup, transferCode } = bookingData;
 
   const payload = {
     name: allNamesStr,
@@ -2630,95 +2803,87 @@ async function handleProcessBooking(event) {
     studentQty: 0,
     childQty: child,
     foreignerQty: 0,
-    paymentMethod: 'Chuyển khoản QR code'
+    paymentMethod: paymentMethod === 'VIETQR' ? `VietQR (${transferCode || 'Chuyển khoản'})` : 'Miễn phí'
   };
 
+  const response = await fetch(`${API_BASE}/tickets/book`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success || !result.data) {
+    throw new Error(result.message || result.error || `HTTP ${response.status}`);
+  }
+
+  const savedTicket = result.data;
+  const ticketCode = isGroup
+    ? `#DOAN-2026-${Math.floor(10000 + Math.random() * 90000)}`
+    : (savedTicket.ticketCode || savedTicket.code || `#VE-2026-${Math.floor(10000 + Math.random() * 90000)}`);
+
+  const qrUrl = savedTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-${ticketCode}${phone ? '-' + phone : ''}`;
+
+  // Sinh danh sách vé con (subTickets) nếu là khách lẻ < 10 người theo Phương án 3
+  const subTickets = [];
+  if (!isGroup) {
+    for (let i = 0; i < totalQty; i++) {
+      const isAdult = i < adult;
+      const subCode = `${ticketCode.replace('#', '')}-${String(i + 1).padStart(2, '0')}`;
+      const holderName = visitorNames[i] || (isAdult ? `Người lớn ${i + 1}` : `Trẻ em ${i + 1 - adult}`);
+      subTickets.push({
+        index: i + 1,
+        code: `#${subCode}`,
+        holderName: holderName,
+        ticketType: isAdult ? 'Vé Người Lớn (30.000 VNĐ)' : 'Vé Trẻ Em (Miễn phí)',
+        isAdult: isAdult,
+        status: 'CHUA_SU_DUNG',
+        qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-#${subCode}`
+      });
+    }
+  }
+
+  // Tạo bản ghi vé hoàn chỉnh theo kiến trúc Hybrid
+  const ticketRecord = {
+    id: savedTicket.id,
+    code: ticketCode,
+    name: isGroup ? (visitorNames[1] ? `${visitorNames[1]} (Đại diện: ${visitorNames[0]})` : `Đoàn ${visitorNames[0]}`) : allNamesStr,
+    leaderName: visitorNames[0] || 'Trưởng đoàn',
+    visitorNames: visitorNames,
+    phone: savedTicket.phone || phone,
+    date: savedTicket.date || date,
+    slot: savedTicket.slot || slot,
+    adultQty: adult,
+    childQty: child,
+    totalQty: totalQty,
+    amount: savedTicket.totalAmount !== undefined ? savedTicket.totalAmount : totalAmount,
+    type: 'ONLINE',
+    paymentMethod: payload.paymentMethod,
+    status: savedTicket.status || 'CHUA_SU_DUNG',
+    isGroup: isGroup,
+    subTickets: subTickets,
+    qrUrl: qrUrl,
+    createdAt: savedTicket.createdAt || new Date().toISOString()
+  };
+
+  TICKETS_PURCHASED_DATA.unshift(ticketRecord);
   try {
-    const response = await fetch(`${API_BASE}/tickets/book`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+    localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+  } catch (e) { }
 
-    const result = await response.json();
+  renderDashboardStats();
 
-    if (!response.ok || !result.success || !result.data) {
-      throw new Error(
-        result.message || result.error || `HTTP ${response.status}`
-      );
-    }
+  currentActiveSubTicketIdx = 0;
+  renderMyTickets(ticketRecord);
+  switchNav('viewMyTickets');
 
-    const savedTicket = result.data;
-    const ticketCode = isGroup
-      ? `#DOAN-2026-${Math.floor(10000 + Math.random() * 90000)}`
-      : (savedTicket.ticketCode || savedTicket.code || `#VE-2026-${Math.floor(10000 + Math.random() * 90000)}`);
-
-    const qrUrl = savedTicket.qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-${ticketCode}${phone ? '-' + phone : ''}`;
-
-    // Sinh danh sách vé con (subTickets) nếu là khách lẻ < 10 người theo Phương án 3
-    const subTickets = [];
-    if (!isGroup) {
-      for (let i = 0; i < totalQty; i++) {
-        const isAdult = i < adult;
-        const subCode = `${ticketCode.replace('#', '')}-${String(i + 1).padStart(2, '0')}`;
-        const holderName = visitorNames[i] || (isAdult ? `Người lớn ${i + 1}` : `Trẻ em ${i + 1 - adult}`);
-        subTickets.push({
-          index: i + 1,
-          code: `#${subCode}`,
-          holderName: holderName,
-          ticketType: isAdult ? 'Vé Người Lớn (30.000 VNĐ)' : 'Vé Trẻ Em (Miễn phí)',
-          isAdult: isAdult,
-          status: 'CHUA_SU_DUNG',
-          qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-#${subCode}`
-        });
-      }
-    }
-
-    // Tạo bản ghi vé hoàn chỉnh theo kiến trúc Hybrid
-    const ticketRecord = {
-      id: savedTicket.id,
-      code: ticketCode,
-      name: isGroup ? (visitorNames[1] ? `${visitorNames[1]} (Đại diện: ${visitorNames[0]})` : `Đoàn ${visitorNames[0]}`) : allNamesStr,
-      leaderName: visitorNames[0] || 'Trưởng đoàn',
-      visitorNames: visitorNames,
-      phone: savedTicket.phone || phone,
-      date: savedTicket.date || date,
-      slot: savedTicket.slot || slot,
-      adultQty: adult,
-      childQty: child,
-      totalQty: totalQty,
-      amount: savedTicket.totalAmount !== undefined ? savedTicket.totalAmount : (adult * 30000),
-      type: 'ONLINE',
-      paymentMethod: savedTicket.paymentMethod || 'Chuyển khoản QR code',
-      status: savedTicket.status || 'CHUA_SU_DUNG',
-      isGroup: isGroup,
-      subTickets: subTickets,
-      qrUrl: qrUrl,
-      createdAt: savedTicket.createdAt || new Date().toISOString()
-    };
-
-    TICKETS_PURCHASED_DATA.unshift(ticketRecord);
-    try {
-      localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
-    } catch (e) { }
-
-    renderDashboardStats();
-
-    currentActiveSubTicketIdx = 0;
-    renderMyTickets(ticketRecord);
-    switchNav('viewMyTickets');
-
-    if (isGroup) {
-      showToast(`Đặt thành công Vé Đoàn (${totalQty} người)! Đã tạo 01 mã Master QR cho đoàn.`, 'success');
-    } else {
-      showToast(`Đặt vé thành công! Đã tạo ${totalQty} mã QR riêng biệt cho từng người.`, 'success');
-    }
-
-  } catch (err) {
-    console.error('❌ Lỗi đặt vé online:', err);
-    showToast(`Không thể lưu vé: ${err.message}`, 'error');
+  if (isGroup) {
+    showToast(`Đặt thành công Vé Đoàn (${totalQty} người)! Đã tạo 01 mã Master QR cho đoàn.`, 'success');
+  } else {
+    showToast(`Đặt vé thành công! Đã tạo ${totalQty} mã QR riêng biệt cho từng người.`, 'success');
   }
 }
 
@@ -4798,5 +4963,8 @@ function handlePrintDashboardReport() {
 // Window bindings
 window.handleExportDashboardCsv = handleExportDashboardCsv;
 window.handlePrintDashboardReport = handlePrintDashboardReport;
+window.closeVietQrModal = closeVietQrModal;
+window.copyVietQrField = copyVietQrField;
+window.handleConfirmVietQrPaid = handleConfirmVietQrPaid;
 
 

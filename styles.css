@@ -5141,4 +5141,296 @@ textarea {
     page-break-inside: avoid;
   }
 }
+
+/* ============================================================
+   VIETQR PAYMENT MODAL STYLES (UI THANH TOÁN VIETQR)
+   ============================================================ */
+.vietqr-modal-card {
+  max-width: 680px !important;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1.5px solid var(--border-gold);
+  box-shadow: 0 20px 45px rgba(217, 119, 6, 0.2);
+}
+
+.vietqr-modal-header {
+  background: linear-gradient(135deg, #78350f, #92400e, #b45309);
+  color: #ffffff;
+  padding: 1.15rem 1.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vietqr-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.vietqr-header-left > i {
+  font-size: 1.6rem;
+  color: #fef3c7;
+  background: rgba(255, 255, 255, 0.15);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vietqr-modal-header .modal-title {
+  color: #ffffff !important;
+  font-size: 1.15rem;
+  margin: 0;
+  font-family: var(--font-heading);
+}
+
+.vietqr-modal-header .modal-subtitle {
+  color: #fef3c7;
+  font-size: 0.8rem;
+  margin: 0.2rem 0 0;
+  opacity: 0.95;
+}
+
+.vietqr-modal-header .modal-close-btn {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+}
+
+.vietqr-modal-header .modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.vietqr-modal-body {
+  padding: 1.4rem;
+  background: #fffdfa;
+}
+
+.vietqr-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.4rem;
+  align-items: flex-start;
+}
+
+.vietqr-qr-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.vietqr-image-wrapper {
+  background: #ffffff;
+  border: 2px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 0.6rem;
+  box-shadow: 0 8px 20px rgba(217, 119, 6, 0.12);
+  position: relative;
+  overflow: hidden;
+  width: 220px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vietqr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.vietqr-scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #d97706, transparent);
+  box-shadow: 0 0 10px #f59e0b;
+  animation: scanMove 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes scanMove {
+  0% { top: 6px; }
+  100% { top: 210px; }
+}
+
+.vietqr-timer-box {
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-gold);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.vietqr-bank-logos {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 0.65rem;
+  line-height: 1.4;
+}
+
+/* Info Column */
+.vietqr-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.vietqr-amount-banner {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1.5px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vietqr-amount-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #78350f;
+  text-transform: uppercase;
+}
+
+.vietqr-amount-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #b45309;
+  font-family: var(--font-heading);
+}
+
+.vietqr-details-table {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.9rem;
+}
+
+.vietqr-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed #f1f5f9;
+  font-size: 0.86rem;
+}
+
+.vietqr-detail-row:last-child {
+  border-bottom: none;
+}
+
+.vietqr-detail-row.highlight-row {
+  background: rgba(254, 243, 199, 0.3);
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius-sm);
+  margin: 0.2rem 0;
+}
+
+.detail-name {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.detail-val {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.detail-val.text-gold {
+  color: #b45309;
+  font-family: monospace;
+  font-size: 0.98rem;
+  letter-spacing: 0.5px;
+}
+
+.detail-copy-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-copy-mini {
+  background: #fffbeb;
+  border: 1px solid var(--border-gold);
+  color: #b45309;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+}
+
+.btn-copy-mini:hover {
+  background: #b45309;
+  color: #ffffff;
+}
+
+.vietqr-guide-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.8rem;
+  color: #1e40af;
+  line-height: 1.45;
+}
+
+.vietqr-guide-box i {
+  font-size: 1.1rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.vietqr-guide-box strong {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.vietqr-guide-box p {
+  margin: 0;
+  color: #1e3a8a;
+}
+
+.vietqr-modal-footer {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem 1.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-width: 650px) {
+  .vietqr-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .vietqr-modal-footer {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+  .vietqr-modal-footer button {
+    width: 100% !important;
+  }
+}
+
 

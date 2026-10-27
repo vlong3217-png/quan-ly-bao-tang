@@ -2463,6 +2463,96 @@
     </div>
   </div>
 
+  <!-- Modal Thanh Toán Chuyển Khoản VietQR (UI Thanh Toán Thông Minh) -->
+  <div class="modal-backdrop" id="vietQrModal">
+    <div class="modal-card vietqr-modal-card">
+      <div class="modal-header vietqr-modal-header">
+        <div class="vietqr-header-left">
+          <i class="fa-solid fa-qrcode"></i>
+          <div>
+            <h3 class="modal-title">Thanh Toán Vé Qua VietQR</h3>
+            <p class="modal-subtitle">Quét mã bằng bất kỳ App Ngân Hàng hoặc Ví Điện Tử nào (24/7)</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeVietQrModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body vietqr-modal-body">
+        <div class="vietqr-layout">
+          <!-- Cột hiển thị Mã QR VietQR chuẩn -->
+          <div class="vietqr-qr-col">
+            <div class="vietqr-image-wrapper">
+              <img id="vietQrImage" src="" alt="Mã VietQR Thanh Toán" class="vietqr-img">
+              <div class="vietqr-scan-line"></div>
+            </div>
+            <div class="vietqr-timer-box">
+              <i class="fa-regular fa-clock"></i> Thời gian giữ vé: <strong id="vietQrTimer">10:00</strong>
+            </div>
+            <div class="vietqr-bank-logos">
+              <span>Hỗ trợ 50+ Ngân hàng: VCB, MB, VietinBank, BIDV, Techcombank, MoMo, VNPay...</span>
+            </div>
+          </div>
+
+          <!-- Cột thông tin chi tiết chuyển khoản -->
+          <div class="vietqr-info-col">
+            <div class="vietqr-amount-banner">
+              <span class="vietqr-amount-label">Số tiền cần thanh toán</span>
+              <strong class="vietqr-amount-value" id="vietQrAmountDisplay">30.000 VNĐ</strong>
+            </div>
+
+            <div class="vietqr-details-table">
+              <div class="vietqr-detail-row">
+                <span class="detail-name">Ngân hàng thụ hưởng:</span>
+                <span class="detail-val" id="vietQrBankName">VietinBank (ICB)</span>
+              </div>
+              <div class="vietqr-detail-row">
+                <span class="detail-name">Chủ tài khoản:</span>
+                <span class="detail-val" id="vietQrAccountName">BAO TANG VH CAC DAN TOC VN</span>
+              </div>
+              <div class="vietqr-detail-row highlight-row">
+                <span class="detail-name">Số tài khoản:</span>
+                <div class="detail-copy-wrap">
+                  <strong class="detail-val" id="vietQrAccountNo">102874639201</strong>
+                  <button type="button" class="btn-copy-mini" onclick="copyVietQrField('vietQrAccountNo', 'Số tài khoản')" title="Sao chép số tài khoản">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="vietqr-detail-row highlight-row">
+                <span class="detail-name">Nội dung chuyển khoản:</span>
+                <div class="detail-copy-wrap">
+                  <strong class="detail-val text-gold" id="vietQrTransferContent">BAOTANG VE202684920</strong>
+                  <button type="button" class="btn-copy-mini" onclick="copyVietQrField('vietQrTransferContent', 'Nội dung')" title="Sao chép nội dung">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="vietqr-guide-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                <strong>Lưu ý quan trọng:</strong>
+                <p>Mã QR đã chứa sẵn số tiền và nội dung. Vui lòng không thay đổi nội dung chuyển khoản để hệ thống đối soát tự động chính xác.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer vietqr-modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeVietQrModal()">
+          <i class="fa-solid fa-arrow-left"></i> Quay Lại
+        </button>
+        <button type="button" class="btn-primary" id="btnConfirmVietQrPaid" onclick="handleConfirmVietQrPaid()">
+          <i class="fa-solid fa-circle-check"></i> Tôi Đã Thanh Toán Thành Công
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification System -->
   <div class="toast-container" id="toastContainer"></div>
 
