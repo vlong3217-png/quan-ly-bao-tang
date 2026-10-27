@@ -2652,7 +2652,7 @@ async function handleProcessBooking(event) {
 const VIETQR_CONFIG = {
   bankId: 'ICB', // VietinBank
   bankName: 'VietinBank (Ngân hàng TMCP Công Thương VN)',
-  accountNo: '102874639201',
+  accountNo: '101882763302',
   accountName: 'BAO TANG VH CAC DAN TOC VN',
   template: 'compact2'
 };
