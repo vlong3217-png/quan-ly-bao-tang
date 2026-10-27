@@ -35,4 +35,81 @@ router.get('/ticket-prices', (req, res) => {
   return res.json({ success: true, data: CATEGORIES.ticketPrices });
 });
 
+/* =========================================================
+   DANH MỤC DÂN TỘC (SQLITE DAN TOC)
+   ========================================================= */
+const pool = require('../config/db');
+
+router.get('/ethnicities', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        dantoc_id AS id, 
+        ten_dantoc AS name, 
+        nhom_ngon_ngu AS languageGroup, 
+        vung_van_hoa AS region, 
+        mo_ta AS desc
+      FROM DanToc
+      ORDER BY dantoc_id ASC
+    `);
+    return res.json({ success: true, count: rows.length, data: rows });
+  } catch (error) {
+    console.error('❌ Lỗi lấy danh mục dân tộc:', error);
+    return res.status(500).json({ success: false, message: 'Không thể lấy danh mục dân tộc', error: error.message });
+  }
+});
+
+router.post('/ethnicities', async (req, res) => {
+  try {
+    const { name, languageGroup, region, desc } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Tên dân tộc không được để trống' });
+    }
+
+    const [result] = await pool.query(`
+      INSERT INTO DanToc (ten_dantoc, nhom_ngon_ngu, vung_van_hoa, mo_ta)
+      VALUES (?, ?, ?, ?)
+    `, [
+      name.trim(),
+      (languageGroup && languageGroup.trim()) || 'Chưa phân loại',
+      (region && region.trim()) || 'Vùng văn hóa chung',
+      (desc && desc.trim()) || ''
+    ]);
+
+    const newId = result.insertId;
+    return res.status(201).json({
+      success: true,
+      message: 'Thêm dân tộc thành công',
+      data: {
+        id: newId,
+        name: name.trim(),
+        languageGroup: (languageGroup && languageGroup.trim()) || 'Chưa phân loại',
+        region: (region && region.trim()) || 'Vùng văn hóa chung'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Lỗi thêm dân tộc:', error);
+    return res.status(500).json({ success: false, message: 'Không thể lưu dân tộc vào CSDL', error: error.message });
+  }
+});
+
+router.delete('/ethnicities/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const [result] = await pool.query(`
+      DELETE FROM DanToc WHERE dantoc_id = ?
+    `, [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy dân tộc để xóa' });
+    }
+
+    return res.json({ success: true, message: 'Đã xóa dân tộc thành công' });
+  } catch (error) {
+    console.error('❌ Lỗi xóa dân tộc:', error);
+    return res.status(500).json({ success: false, message: 'Không thể xóa dân tộc khỏi CSDL', error: error.message });
+  }
+});
+
 module.exports = router;
+

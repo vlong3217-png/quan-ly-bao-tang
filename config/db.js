@@ -154,6 +154,32 @@ async function getDb() {
         `);
       }
 
+      // Auto-create DanToc table if not exists
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS DanToc (
+          dantoc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ten_dantoc TEXT NOT NULL,
+          nhom_ngon_ngu TEXT,
+          vung_van_hoa TEXT,
+          mo_ta TEXT
+        );
+      `);
+
+      const existingDanToc = await db.get('SELECT dantoc_id FROM DanToc LIMIT 1');
+      if (!existingDanToc) {
+        await db.run(`
+          INSERT INTO DanToc (ten_dantoc, nhom_ngon_ngu, vung_van_hoa)
+          VALUES 
+          ('Dân tộc Tày', 'Tày - Thái', 'Vùng Việt Bắc'),
+          ('Dân tộc Gia Rai', 'Môn - Khmer', 'Vùng Tây Nguyên'),
+          ('Dân tộc Thái', 'Tày - Thái', 'Vùng Tây Bắc'),
+          ('Dân tộc H''Mông', 'H''Mông - Dao', 'Vùng Núi Phía Bắc'),
+          ('Dân tộc Mường', 'Việt - Mường', 'Vùng Hòa Bình - Thanh Hóa'),
+          ('Dân tộc Chăm', 'Nam Đảo', 'Vùng Duyên Hải Nam Trung Bộ'),
+          ('Dân tộc Khmer', 'Môn - Khmer', 'Vùng Đồng Bằng Sông Cửu Long');
+        `);
+      }
+
       // Drop obsolete LichSuMuonTra table if exists
       await db.exec(`DROP TABLE IF EXISTS LichSuMuonTra;`);
 

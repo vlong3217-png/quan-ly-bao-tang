@@ -214,70 +214,127 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Sync with live Node.js REST API Backend for real-time multi-device synchronization
+  await syncMuseumDataFromBackend(true);
+
+  renderCatalog(ARTIFACTS_DATA);
+  renderInventoryTable(ARTIFACTS_DATA);
+  renderTourTable(TOURS_DATA);
+  renderUserTable(USERS_DATA);
+  renderDashboardStats();
+  renderMyTickets();
+  loadFeedbacksFromApi();
+  initCustomSelects();
+
+  // Background Auto-sync every 30 seconds and when switching back to tab/window
+  setInterval(() => {
+    syncMuseumDataFromBackend(false);
+  }, 30000);
+
+  window.addEventListener('focus', () => {
+    syncMuseumDataFromBackend(false);
+  });
+});
+
+/**
+ * Authoritative Backend Synchronizer with SQLite
+ * Ensures all devices reflect real-time changes without stale local storage overwrites
+ */
+async function syncMuseumDataFromBackend(isInitialLoad = false) {
   try {
-    const [resArt, resTour, resTicket, resUser] = await Promise.all([
+    const [resArt, resTour, resTicket, resUser, resEth] = await Promise.all([
       fetch(`${API_BASE}/artifacts`),
       fetch(`${API_BASE}/tickets/tours`),
       fetch(`${API_BASE}/tickets`),
-      fetch(`${API_BASE}/users`)
+      fetch(`${API_BASE}/users`),
+      fetch(`${API_BASE}/categories/ethnicities`)
     ]);
 
-    if (resArt.ok) {
+    let hasChanges = false;
+
+    if (resArt && resArt.ok) {
       const result = await resArt.json();
-
       if (result.success && Array.isArray(result.data)) {
-        if (result.data.length > 0) {
-          ARTIFACTS_DATA = result.data
-            .map(normalizeArtifact)
-            .filter(Boolean);
-
-          localStorage.setItem(
-            'baotang_artifacts_data',
-            JSON.stringify(ARTIFACTS_DATA)
-          );
-        } else if (ARTIFACTS_DATA.length > 0) {
-          // Tự động đẩy hiện vật từ local lên SQLite nếu backend rỗng
-          ARTIFACTS_DATA.forEach(art => {
-            fetch(`${API_BASE}/artifacts`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(art)
-            }).catch(() => { });
-          });
-        }
+        // SQLite is the single source of truth: replace client array directly
+        ARTIFACTS_DATA = result.data.map(normalizeArtifact).filter(Boolean);
+        localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
+        hasChanges = true;
       }
     }
 
-    if (resTour.ok) {
+    if (resTour && resTour.ok) {
       const tourResult = await resTour.json();
       if (tourResult.success && Array.isArray(tourResult.data)) {
         TOURS_DATA = tourResult.data;
         localStorage.setItem('baotang_tours_data', JSON.stringify(TOURS_DATA));
+        hasChanges = true;
       }
     }
 
     if (resTicket && resTicket.ok) {
       const ticketResult = await resTicket.json();
       if (ticketResult.success && Array.isArray(ticketResult.data)) {
-        TICKETS_PURCHASED_DATA = ticketResult.data.map(t => ({
-          id: t.ve_id || t.id,
-          code: t.ma_qr || t.code,
-          name: t.ten_khach || t.name,
-          phone: t.so_dien_thoai || t.phone,
-          date: t.ngay_tham_quan || t.date,
-          slot: t.khung_gio || t.slot,
-          adultQty: t.so_nguoi_lon !== undefined ? t.so_nguoi_lon : (t.adultQty || 0),
-          childQty: t.so_tre_em !== undefined ? t.so_tre_em : (t.childQty || 0),
-          studentQty: t.so_sinh_vien !== undefined ? t.so_sinh_vien : (t.studentQty || 0),
-          foreignerQty: t.so_nguoi_nuoc_ngoai !== undefined ? t.so_nguoi_nuoc_ngoai : (t.foreignerQty || 0),
-          totalQty: (t.so_nguoi_lon || t.adultQty || 0) + (t.so_tre_em || t.childQty || 0) + (t.so_sinh_vien || t.studentQty || 0) + (t.so_nguoi_nuoc_ngoai || t.foreignerQty || 0),
-          amount: t.tong_tien !== undefined ? t.tong_tien : (t.amount || 0),
-          type: (t.ma_qr && t.ma_qr.includes('POS')) ? 'POS' : 'ONLINE',
-          paymentMethod: t.phuong_thuc_thanh_toan || t.paymentMethod || 'Chuyển khoản QR code',
-          status: t.trang_thai || t.status || 'CHUA_SU_DUNG',
-          createdAt: t.ngay_mua || t.createdAt
-        }));
+        TICKETS_PURCHASED_DATA = ticketResult.data.map(t => {
+          const adult = t.so_nguoi_lon !== undefined ? t.so_nguoi_lon : (t.adultQty || 0);
+          const child = t.so_tre_em !== undefined ? t.so_tre_em : (t.childQty || 0);
+          const student = t.so_sinh_vien !== undefined ? t.so_sinh_vien : (t.studentQty || 0);
+          const foreigner = t.so_nguoi_nuoc_ngoai !== undefined ? t.so_nguoi_nuoc_ngoai : (t.foreignerQty || 0);
+          const totalQty = adult + child + student + foreigner;
+          const code = t.ma_qr || t.code || '';
+          const name = t.ten_khach || t.name || '';
+          const isGroup = totalQty >= 10 || code.includes('DOAN');
+
+          // Re-hydrate subTickets for individual visitors so gate QR scanner works across devices
+          const subTickets = [];
+          if (!isGroup && totalQty > 0) {
+            const namesArray = name ? name.split(',').map(s => s.trim()) : [];
+            for (let i = 0; i < totalQty; i++) {
+              const isAdult = i < adult;
+              const subCode = `${code.replace('#', '')}-${String(i + 1).padStart(2, '0')}`;
+              const holderName = namesArray[i] || (isAdult ? `Người lớn ${i + 1}` : `Trẻ em ${i + 1 - adult}`);
+              subTickets.push({
+                index: i + 1,
+                code: `#${subCode}`,
+                holderName: holderName,
+                ticketType: isAdult ? 'Vé Người Lớn (30.000 VNĐ)' : 'Vé Trẻ Em (Miễn phí)',
+                isAdult: isAdult,
+                status: t.trang_thai === 'DA_SOAT_VE' ? 'DA_SOAT_VE' : 'CHUA_SU_DUNG',
+                qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BAOTANG-#${subCode}`
+              });
+            }
+          }
+
+          return {
+            id: t.ve_id || t.id,
+            code: code,
+            name: name,
+            phone: t.so_dien_thoai || t.phone,
+            date: t.ngay_tham_quan || t.date,
+            slot: t.khung_gio || t.slot,
+            adultQty: adult,
+            childQty: child,
+            studentQty: student,
+            foreignerQty: foreigner,
+            totalQty: totalQty,
+            amount: t.tong_tien !== undefined ? t.tong_tien : (t.amount || 0),
+            type: (code && code.includes('POS')) ? 'POS' : 'ONLINE',
+            paymentMethod: t.phuong_thuc_thanh_toan || t.paymentMethod || 'Chuyển khoản QR code',
+            status: t.trang_thai || t.status || 'CHUA_SU_DUNG',
+            isGroup: isGroup,
+            subTickets: subTickets,
+            createdAt: t.ngay_mua || t.createdAt
+          };
+        });
         localStorage.setItem('baotang_purchased_tickets_data', JSON.stringify(TICKETS_PURCHASED_DATA));
+        hasChanges = true;
+      }
+    }
+
+    if (resEth && resEth.ok) {
+      const ethResult = await resEth.json();
+      if (ethResult.success && Array.isArray(ethResult.data)) {
+        ETHNICITIES_DATA = ethResult.data;
+        saveCategoryDataToStorage();
+        renderCategoryEthnicitiesTable();
       }
     }
 
@@ -307,19 +364,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     }
-  } catch (apiErr) {
-    console.log('📡 Using local dataset fallback for museum data.');
-  }
 
-  renderCatalog(ARTIFACTS_DATA);
-  renderInventoryTable(ARTIFACTS_DATA);
-  renderTourTable(TOURS_DATA);
-  renderUserTable(USERS_DATA);
-  renderDashboardStats();
-  renderMyTickets();
-  loadFeedbacksFromApi();
-  initCustomSelects();
-});
+    if (!isInitialLoad && hasChanges) {
+      // Background re-render views smoothly
+      renderCatalog(ARTIFACTS_DATA);
+      renderInventoryTable(ARTIFACTS_DATA);
+      renderTourTable(TOURS_DATA);
+      renderDashboardStats();
+    }
+  } catch (apiErr) {
+    if (isInitialLoad) {
+      console.log('📡 Sử dụng dữ liệu bộ nhớ cục bộ dự phòng cho máy trạm.');
+    }
+  }
+}
+
 
 /**
  * Setup Responsive Custom Dropdown for Select elements to prevent OS-level overflow on all devices
@@ -3616,6 +3675,22 @@ function saveCategoryDataToStorage() {
   localStorage.setItem('ETHNICITIES_DATA', JSON.stringify(ETHNICITIES_DATA));
 }
 
+async function loadEthnicitiesFromApi() {
+  try {
+    const res = await fetch(`${API_BASE}/categories/ethnicities`);
+    if (res.ok) {
+      const result = await res.json();
+      if (result.success && Array.isArray(result.data)) {
+        ETHNICITIES_DATA = result.data;
+        saveCategoryDataToStorage();
+        renderCategoryEthnicitiesTable();
+      }
+    }
+  } catch (e) {
+    console.warn('Không thể tải danh mục dân tộc từ API:', e);
+  }
+}
+
 function renderCategoryEthnicitiesTable() {
   const tbody = document.getElementById('catEthnicityTableBody');
   if (!tbody) return;
@@ -3645,7 +3720,7 @@ function closeAddEthnicityModal() {
   document.getElementById('addEthnicityModal').classList.remove('active');
 }
 
-function handleAddEthnicity(event) {
+async function handleAddEthnicity(event) {
   event.preventDefault();
   const name = document.getElementById('modalEthName').value.trim();
   const languageGroup = document.getElementById('modalEthLanguage').value.trim();
@@ -3656,29 +3731,64 @@ function handleAddEthnicity(event) {
     return;
   }
 
-  const nextId = ETHNICITIES_DATA.length > 0 ? Math.max(...ETHNICITIES_DATA.map(e => parseInt(e.id, 10) || 0)) + 1 : 1;
-  const newEth = {
-    id: nextId,
-    name: name,
-    languageGroup: languageGroup || 'Chưa phân loại',
-    region: region || 'Vùng văn hóa chung'
-  };
+  try {
+    const res = await fetch(`${API_BASE}/categories/ethnicities`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        languageGroup: languageGroup || 'Chưa phân loại',
+        region: region || 'Vùng văn hóa chung'
+      })
+    });
 
-  ETHNICITIES_DATA.push(newEth);
-  saveCategoryDataToStorage();
-  renderCategoryEthnicitiesTable();
-  closeAddEthnicityModal();
-  showToast(`Đã thêm "${name}" vào danh mục dân tộc!`, 'success');
+    const result = await res.json();
+    if (res.ok && result.success) {
+      ETHNICITIES_DATA.push(result.data);
+      saveCategoryDataToStorage();
+      renderCategoryEthnicitiesTable();
+      closeAddEthnicityModal();
+      showToast(`Đã thêm "${name}" vào danh mục hệ thống (SQLite)!`, 'success');
+    } else {
+      showToast(result.message || 'Lỗi thêm dân tộc', 'error');
+    }
+  } catch (err) {
+    // Fallback local
+    const nextId = ETHNICITIES_DATA.length > 0 ? Math.max(...ETHNICITIES_DATA.map(e => parseInt(e.id, 10) || 0)) + 1 : 1;
+    const newEth = {
+      id: nextId,
+      name: name,
+      languageGroup: languageGroup || 'Chưa phân loại',
+      region: region || 'Vùng văn hóa chung'
+    };
+    ETHNICITIES_DATA.push(newEth);
+    saveCategoryDataToStorage();
+    renderCategoryEthnicitiesTable();
+    closeAddEthnicityModal();
+    showToast(`Đã lưu "${name}" tạm thời trên thiết bị!`, 'info');
+  }
 }
 
-function deleteEthnicity(id) {
+async function deleteEthnicity(id) {
   if (confirm('Bạn có chắc chắn muốn xóa dân tộc này khỏi danh mục hệ thống không?')) {
+    try {
+      const res = await fetch(`${API_BASE}/categories/ethnicities/${id}`, {
+        method: 'DELETE'
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        showToast(result.message || 'Không thể xóa trên CSDL máy chủ', 'error');
+      }
+    } catch (err) {
+      console.warn('Lỗi gọi API xóa dân tộc:', err);
+    }
     ETHNICITIES_DATA = ETHNICITIES_DATA.filter(e => String(e.id) !== String(id));
     saveCategoryDataToStorage();
     renderCategoryEthnicitiesTable();
-    showToast('Đã xóa dân tộc khỏi danh mục', 'info');
+    showToast('Đã xóa dân tộc khỏi danh mục hệ thống', 'info');
   }
 }
+
 
 function setNlQueryPrompt(promptText) {
   document.getElementById('adminNlQueryInput').value = promptText;
