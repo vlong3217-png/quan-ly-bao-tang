@@ -1685,6 +1685,8 @@ async function handleSaveArtifact(event) {
     );
   }
 
+  const primaryImg = editingArtifactImages.length > 0 ? editingArtifactImages[0] : 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80';
+  const allImages = editingArtifactImages.length > 0 ? [...editingArtifactImages] : [primaryImg];
   const audioContent = (meaning && meaning.trim()) ? meaning.trim() : `Hiện vật ${title} của Dân tộc ${ethnic}.`;
 
   const targetPayload = {
