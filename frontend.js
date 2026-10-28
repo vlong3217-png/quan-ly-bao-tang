@@ -1677,12 +1677,9 @@ async function handleSaveArtifact(event) {
     }
   }
 
-  const primaryImg = editingArtifactImages.length > 0 ? editingArtifactImages[0] : 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80';
-  const allImages = editingArtifactImages.length > 0 ? [...editingArtifactImages] : [primaryImg];
-
-  let targetArt = null;
+  let existingArt = null;
   if (editingArtifactId !== null && editingArtifactId !== undefined && editingArtifactId !== '' && editingArtifactId !== 'undefined') {
-    targetArt = ARTIFACTS_DATA.find(item =>
+    existingArt = ARTIFACTS_DATA.find(item =>
       String(item.id) === String(editingArtifactId) ||
       item.code === String(editingArtifactId)
     );
@@ -1690,100 +1687,78 @@ async function handleSaveArtifact(event) {
 
   const audioContent = (meaning && meaning.trim()) ? meaning.trim() : `Hiện vật ${title} của Dân tộc ${ethnic}.`;
 
-  if (targetArt) {
-    targetArt.code = code;
-    targetArt.title = title;
-    targetArt.ethnic = ethnic;
-    targetArt.region = region;
-    targetArt.material = material;
-    targetArt.location = location;
-    targetArt.meaning = meaning;
-    targetArt.y_nghia_van_hoa = meaning;
-    targetArt.img = primaryImg;
-    targetArt.images = allImages;
-    targetArt.audioText = audioContent;
-    showToast(`Đã cập nhật thành công hồ sơ hiện vật ${code}!`, 'success');
-  } else {
-    const newArt = {
-      id: Date.now(),
-      code: code,
-      title: title,
-      ethnic: ethnic,
-      region: region,
-      material: material,
-      location: location,
-      status: 'Nguyên vẹn',
-      img: primaryImg,
-      images: allImages,
-      meaning: meaning,
-      y_nghia_van_hoa: meaning,
-      audioText: audioContent
-    };
-    targetArt = newArt;
-    ARTIFACTS_DATA.unshift(newArt);
-    showToast(`Đã thêm mới hồ sơ hiện vật ${code} vào hệ thống kho!`, 'success');
-  }
+  const targetPayload = {
+    id: existingArt ? existingArt.id : undefined,
+    code: code,
+    title: title,
+    ethnic: ethnic,
+    region: region,
+    material: material,
+    location: location,
+    status: 'Nguyên vẹn',
+    img: primaryImg,
+    images: allImages,
+    meaning: meaning,
+    y_nghia_van_hoa: meaning,
+    audioText: audioContent
+  };
 
-  // Filter out any corrupted entries
-  ARTIFACTS_DATA = ARTIFACTS_DATA.map(normalizeArtifact).filter(Boolean);
-
-  // Save to LocalStorage safely
+  // Sync to REST API backend first
   try {
-    localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
-  } catch (storageErr) {
-    console.warn('⚠️ LocalStorage Quota Exceeded:', storageErr);
-  }
-
-  // Sync to REST API backend if running
-  try {
-    const response = await fetch('/api/artifacts', {
+    const response = await fetch(`${API_BASE}/artifacts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(targetArt)
+      body: JSON.stringify(targetPayload)
     });
 
     const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Không thể lưu hiện vật vào cơ sở dữ liệu');
+    if (!response.ok || !result.success || !result.data) {
+      throw new Error(result.message || result.error || 'Không thể lưu hiện vật vào cơ sở dữ liệu');
     }
 
-    if (result.data) {
-      const savedArtifact = normalizeArtifact(result.data);
+    const savedArtifact = normalizeArtifact(result.data);
 
+    if (existingArt) {
       const index = ARTIFACTS_DATA.findIndex(item =>
-        String(item.id) === String(targetArt.id) ||
-        item.code === targetArt.code
+        String(item.id) === String(existingArt.id) ||
+        item.code === existingArt.code
       );
-
       if (index !== -1) {
         ARTIFACTS_DATA[index] = savedArtifact;
+      } else {
+        ARTIFACTS_DATA.unshift(savedArtifact);
       }
+      showToast(`Đã cập nhật thành công hồ sơ hiện vật ${savedArtifact.code}!`, 'success');
+    } else {
+      ARTIFACTS_DATA.unshift(savedArtifact);
+      showToast(`Đã thêm mới hồ sơ hiện vật ${savedArtifact.code} vào hệ thống kho (SQLite)!`, 'success');
     }
 
-    localStorage.setItem(
-      'baotang_artifacts_data',
-      JSON.stringify(ARTIFACTS_DATA)
-    );
+    // Filter out any corrupted entries and persist
+    ARTIFACTS_DATA = ARTIFACTS_DATA.map(normalizeArtifact).filter(Boolean);
+    try {
+      localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
+    } catch (storageErr) {
+      console.warn('⚠️ LocalStorage Quota Exceeded:', storageErr);
+    }
+
+    renderInventoryTable(ARTIFACTS_DATA);
+    renderCatalog(ARTIFACTS_DATA);
+    renderDashboardStats();
+
+    if (typeof currentArtifact !== 'undefined' && currentArtifact && String(currentArtifact.id) === String(savedArtifact.id)) {
+      openArtifactDetail(savedArtifact.id);
+    }
+
+    closeArtifactModal();
 
   } catch (err) {
     console.error('Lỗi lưu hiện vật:', err);
     showToast('Lưu hiện vật thất bại: ' + err.message, 'error');
-    return;
   }
-
-  renderInventoryTable(ARTIFACTS_DATA);
-  renderCatalog(ARTIFACTS_DATA);
-  renderDashboardStats();
-
-  // If user is currently viewing this artifact in detail view, update detail view too
-  if (typeof currentArtifact !== 'undefined' && currentArtifact && String(currentArtifact.id) === String(targetArt.id)) {
-    openArtifactDetail(targetArt.id);
-  }
-
-  closeArtifactModal();
 }
 
 /**
@@ -1800,43 +1775,40 @@ async function deleteArtifact(id) {
     return;
   }
 
-  // Remove from memory array
-  ARTIFACTS_DATA = ARTIFACTS_DATA.filter(item => String(item.id) !== String(targetId) && item.code !== String(targetId));
-
-  // Sync to LocalStorage
+  // Sync DELETE to REST API backend first
   try {
-    localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
-  } catch (storageErr) {
-    console.warn('⚠️ LocalStorage Quota Exceeded:', storageErr);
-  }
-
-  // Sync DELETE to REST API backend
-  try {
-    const response = await fetch(`/api/artifacts/${targetId}`, {
+    const response = await fetch(`${API_BASE}/artifacts/${encodeURIComponent(targetId)}`, {
       method: 'DELETE'
     });
 
     const result = await response.json();
 
     if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Không thể xóa hiện vật');
+      throw new Error(result.message || result.error || 'Không thể xóa hiện vật khỏi cơ sở dữ liệu');
     }
+
+    // Remove from memory array after server confirms deletion
+    ARTIFACTS_DATA = ARTIFACTS_DATA.filter(item => String(item.id) !== String(targetId) && item.code !== String(targetId));
+
+    try {
+      localStorage.setItem('baotang_artifacts_data', JSON.stringify(ARTIFACTS_DATA));
+    } catch (storageErr) {
+      console.warn('⚠️ LocalStorage Quota Exceeded:', storageErr);
+    }
+
+    showToast(`Đã xóa thành công ${artName}!`, 'info');
+
+    // Refresh UI tables and catalog
+    renderInventoryTable(ARTIFACTS_DATA);
+    renderCatalog(ARTIFACTS_DATA);
+    renderDashboardStats();
+
+    closeArtifactModal();
 
   } catch (err) {
     console.error('Lỗi xóa hiện vật:', err);
     showToast('Xóa hiện vật thất bại: ' + err.message, 'error');
-    return;
   }
-
-  showToast(`Đã xóa thành công ${artName}!`, 'info');
-
-  // Refresh UI tables and catalog
-  renderInventoryTable(ARTIFACTS_DATA);
-  renderCatalog(ARTIFACTS_DATA);
-  renderDashboardStats();
-
-  // Close modal if open
-  closeArtifactModal();
 }
 
 /* Global Clipboard Paste Listener for Ctrl + V */
